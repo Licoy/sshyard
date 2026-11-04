@@ -60,12 +60,19 @@ func TestExecCancelClosesChannel(t *testing.T) {
 	started := make(chan struct{})
 	handlerDone := make(chan struct{})
 	srv.Exec = func(ch ssh.Channel, cmd string) int {
-		close(started)
+		defer close(handlerDone)
+		// Stdin EOF is only a half-close; keep running until the channel closes.
 		io.Copy(io.Discard, ch)
-		close(handlerDone)
-		return 0
+		close(started)
+		for {
+			if _, err := io.WriteString(ch, "."); err != nil {
+				return 0
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
 	}
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	client := dialClient(t, srv)
 	execDone := make(chan error, 1)
 	go func() {
