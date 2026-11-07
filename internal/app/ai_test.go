@@ -649,7 +649,9 @@ func TestFullAccessNeedsConfirmation(t *testing.T) {
 	})
 }
 
-func TestFullModeUnknownAsksRed(t *testing.T) {
+// Full access promises to stop asking, so an action the rules could not
+// grade runs like any other and is only marked red.
+func TestFullModeUnknownRunsRed(t *testing.T) {
 	a, tt := newTestApp(t)
 	h := savedHost(t, a, "web", "10.0.0.8")
 	consentHost(t, a, h.ID)
@@ -673,13 +675,25 @@ func TestFullModeUnknownAsksRed(t *testing.T) {
 	}
 	tt.Frame()
 	a.SendAI(id, "run it")
-	waitFor(t, tt, "confirmation", func() bool { return a.conns[id].ai.pending != nil })
-	pend := a.conns[id].ai.pending
-	if !pend.prompt.Decision.Red || pend.prompt.Decision.Risk != policy.RiskUnknown {
-		t.Fatalf("prompt %+v", pend)
+	waitFor(t, tt, "unknown command ran", func() bool {
+		for _, it := range a.conns[id].ai.items {
+			if it.kind == "tool" && it.tool.Phase == "done" {
+				return true
+			}
+		}
+		return false
+	})
+	if pend := a.conns[id].ai.pending; pend != nil {
+		t.Fatalf("full access asked before running an unknown command: %+v", pend.prompt)
 	}
-	if pend.prompt.Decision.Similar {
-		t.Fatal("similar was offered for an unknown command")
+	var card agent.ToolCard
+	for _, it := range a.conns[id].ai.items {
+		if it.kind == "tool" {
+			card = it.tool
+		}
+	}
+	if card.Risk != "unknown" || card.Verdict != "full" || !card.Run {
+		t.Fatalf("card %+v", card)
 	}
 	a.StopAI(id)
 	waitFor(t, tt, "stopped", func() bool { return !a.conns[id].ai.running })

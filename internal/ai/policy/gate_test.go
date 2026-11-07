@@ -295,19 +295,19 @@ func TestGateFlows(t *testing.T) {
 		}
 	})
 
-	t.Run("full unknown asks red", func(t *testing.T) {
+	t.Run("full unknown runs red", func(t *testing.T) {
 		aud := &memAudit{}
-		p := &scriptPrompt{answers: []Answer{AllowOnce}}
+		p := &scriptPrompt{}
 		g := testGate(ModeFull, p, nil, aud)
 		a := cmdAction("foobar")
 		v, err := g.Authorize(ctx, a, "")
 		seen := p.seen()
-		if err != nil || !v.Run || v.By != ByUser || !v.Red || v.Similar || len(seen) != 1 || !seen[0].Decision.Red || seen[0].Decision.Similar {
+		if err != nil || !v.Run || v.By != ByFull || !v.Red || v.Similar || len(seen) != 0 {
 			t.Fatalf("%+v prompts=%d err=%v", v, len(seen), err)
 		}
 		g.Done(a, v, 0, 1, 0)
 		recs := aud.list()
-		if len(recs) != 1 || recs[0].Verdict != "user-allow" || recs[0].Decider != "user" {
+		if len(recs) != 1 || recs[0].Verdict != "full" || recs[0].Decider != "full" || recs[0].Risk != "unknown" {
 			t.Fatalf("%+v", recs)
 		}
 	})

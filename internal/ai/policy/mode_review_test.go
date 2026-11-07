@@ -139,7 +139,7 @@ func TestOtherPermissionRoutesRemainUnchanged(t *testing.T) {
 	}{
 		{RiskReadOnly, Allow, Allow, Allow}, {RiskLow, Ask, Allow, Allow},
 		{RiskMedium, Ask, Allow, Ask}, {RiskHigh, Ask, Allow, Ask},
-		{RiskCritical, Ask, Allow, Ask}, {RiskUnknown, Ask, Ask, Ask},
+		{RiskCritical, Ask, Allow, Ask}, {RiskUnknown, Ask, Allow, Ask},
 	} {
 		t.Run(tc.risk.String(), func(t *testing.T) {
 			grade := Grade{Risk: tc.risk}

@@ -304,7 +304,7 @@ func knownCommand(name string) bool {
 		return true
 	}
 	switch name {
-	case "rm", "rmdir", "unlink", "truncate", "shred", "mkdir", "touch", "mv", "cp", "ln", "install", "tee", "sed", "find", "chmod", "chown", "chgrp", "dd", "systemctl", "service", "docker", "git", "kubectl", "ip", "reboot", "shutdown":
+	case "rm", "rmdir", "unlink", "truncate", "shred", "mkdir", "touch", "mv", "cp", "ln", "install", "tee", "sed", "find", "chmod", "chown", "chgrp", "dd", "systemctl", "service", "docker", "git", "kubectl", "ip", "tc", "reboot", "shutdown":
 		return true
 	}
 	return false
