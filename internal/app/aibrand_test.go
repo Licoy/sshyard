@@ -54,8 +54,12 @@ func TestAIModelMenu(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
+	// One provider has no group to name first, so its models are the menu.
 	mustClick(t, tt, "Model")
 	tt.Frame()
+	if tt.HasText("OpenAI") {
+		t.Fatalf("a lone provider was listed as a group: %q", tt.Texts())
+	}
 	mustClick(t, tt, "claude-sonnet-4")
 	tt.Frame()
 	if a.conns[id].ai.model != "claude-sonnet-4" {
@@ -67,6 +71,19 @@ func TestAIModelMenu(t *testing.T) {
 	tt.Frame()
 	if a.conns[id].ai.model != "unknown-model" {
 		t.Fatalf("unknown model selection: %q", a.conns[id].ai.model)
+	}
+}
+
+// openModelSubmenu moves the pointer onto a provider's entry so that its
+// models show in the submenu, as the menu does when a pointer comes on it.
+func openModelSubmenu(t *testing.T, a *App, tt *ui.Tester, provider string) {
+	t.Helper()
+	r := mustFind(t, tt, provider)
+	tt.Move(r.X+r.W/2, r.Y+r.H/2)
+	tt.Frame()
+	tt.Frame()
+	if a.menu.sub < 0 {
+		t.Fatalf("%q's models did not open: %q", provider, tt.Texts())
 	}
 }
 

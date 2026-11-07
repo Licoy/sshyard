@@ -36,6 +36,8 @@ type menuEntry struct {
 	Sep bool
 	// Sub are the entries of its submenu, nil for none.
 	Sub []menuEntry
+	// SubWidth is the narrowest that submenu grows to; 0 for menuWidth.
+	SubWidth float32
 	// Do runs as the entry is chosen.
 	Do func()
 }
@@ -212,6 +214,8 @@ func (a *App) dropDown(c *ui.Context, key string, el ui.Element, disabled bool, 
 type menuLayout struct {
 	compact   bool
 	maxHeight float32
+	// width is the narrowest the panel grows to; 0 for menuWidth.
+	width float32
 }
 
 // menuHeightAt reserves the popover gap, window margin and panel insets
@@ -230,6 +234,9 @@ func (a *App) menuPanel(c *ui.Context, tok theme.Tokens, panel ui.Element, entri
 		if options[0].maxHeight > 0 {
 			layout.maxHeight = options[0].maxHeight
 		}
+		if options[0].width > 0 {
+			layout.width = options[0].width
+		}
 	}
 	compact := layout.compact
 	for _, e := range entries {
@@ -238,6 +245,9 @@ func (a *App) menuPanel(c *ui.Context, tok theme.Tokens, panel ui.Element, entri
 		}
 	}
 	width := float32(menuWidth)
+	if layout.width > 0 {
+		width = layout.width
+	}
 	if compact {
 		width = theme.Space(28)
 	}
@@ -345,11 +355,11 @@ func (a *App) menuRow(c *ui.Context, tok theme.Tokens, e menuEntry, i, level int
 			ui.Text(c, shortcutText(runtime.GOOS, e.Mods, e.Key)).FontSize(theme.Footnote).TextColor(muted).SingleLine().
 				Shrink(0).MarginStart(theme.Space(4))
 		}
-		switch {
-		case e.Sub != nil:
-			ui.Icon(c, icons.Submenu.SVG).Size(14, 14).Shrink(0).TextColor(muted)
-		case e.Checked:
+		if e.Checked {
 			ui.Icon(c, icons.Check.SVG).Size(14, 14).Shrink(0).TextColor(tok.Accent)
+		}
+		if e.Sub != nil {
+			ui.Icon(c, icons.Submenu.SVG).Size(14, 14).Shrink(0).TextColor(muted)
 		}
 	})
 	if e.Disabled {
@@ -364,7 +374,7 @@ func (a *App) menuRow(c *ui.Context, tok theme.Tokens, e menuEntry, i, level int
 			open := true
 			ui.PopoverBase(c.Key("sub:"+strconv.Itoa(i)), row, &open, func(panel ui.Element) {
 				panel.AttachTo(row, ui.AnchorTopEnd, ui.AnchorTopStart).Margin(0, 0, 0, 6).Top(-6)
-				a.menuPanel(c, tok, panel, e.Sub, 1)
+				a.menuPanel(c, tok, panel, e.Sub, 1, menuLayout{width: e.SubWidth})
 				if panel.OverlayShortcut(0, ui.KeyLeft) {
 					open = false
 					row.Focus()

@@ -248,10 +248,14 @@ func (a *App) chooseModel(cn *conn, p *settings.AIProvider, model string) {
 // modelMenuMax is the most models one provider lists before a search.
 const modelMenuMax = 200
 
+// modelMenuWidth is the width of the model menu and of each provider's
+// submenu, wide enough for a long model id beside its check.
+const modelMenuWidth = 300
+
 // modelChip shows the pane's model and chooses another, of any provider,
-// from a menu with a search field: Enter takes the first match, or the
-// name typed when nothing matches. Without a provider it shows in the
-// warning color.
+// from a menu of providers, each opening its own models: a search field
+// above them takes the first match on Enter, or the name typed when
+// nothing matches. Without a provider it shows in the warning color.
 func (a *App) modelChip(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Messages, fit aiFit) {
 	key := "aimodel:" + strconv.Itoa(cn.id)
 	p := a.paneProvider(cn)
@@ -279,7 +283,7 @@ func (a *App) modelChip(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Mes
 		return
 	}
 	ui.PopoverBase(c.Key("menu:"+key), el, &open, func(panel ui.Element) {
-		panel.Margin(4, 0, 0, 0).Role(ui.RoleMenu).Width(300).Padding(5).Radius(theme.RadiusCard).Background(tok.Inset).
+		panel.Margin(4, 0, 0, 0).Role(ui.RoleMenu).Width(modelMenuWidth).Padding(5).Radius(theme.RadiusCard).Background(tok.Inset).
 			Border(1, tok.GlassEdge).FocusGroup(ui.Vertical)
 		tok.Lift.On(panel)
 		panel.Children(func() {
@@ -310,38 +314,7 @@ func (a *App) modelChip(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Mes
 			}
 			gutterScroll(c, ui.Scroll(c.Key("scroll")).MaxHeight(menuHeight).FillWidth()).Children(func() {
 				ui.Column(c).FillWidth().Children(func() {
-					n := 0
-					for gi, g := range groups {
-						if len(g) == 0 {
-							continue
-						}
-						gp := g[0].p
-						ui.Row(c.Key("h:"+strconv.Itoa(gi))).AlignItems(ui.Center).Gap(theme.Space(2.5)).Padding(theme.Space(1.5), theme.Space(2), theme.Space(0.5), theme.Space(2)).Children(func() {
-							brandImage(c, aibrands.Provider(*gp), 16)
-							ui.Text(c, providerName(*gp)).FontSize(theme.Caption).FontWeight(600).TextColor(tok.TextMuted).SingleLine()
-						})
-						for i, mc := range g {
-							if i >= modelMenuMax {
-								break
-							}
-							mc := mc
-							e := menuEntry{Lead: func() { brandImage(c, aibrands.Model(mc.model, *mc.p), 16) }, Label: mc.model, Checked: p != nil && mc.p.ID == p.ID && mc.model == cur, Do: func() { a.chooseModel(cn, mc.p, mc.model) }}
-							if mc.model == mc.p.Model {
-								e.InlineNote = m.AiDefaultModel()
-							}
-							a.menuRow(c, tok, e, n, 0)
-							n++
-						}
-					}
-					if first.p == nil && typed != "" && p != nil {
-						a.menuRow(c, tok, menuEntry{Lead: func() { brandImage(c, aibrands.Model(typed, *p), 16) }, Label: m.AiUseModel(typed), Do: func() { a.chooseModel(cn, p, typed) }}, n, 0)
-						n++
-					}
-					if n == 0 && typed != "" {
-						ui.Text(c, m.AiNoModels()).FontSize(theme.Footnote).TextColor(tok.TextMuted).Padding(6, 8)
-					}
-					ui.Box(c.Key("sep")).Height(1).Margin(4, 8).Background(tok.Line)
-					a.menuRow(c, tok, menuEntry{Icon: icons.Settings, Label: m.AiManageProviders(), Do: func() { a.openSettings(prefAI) }}, n, 0)
+					a.modelMenuRows(c, cn, tok, m, p, cur, groups, typed)
 				})
 			})
 		})
@@ -351,6 +324,78 @@ func (a *App) modelChip(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Mes
 			a.menu = dropMenu{}
 		}
 	}
+}
+
+// modelMenuRows lists the model menu under the search field: one entry per
+// provider, whose submenu holds its models, so the first level names the
+// groups and only the second one the models. One provider alone has nothing
+// to name first, and a query has already narrowed the list, so both show
+// their models flat rather than one step further away.
+func (a *App) modelMenuRows(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Messages, p *settings.AIProvider, cur string, groups [][]modelChoice, typed string) {
+	n := 0
+	row := func(e menuEntry) {
+		a.menuRow(c, tok, e, n, 0)
+		n++
+	}
+	model := func(mc modelChoice) menuEntry {
+		e := menuEntry{
+			Lead:    func() { brandImage(c, aibrands.Model(mc.model, *mc.p), 16) },
+			Label:   mc.model,
+			Checked: p != nil && mc.p.ID == p.ID && mc.model == cur,
+			Do:      func() { a.chooseModel(cn, mc.p, mc.model) },
+		}
+		if mc.model == mc.p.Model {
+			e.InlineNote = m.AiDefaultModel()
+		}
+		return e
+	}
+	providers := 0
+	for _, g := range groups {
+		if len(g) > 0 {
+			providers++
+		}
+	}
+	flat := typed != "" || providers <= 1
+	for _, g := range groups {
+		if len(g) == 0 {
+			continue
+		}
+		if flat {
+			for i, mc := range g {
+				if i >= modelMenuMax {
+					break
+				}
+				row(model(mc))
+			}
+			continue
+		}
+		gp := g[0].p
+		sub := make([]menuEntry, 0, len(g))
+		for i, mc := range g {
+			if i >= modelMenuMax {
+				break
+			}
+			sub = append(sub, model(mc))
+		}
+		row(menuEntry{
+			Lead:     func() { brandImage(c, aibrands.Provider(*gp), 16) },
+			Label:    providerName(*gp),
+			Checked:  p != nil && gp.ID == p.ID,
+			Sub:      sub,
+			SubWidth: modelMenuWidth,
+		})
+	}
+	if typed != "" {
+		switch {
+		case n == 0 && p != nil:
+			pm := *p
+			row(menuEntry{Lead: func() { brandImage(c, aibrands.Model(typed, pm), 16) }, Label: m.AiUseModel(typed), Do: func() { a.chooseModel(cn, p, typed) }})
+		case n == 0:
+			ui.Text(c, m.AiNoModels()).FontSize(theme.Footnote).TextColor(tok.TextMuted).Padding(6, 8)
+		}
+	}
+	ui.Box(c.Key("sep")).Height(1).Margin(4, 8).Background(tok.Line)
+	row(menuEntry{Icon: icons.Settings, Label: m.AiManageProviders(), Do: func() { a.openSettings(prefAI) }})
 }
 
 // aiModes are the permissions a pane runs under, in the order its menu
@@ -656,12 +701,13 @@ func (a *App) aiCard(c *ui.Context, cn *conn, i int, tok theme.Tokens, m locales
 	}
 }
 
-// riskTint is the color of a tool's risk: green to red.
+// riskTint is the color of a tool's risk: green to red, with an ungraded
+// action marked amber so full access still shows what ran unjudged.
 func riskTint(tok theme.Tokens, s string) ui.Color {
 	switch s {
 	case "readonly", "low":
 		return tok.Success
-	case "medium":
+	case "medium", "unknown":
 		return tok.Warning
 	case "high", "critical":
 		return tok.Danger
