@@ -9,7 +9,8 @@
 //   - A mode id skips approval when, with case and '-' / '_' removed, it
 //     contains bypass, fullaccess, auto, agent, acceptedits, alwaysapprove
 //     or skippermission. "agent" is the spec's word and also matches ids
-//     such as "my-agent".
+//     such as "my-agent". An id that is a URI with a fragment is judged by
+//     the fragment only.
 //   - An omitted terminal outputByteLimit is 1 MiB. A larger limit is
 //     clamped to 1 MiB. Zero keeps nothing.
 //   - At most two terminals run per session (the spec's command cap).

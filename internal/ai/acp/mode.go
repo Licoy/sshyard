@@ -1,6 +1,9 @@
 package acp
 
-import "strings"
+import (
+	"net/url"
+	"strings"
+)
 
 // skipTokens are matched against a mode id after lowercasing and removing
 // '-' and '_'. See the package comment for why the list is wider than the
@@ -25,7 +28,15 @@ func SkipApproval(id string) bool {
 	return false
 }
 
+// normalizeMode lowercases a mode id and removes '-' and '_'. An id that is
+// a URI with a fragment, such as GitHub Copilot's
+// "https://agentclientprotocol.com/protocol/session-modes#plan", is judged
+// by its fragment alone: the host name would otherwise match "agent" in
+// every one of them.
 func normalizeMode(id string) string {
+	if u, err := url.Parse(id); err == nil && u.Scheme != "" && u.Fragment != "" {
+		id = u.Fragment
+	}
 	s := strings.ToLower(id)
 	s = strings.ReplaceAll(s, "-", "")
 	s = strings.ReplaceAll(s, "_", "")

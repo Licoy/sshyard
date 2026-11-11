@@ -108,6 +108,22 @@ func TestPickModeConservative(t *testing.T) {
 	}
 }
 
+// GitHub Copilot CLI names its modes with URIs whose host contains "agent".
+func TestPickModeURIModeIDs(t *testing.T) {
+	const base = "https://agentclientprotocol.com/protocol/session-modes#"
+	agent, plan, autopilot := base+"agent", base+"plan", base+"autopilot"
+	if SkipApproval(plan) || !SkipApproval(agent) || !SkipApproval(autopilot) {
+		t.Fatal("a URI mode id must be judged by its fragment")
+	}
+	m, set, stop := PickMode("custom", agent, []string{agent, plan, autopilot})
+	if m != plan || !set || stop {
+		t.Fatalf("copilot %q set %v stop %v", m, set, stop)
+	}
+	if !SkipApproval("https://agentclientprotocol.com/protocol/session-modes") {
+		t.Fatal("a URI without a fragment is matched as a whole")
+	}
+}
+
 func TestTrimTailUTF8(t *testing.T) {
 	if got := TrimTail("éhello", 6); got != "hello" {
 		t.Fatalf("tail %q", got)
