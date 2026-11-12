@@ -755,7 +755,7 @@ func TestModeAndModel(t *testing.T) {
 		t.Fatal(cs.Diagnostics())
 	}
 	cl := mustStart(t, "modes default default\n", Config{Type: "claude", Gate: &fixedGate{run: true}})
-	cd := waitDiag(t, cl, "allowDangerouslySkipPermissions")
+	cd := waitDiag(t, cl, "\nmcp ")
 	if strings.Contains(cd, "set_mode") || !strings.Contains(cd, `"allowDangerouslySkipPermissions":false`) || !strings.Contains(cd, "mcp []") {
 		t.Fatalf("claude diag %s", cd)
 	}
