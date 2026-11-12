@@ -18,7 +18,7 @@ func mremoteCSV(text string) (Result, error) {
 	}
 	headers := iniSection{}
 	for _, k := range rows[0] {
-		headers.pairs = append(headers.pairs, iniPair{k, "1"})
+		headers.pairs = append(headers.pairs, iniPair{key: k, value: "1"})
 	}
 	if headers.get("Hostname") == "" || headers.get("Protocol") == "" || headers.get("Name") == "" {
 		return Result{}, ErrFormat
@@ -31,7 +31,7 @@ func mremoteCSV(text string) (Result, error) {
 		s := iniSection{}
 		for i, v := range row {
 			key := rows[0][i]
-			s.pairs = append(s.pairs, iniPair{key, v})
+			s.pairs = append(s.pairs, iniPair{key: key, value: v})
 			if key == "NodeType" {
 				key = "Type"
 			}

@@ -80,7 +80,7 @@ func TestTextImportBounds(t *testing.T) {
 	if err := os.WriteFile(path, []byte("host=b.example user=ops title=b\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	r, err = Read(Text, []string{path})
+	r, err = Read(Text, []string{path}, Options{})
 	if err != nil || len(r.Entries) != 1 || r.Entries[0].Name != "b" || r.Entries[0].User != "ops" {
 		t.Fatalf("read %+v %v", r, err)
 	}
@@ -140,7 +140,7 @@ func TestCSVImportFields(t *testing.T) {
 	if err := os.WriteFile(path, []byte("host\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Read(CSV, []string{path}); err != ErrNoEntries {
+	if _, err := Read(CSV, []string{path}, Options{}); err != ErrNoEntries {
 		t.Fatalf("header only: %v", err)
 	}
 }

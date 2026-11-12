@@ -15743,6 +15743,70 @@ func (msgs Messages) MigrationFormatError() string {
 	return Catalog.Format(msgs.locale, "migrationFormatError", nil)
 }
 
+// MigrationFormatErrorAt says "Unsupported or damaged export at line {line} of {file}; choose the matching source and export format"
+// in the language the app shows.
+func MigrationFormatErrorAt(line string, file string) string {
+	return In(i18n.Locale()).MigrationFormatErrorAt(line, file)
+}
+
+// MigrationFormatErrorAt says "Unsupported or damaged export at line {line} of {file}; choose the matching source and export format"
+// in the language of msgs.
+func (msgs Messages) MigrationFormatErrorAt(line string, file string) string {
+	return Catalog.Format(msgs.locale, "migrationFormatErrorAt", map[string]any{"line": line, "file": file})
+}
+
+// MigrationLine says "line {line}"
+// in the language the app shows.
+func MigrationLine(line string) string { return In(i18n.Locale()).MigrationLine(line) }
+
+// MigrationLine says "line {line}"
+// in the language of msgs.
+func (msgs Messages) MigrationLine(line string) string {
+	return Catalog.Format(msgs.locale, "migrationLine", map[string]any{"line": line})
+}
+
+// MigrationDamagedEntry says "Damaged session skipped"
+// in the language the app shows.
+func MigrationDamagedEntry() string { return In(i18n.Locale()).MigrationDamagedEntry() }
+
+// MigrationDamagedEntry says "Damaged session skipped"
+// in the language of msgs.
+func (msgs Messages) MigrationDamagedEntry() string {
+	return Catalog.Format(msgs.locale, "migrationDamagedEntry", nil)
+}
+
+// MigrationDefaultUser says "No default user name found; the local user name is used, check it before saving"
+// in the language the app shows.
+func MigrationDefaultUser() string { return In(i18n.Locale()).MigrationDefaultUser() }
+
+// MigrationDefaultUser says "No default user name found; the local user name is used, check it before saving"
+// in the language of msgs.
+func (msgs Messages) MigrationDefaultUser() string {
+	return Catalog.Format(msgs.locale, "migrationDefaultUser", nil)
+}
+
+// MigrationEncoding says "File encoding"
+// in the language the app shows.
+func MigrationEncoding() string { return In(i18n.Locale()).MigrationEncoding() }
+
+// MigrationEncoding says "File encoding"
+// in the language of msgs.
+func (msgs Messages) MigrationEncoding() string {
+	return Catalog.Format(msgs.locale, "migrationEncoding", nil)
+}
+
+// MigrationEncodingNote says "The file is not UTF-8 and was read as {encoding}; if text looks garbled, choose another encoding"
+// in the language the app shows.
+func MigrationEncodingNote(encoding string) string {
+	return In(i18n.Locale()).MigrationEncodingNote(encoding)
+}
+
+// MigrationEncodingNote says "The file is not UTF-8 and was read as {encoding}; if text looks garbled, choose another encoding"
+// in the language of msgs.
+func (msgs Messages) MigrationEncodingNote(encoding string) string {
+	return Catalog.Format(msgs.locale, "migrationEncodingNote", map[string]any{"encoding": encoding})
+}
+
 // MigrationTooLarge says "Source exceeds the limit of 32 MiB or 1,024 files; select a smaller batch"
 // in the language the app shows.
 func MigrationTooLarge() string { return In(i18n.Locale()).MigrationTooLarge() }

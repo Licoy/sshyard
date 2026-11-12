@@ -81,7 +81,7 @@ func parsePuTTY(data []byte, name string) (Result, error) {
 				return Result{}, err
 			}
 		}
-		sections[current].pairs = append(sections[current].pairs, iniPair{key, value})
+		sections[current].pairs = append(sections[current].pairs, iniPair{key, value, i + 1})
 	}
 	if len(sections) == 0 {
 		return Result{}, ErrFormat

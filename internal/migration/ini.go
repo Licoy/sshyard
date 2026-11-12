@@ -7,11 +7,14 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/unicode"
 )
 
-type iniPair struct{ key, value string }
+// iniPair is a key=value line; line is its number, from 1.
+type iniPair struct {
+	key, value string
+	line       int
+}
 type iniSection struct {
 	name  string
 	pairs []iniPair
@@ -39,7 +42,7 @@ func iniText(data []byte) (string, error) {
 	case utf8.Valid(data):
 		out = data
 	default:
-		out, err = charmap.Windows1252.NewDecoder().Bytes(data)
+		out, _, err = legacyText(data, Options{})
 	}
 	if err != nil || bytes.ContainsRune(out, '\x00') || bytes.Contains(out, []byte("\uFFFD")) {
 		return "", ErrFormat
@@ -52,24 +55,24 @@ func iniRead(data []byte) ([]iniSection, error) {
 		return nil, err
 	}
 	sections := []iniSection{{}}
-	for _, raw := range strings.Split(text, "\n") {
+	for n, raw := range strings.Split(text, "\n") {
 		line := strings.TrimSpace(strings.TrimSuffix(raw, "\r"))
 		if line == "" || strings.HasPrefix(line, ";") || (strings.HasPrefix(line, "#") && !strings.Contains(line, "=")) {
 			continue
 		}
 		if strings.HasPrefix(line, "[") {
 			if !strings.HasSuffix(line, "]") || len(line) < 3 {
-				return nil, ErrFormat
+				return nil, &FormatError{Line: n + 1}
 			}
 			sections = append(sections, iniSection{name: line[1 : len(line)-1]})
 			continue
 		}
 		key, value, ok := strings.Cut(line, "=")
 		if !ok || strings.TrimSpace(key) == "" {
-			return nil, ErrFormat
+			return nil, &FormatError{Line: n + 1}
 		}
 		i := len(sections) - 1
-		sections[i].pairs = append(sections[i].pairs, iniPair{strings.TrimSpace(key), strings.TrimSpace(value)})
+		sections[i].pairs = append(sections[i].pairs, iniPair{strings.TrimSpace(key), strings.TrimSpace(value), n + 1})
 	}
 	return sections, nil
 }

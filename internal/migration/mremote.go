@@ -15,7 +15,7 @@ type mremoteNode struct {
 func mremoteAttrs(attrs []xml.Attr) iniSection {
 	s := iniSection{}
 	for _, a := range attrs {
-		s.pairs = append(s.pairs, iniPair{a.Name.Local, a.Value})
+		s.pairs = append(s.pairs, iniPair{key: a.Name.Local, value: a.Value})
 	}
 	return s
 }
@@ -74,7 +74,7 @@ func mremoteWalk(nodes []mremoteNode, parent iniSection, group string, depth int
 			if field == "Description" {
 				field = "Descr"
 			}
-			effective.pairs = append(effective.pairs, iniPair{field, parent.get(field)})
+			effective.pairs = append(effective.pairs, iniPair{key: field, value: parent.get(field)})
 		}
 		if strings.EqualFold(s.get("Type"), "Container") {
 			child := strings.Trim(strings.Join([]string{group, s.get("Name")}, "/"), "/")

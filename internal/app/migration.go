@@ -12,6 +12,7 @@ import (
 	"github.com/Licoy/sshyard/internal/keys"
 	"github.com/Licoy/sshyard/internal/migration"
 	"github.com/Licoy/sshyard/locales"
+	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -57,6 +58,10 @@ type migrationForm struct {
 	batch     migrationBatch
 	table     ui.ListState
 	done      *migrationOutcome
+	// paths are the files read, encoding the legacy code page they were
+	// decoded in (empty when none was); choosing another reads them again
+	paths    []string
+	encoding migration.Encoding
 }
 
 // migrationOutcome counts what a text import did with its rows.
@@ -78,7 +83,7 @@ func migrationTarget(address string, port int, user string) string {
 	return strings.ToLower(address) + "\x00" + strconv.Itoa(port) + "\x00" + user
 }
 func (a *App) newMigration(source migration.Source, result migration.Result) *migrationForm {
-	f := &migrationForm{source: source, issues: result.Issues, baseline: a.store.List()}
+	f := &migrationForm{source: source, issues: result.Issues, baseline: a.store.List(), encoding: result.Encoding}
 	// A text import's rows choose their login, which saves its secret.
 	f.saveSecrets = f.editable()
 	saved := f.saved()
@@ -262,7 +267,7 @@ func (a *App) readMigration(m locales.Messages, source migration.Source, directo
 		}
 		var result migration.Result
 		if err == nil && len(paths) > 0 {
-			result, err = migration.Read(source, paths)
+			result, err = migration.Read(source, paths, migration.Options{Prefer: migration.LanguageEncoding(i18n.Locale())})
 		}
 		a.post(func() {
 			if a.migration != f {
@@ -279,13 +284,47 @@ func (a *App) readMigration(m locales.Messages, source migration.Source, directo
 				a.closeMigration()
 				return
 			}
-			next := a.newMigration(source, result)
-			if len(next.rows) == 0 {
-				next.err = m.MigrationEmpty()
-			}
-			a.migration = next
+			a.migration = a.readMigrationResult(m, source, paths, result)
 		})
 	}()
+}
+
+// rereadMigration reads the preview's files again in another legacy code
+// page; on failure the preview stays as it was, with the error.
+func (a *App) rereadMigration(m locales.Messages, encoding migration.Encoding) {
+	f := a.migration
+	if f == nil || f.reading || f.saving || f.done != nil || len(f.paths) == 0 || encoding == f.encoding {
+		return
+	}
+	source, paths := f.source, f.paths
+	f.reading, f.err = true, ""
+	go func() {
+		result, err := migration.Read(source, paths, migration.Options{Encoding: encoding})
+		a.post(func() {
+			if a.migration != f {
+				clearMigrationResult(result)
+				return
+			}
+			f.reading = false
+			if err != nil {
+				clearMigrationResult(result)
+				f.err = migrationReadError(m, err)
+				return
+			}
+			f.forget()
+			a.migration = a.readMigrationResult(m, source, paths, result)
+		})
+	}()
+}
+
+// readMigrationResult is the preview of what paths read to.
+func (a *App) readMigrationResult(m locales.Messages, source migration.Source, paths []string, result migration.Result) *migrationForm {
+	next := a.newMigration(source, result)
+	next.paths = paths
+	if len(next.rows) == 0 {
+		next.err = m.MigrationEmpty()
+	}
+	return next
 }
 func (a *App) startMigrationSave(m locales.Messages) {
 	f := a.migration
@@ -378,11 +417,14 @@ func clearMigrationResult(result migration.Result) {
 }
 
 func migrationReadError(m locales.Messages, err error) string {
+	var fe *migration.FormatError
 	switch {
 	case errors.Is(err, migration.ErrNoEntries):
 		return m.MigrationEmpty()
 	case errors.Is(err, migration.ErrTooLarge):
 		return m.MigrationTooLarge()
+	case errors.As(err, &fe) && fe.Line > 0:
+		return m.MigrationFormatErrorAt(strconv.Itoa(fe.Line), fe.File)
 	case errors.Is(err, migration.ErrFormat):
 		return m.MigrationFormatError()
 	case errors.Is(err, migration.ErrEncrypted):

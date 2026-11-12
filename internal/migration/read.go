@@ -2,6 +2,7 @@ package migration
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/fs"
 	"net/netip"
@@ -16,8 +17,9 @@ const MaxEntries = 10000
 const MaxIssues = 10000
 const MaxBytes int64 = 32 << 20
 
-// Read accepts selected files or directories; symbolic links are never followed.
-func Read(source Source, paths []string) (Result, error) {
+// Read accepts selected files or directories; symbolic links are never
+// followed. o says how an INI-style source's legacy files are decoded.
+func Read(source Source, paths []string, o Options) (Result, error) {
 	var result Result
 	var total int64
 	count := 0
@@ -37,7 +39,20 @@ func Read(source Source, paths []string) (Result, error) {
 			return err
 		}
 		total += int64(len(data))
+		if iniStyle(source) && legacy(data) {
+			var used Encoding
+			if data, used, err = legacyText(data, o); err != nil {
+				return &FormatError{File: filepath.Base(path)}
+			}
+			if result.Encoding == "" {
+				result.Encoding = used
+			}
+		}
 		r, err := parseData(source, data, path)
+		var fe *FormatError
+		if errors.As(err, &fe) {
+			return &FormatError{File: filepath.Base(path), Line: fe.Line}
+		}
 		if err != nil {
 			return err
 		}
@@ -125,6 +140,16 @@ func visitFiles(source Source, path string, consume func(string, string) error) 
 		}
 		return consume(p, filepath.ToSlash(rel))
 	})
+}
+
+// iniStyle reports a source whose Windows client writes its exports in the
+// system's ANSI code page, decoded as Options say.
+func iniStyle(s Source) bool {
+	switch s {
+	case Xshell, MobaXterm, PuTTY, Remmina, MRemoteNG, WinSCP:
+		return true
+	}
+	return false
 }
 func acceptFile(s Source, name string) bool {
 	ext := strings.ToLower(filepath.Ext(name))

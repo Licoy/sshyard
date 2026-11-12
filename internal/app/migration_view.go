@@ -149,6 +149,19 @@ func (a *App) migrationPreview(c *ui.Context, m locales.Messages, tok theme.Toke
 	if !f.editable() {
 		ui.Text(c, m.MigrationReadOnly()).FontSize(theme.Footnote).TextColor(tok.TextMuted)
 	}
+	if f.encoding != "" {
+		ui.Row(c).Gap(theme.Space(2)).AlignItems(ui.Center).FillWidth().Children(func() {
+			ui.Text(c, m.MigrationEncodingNote(string(f.encoding))).FontSize(theme.Footnote).TextColor(tok.TextMuted).Grow(1).Shrink(1)
+			choice := string(f.encoding)
+			var options []string
+			for _, e := range migration.Encodings() {
+				options = append(options, string(e))
+			}
+			if formSelect(c.Key("migration:encoding"), &choice, options).Label(m.MigrationEncoding()).Changed() {
+				a.rereadMigration(m, migration.Encoding(choice))
+			}
+		})
+	}
 	ui.Row(c).Gap(theme.Space(2)).AlignItems(ui.Center).FillWidth().Children(func() {
 		in := formTextInput(c.Key("migration:search"), &f.search).Label(m.SearchHosts()).Placeholder(m.SearchHosts()).AutoFocus().Grow(1).Shrink(1).MinWidth(0)
 		a.migrationHold.apply(c, f, in)

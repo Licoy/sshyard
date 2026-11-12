@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -306,6 +307,10 @@ func migrationIssue(m locales.Messages, issue migration.Issue) string {
 		text = m.MigrationEncryptedSecret()
 	case "invalid-entry":
 		text = m.MigrationInvalidEntry()
+	case "damaged-entry":
+		text = m.MigrationDamagedEntry()
+	case "default-user":
+		text = m.MigrationDefaultUser()
 	case "missing-reference":
 		text = m.MigrationDependency()
 	case "duplicate-id":
@@ -333,6 +338,9 @@ func migrationIssue(m locales.Messages, issue migration.Issue) string {
 	}
 	if label != "" {
 		text += " · " + label
+	}
+	if issue.Line > 0 {
+		text += " · " + m.MigrationLine(strconv.Itoa(issue.Line))
 	}
 	return text
 }

@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -155,7 +156,7 @@ func TestPuTTYUnixDefaultSettings(t *testing.T) {
 		{"Default%20Settings", "garbage"}, {"Default%20Settings", "other=value"}, {"Default%20Settings", ""},
 		{"Default%20Settings", "[unknown]\nProtocol=ssh\n"}, {"ordinary", "HostName=\nProtocol=ssh\n"},
 	} {
-		if _, err := parsePuTTY([]byte(tc.data), tc.name); err != ErrFormat {
+		if _, err := parsePuTTY([]byte(tc.data), tc.name); !errors.Is(err, ErrFormat) {
 			t.Fatal("accepted malformed or missing-host session")
 		}
 	}
@@ -171,7 +172,7 @@ func TestPuTTYUnixSessionsDirectory(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	r, err := Read(PuTTY, []string{dir})
+	r, err := Read(PuTTY, []string{dir}, Options{})
 	if err != nil || len(r.Entries) != 1 {
 		t.Fatalf("directory import failed: entries=%d error=%v", len(r.Entries), err)
 	}

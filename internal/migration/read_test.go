@@ -23,14 +23,14 @@ func TestMigrationReadLimits(t *testing.T) {
 	if err := os.Symlink(nested, filepath.Join(dir, "linked")); err != nil {
 		t.Fatal(err)
 	}
-	r, err := Read(Netcatty, []string{dir, path})
+	r, err := Read(Netcatty, []string{dir, path}, Options{})
 	if err != nil || len(r.Entries) != 1 || r.Entries[0].Group != "nested" || !hasIssue(r.Entries[0].Issues, "invalid-entry", "port") {
 		t.Fatal("bounded directory import failed")
 	}
 	if err := os.WriteFile(filepath.Join(dir, "broken.json"), []byte("{"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if r, err = Read(Netcatty, []string{dir}); err != ErrFormat || len(r.Entries) != 0 {
+	if r, err = Read(Netcatty, []string{dir}, Options{}); err != ErrFormat || len(r.Entries) != 0 {
 		t.Fatal("partial import returned after damaged file")
 	}
 	big := filepath.Join(t.TempDir(), "big.json")
@@ -42,7 +42,7 @@ func TestMigrationReadLimits(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.Close()
-	if _, err := Read(Netcatty, []string{big}); err != ErrTooLarge {
+	if _, err := Read(Netcatty, []string{big}, Options{}); err != ErrTooLarge {
 		t.Fatal("size bound missed")
 	}
 	many := t.TempDir()
@@ -51,7 +51,7 @@ func TestMigrationReadLimits(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := Read(Netcatty, []string{many}); err != ErrTooLarge {
+	if _, err := Read(Netcatty, []string{many}, Options{}); err != ErrTooLarge {
 		t.Fatal("file count bound missed")
 	}
 }
@@ -93,21 +93,21 @@ func TestMigrationReadSelections(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	r, err := Read(Netcatty, []string{one, two})
+	r, err := Read(Netcatty, []string{one, two}, Options{})
 	if err != nil || len(r.Entries) != 2 || !hasIssue(r.Entries[0].Issues, "duplicate-id", "id") || !hasIssue(r.Entries[1].Issues, "duplicate-id", "id") {
 		t.Fatal("multi-file duplicates missed")
 	}
-	if _, err := Read(Netcatty, []string{filepath.Join(dir, "missing.json")}); err != ErrRead {
+	if _, err := Read(Netcatty, []string{filepath.Join(dir, "missing.json")}, Options{}); err != ErrRead {
 		t.Fatal("read error hidden")
 	}
-	if _, err := Read(Netcatty, []string{t.TempDir()}); err != ErrNoEntries {
+	if _, err := Read(Netcatty, []string{t.TempDir()}, Options{}); err != ErrNoEntries {
 		t.Fatal("empty source accepted")
 	}
 	linked := filepath.Join(dir, "linked.json")
 	if err := os.Symlink(one, linked); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Read(Netcatty, []string{linked}); err != ErrRead {
+	if _, err := Read(Netcatty, []string{linked}, Options{}); err != ErrRead {
 		t.Fatal("selected symlink followed")
 	}
 	var data bytes.Buffer
@@ -122,7 +122,7 @@ func TestMigrationReadSelections(t *testing.T) {
 	if err := os.WriteFile(one, data.Bytes(), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Read(Netcatty, []string{one}); err != ErrTooLarge {
+	if _, err := Read(Netcatty, []string{one}, Options{}); err != ErrTooLarge {
 		t.Fatal("entry bound missed")
 	}
 }
@@ -135,7 +135,7 @@ func TestMigrationPuTTYDirectoryNames(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	r, err := Read(PuTTY, []string{dir})
+	r, err := Read(PuTTY, []string{dir}, Options{})
 	if err != nil || len(r.Entries) != len(names) {
 		t.Fatal("PuTTY session filename filtered out")
 	}
@@ -171,7 +171,7 @@ func TestMigrationReadIssueLimit(t *testing.T) {
 	if err := os.WriteFile(path, data.Bytes(), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if r, err := Read(WindTerm, []string{path}); err != ErrTooLarge || len(r.Entries) != 0 || len(r.Issues) != 0 {
+	if r, err := Read(WindTerm, []string{path}, Options{}); err != ErrTooLarge || len(r.Entries) != 0 || len(r.Issues) != 0 {
 		t.Fatal("non-SSH diagnostic count exceeded bounded preview")
 	}
 }
