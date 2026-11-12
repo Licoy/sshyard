@@ -63,7 +63,17 @@ func typesText(k ui.Key) bool {
 // EncodeKey returns what a key pressed in the terminal sends to the
 // program, as xterm sends it, and false for keys it leaves: keys that type
 // text (the text comes after them, InputText) and the app's own shortcuts.
+// Cmd+Left and Cmd+Right (the Windows key elsewhere, when the system lets
+// it through) go to the line's start and end, as Home and End.
 func EncodeKey(k ui.Key, mods ui.Modifiers, m vt.Modes) ([]byte, bool) {
+	if mods == ui.Super {
+		switch k {
+		case ui.KeyLeft:
+			k, mods = ui.KeyHome, 0
+		case ui.KeyRight:
+			k, mods = ui.KeyEnd, 0
+		}
+	}
 	if mods&ui.Super != 0 {
 		return nil, false
 	}
