@@ -37,6 +37,18 @@ type ptyTarget interface {
 
 const termPad = 10 // DIPs around the grid, inside the pane card
 
+// A selection drag scrolls the view taken past the grid's top or bottom
+// (dragMargin): slowest at the margin, and dragScrollRamp rows past it as
+// fast as dragScrollFast lines a second.
+const (
+	dragMargin     = 0.25                   // of a row inside the grid's edge
+	dragScrollRamp = 3                      // rows past the margin at the fastest
+	dragScrollSlow = 4                      // lines a second at the margin
+	dragScrollFast = 30                     // lines a second dragScrollRamp rows past it
+	dragScrollRate = 60                     // frames a second while it scrolls
+	dragScrollStep = 100 * time.Millisecond // the most a late frame scrolls
+)
+
 type termView struct {
 	target         ptyTarget
 	snippetSending bool // UI-thread state, cleared when the captured write returns
@@ -103,8 +115,16 @@ type termView struct {
 	w, h                float32 // the element's size last drawn
 	selA, selB          vt.Pos
 	selecting, selected bool
-	preedit             string
-	swallow             bool
+	// a selection drag taken past the grid's top or bottom scrolls the
+	// view: dragScroll is where (-1 back, 1 forward), dragX the
+	// pointer's column, dragOver how far past the margin it is, and
+	// dragAt and dragAcc the clock and the lines of the scroll on its way
+	dragScroll      int
+	dragX, dragOver float32
+	dragAt          time.Time
+	dragAcc         float32
+	preedit         string
+	swallow         bool
 	// altClick is a plain left click with ⌥ (Alt elsewhere) being held:
 	// let go where it was pressed, it moves the shell's cursor there.
 	altClick bool
@@ -301,11 +321,80 @@ func (v *termView) cellAt(x, y float32) vt.Pos {
 	if v.cellW == 0 {
 		return vt.Pos{Line: v.first}
 	}
-	col := int(math.Floor(float64((x - termPad - v.gutterW()) / v.cellW)))
 	row := int(math.Floor(float64((y - termPad) / v.cellH)))
-	col = max(0, min(col, v.cols-1))
 	row = max(0, min(row, v.rows-1))
-	return vt.Pos{Line: v.first + row, Col: col}
+	return vt.Pos{Line: v.first + row, Col: v.colAt(x)}
+}
+
+// colAt is the column at x in the element's box, within the grid's.
+func (v *termView) colAt(x float32) int {
+	if v.cellW == 0 {
+		return 0
+	}
+	col := int(math.Floor(float64((x - termPad - v.gutterW()) / v.cellW)))
+	return max(0, min(col, v.cols-1))
+}
+
+// dragScrollAt is where a selection drag at y scrolls the view: -1 above
+// the grid's top margin, 1 below its bottom one, 0 inside; over is how far
+// past that margin it is in DIPs.
+func (v *termView) dragScrollAt(y float32) (dir int, over float32) {
+	if v.cellW == 0 || v.rows <= 0 {
+		return 0, 0
+	}
+	top := termPad + v.cellH*dragMargin
+	bottom := termPad + float32(v.rows)*v.cellH - v.cellH*dragMargin
+	switch {
+	case y < top:
+		return -1, top - y
+	case y > bottom:
+		return 1, y - bottom
+	}
+	return 0, 0
+}
+
+// dragRate is the lines a second a selection drag past the margin scrolls
+// the view: slowest at it, fastest dragScrollRamp rows past.
+func (v *termView) dragRate() float32 {
+	if v.cellH <= 0 || v.rows <= 0 {
+		return dragScrollSlow
+	}
+	f := min(v.dragOver/(dragScrollRamp*v.cellH), 1)
+	return dragScrollSlow + (dragScrollFast-dragScrollSlow)*f
+}
+
+// autoScroll moves the view on as a selection drag held past its margin
+// scrolls it, at the painter's clock, and asks for the frame that moves it
+// again.
+func (v *termView) autoScroll(p *ui.Painter) {
+	if !v.selecting || v.dragScroll == 0 {
+		return
+	}
+	now := p.Now()
+	if v.dragAt.IsZero() {
+		v.dragAt = now
+	}
+	// A frame long after the last, as after the window was hid, scrolls no
+	// further than dragScrollStep does.
+	dt := min(now.Sub(v.dragAt), dragScrollStep)
+	v.dragAt = now
+	v.dragAcc += float32(dt.Seconds()) * v.dragRate()
+	if n := int(v.dragAcc); n > 0 {
+		v.dragAcc -= float32(n)
+		v.offset = max(v.offset-v.dragScroll*n, 0)
+	}
+	p.AnimationFrameRate(dragScrollRate)
+}
+
+// dragExtend puts the end of a selection drag at the row the view scrolled
+// past, at the pointer's column.
+func (v *termView) dragExtend() {
+	line := v.first
+	if v.dragScroll > 0 {
+		line = v.first + v.rows - 1
+	}
+	v.selB = vt.Pos{Line: line, Col: v.colAt(v.dragX)}
+	v.selected = true
 }
 
 func (v *termView) shape(text string, bold, italic bool) []ui.Glyph {
@@ -452,17 +541,22 @@ func (v *termView) paint(p *ui.Painter, r ui.Rect, pal *theme.Terminal, focused 
 		if v.sized && cols != v.cols {
 			// The lines are reflowed: the selection's are not where it was.
 			v.selected, v.selecting = false, false
+			v.dragScroll = 0
 		}
 		v.cols, v.rows, v.sized = cols, rows, true
 		v.target.Resize(cols, rows)
 	}
 	t := v.target.Terminal()
+	v.autoScroll(p)
 	t.SnapshotInto(&v.snap, v.offset)
 	snap := &v.snap
 	if v.hl != nil && (v.hlFullScreen || !snap.Modes.AltScreen) {
 		v.hl.Apply(snap.Lines, v.hlOverride)
 	}
 	v.offset, v.first = snap.Offset, snap.First
+	if v.selecting && v.dragScroll != 0 {
+		v.dragExtend()
+	}
 	v.w, v.h = r.W, r.H
 	if !v.clear {
 		p.Fill(r, pal.Background, 0)
@@ -716,6 +810,7 @@ func (v *termView) send(b []byte) {
 	v.blink.at = time.Time{}
 	v.offset = 0
 	v.selected = false
+	v.dragScroll = 0
 	if _, err := v.target.Write(b); errors.Is(err, session.ErrInputBusy) && v.inputError != nil {
 		v.inputError(errSnippetBusy)
 	}
@@ -988,6 +1083,7 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 			v.selected = false
 		}
 		v.selecting = true
+		v.dragScroll, v.dragAcc, v.dragAt = 0, 0, time.Time{}
 		return true
 	case ui.InputPointerMove:
 		if v.barDrag {
@@ -1019,6 +1115,24 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 			}
 		}
 		if v.selecting && ev.Button == 0 {
+			v.dragX = ev.X
+			dir, over := v.dragScrollAt(ev.Y)
+			switch {
+			case dir != v.dragScroll:
+				v.dragScroll, v.dragOver = dir, over
+				v.dragAt, v.dragAcc = ev.Time, 0
+				if dir != 0 {
+					// A line at once, the frames after at its rate.
+					v.dragAcc = 1
+				}
+			case dir != 0:
+				v.dragOver = over
+			}
+			if v.dragScroll != 0 {
+				// The frame that scrolls puts the end on the row it goes by.
+				v.selected = true
+				return true
+			}
 			p := v.cellAt(ev.X, ev.Y)
 			if p != v.selB || p != v.selA {
 				v.selB = p
@@ -1042,6 +1156,7 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 		}
 		if v.selecting {
 			v.selecting = false
+			v.dragScroll, v.dragAcc, v.dragAt = 0, 0, time.Time{}
 			if v.altClick && !v.selected {
 				v.moveCursorTo(v.selA)
 			}
