@@ -37,13 +37,12 @@ type ptyTarget interface {
 
 const termPad = 10 // DIPs around the grid, inside the pane card
 
-// A selection drag scrolls the view taken past the grid's top or bottom
-// (dragMargin): slowest at the margin, and dragScrollRamp rows past it as
-// fast as dragScrollFast lines a second.
+// A selection drag scrolls the view taken past the grid's top or bottom:
+// slowest at the edge, and dragScrollRamp rows past it as fast as
+// dragScrollFast lines a second.
 const (
-	dragMargin     = 0.25                   // of a row inside the grid's edge
-	dragScrollRamp = 3                      // rows past the margin at the fastest
-	dragScrollSlow = 4                      // lines a second at the margin
+	dragScrollRamp = 3                      // rows past the edge at the fastest
+	dragScrollSlow = 4                      // lines a second at the edge
 	dragScrollFast = 30                     // lines a second dragScrollRamp rows past it
 	dragScrollRate = 60                     // frames a second while it scrolls
 	dragScrollStep = 100 * time.Millisecond // the most a late frame scrolls
@@ -117,7 +116,7 @@ type termView struct {
 	selecting, selected bool
 	// a selection drag taken past the grid's top or bottom scrolls the
 	// view: dragScroll is where (-1 back, 1 forward), dragX the
-	// pointer's column, dragOver how far past the margin it is, and
+	// pointer's column, dragOver how far past the edge it is, and
 	// dragAt and dragAcc the clock and the lines of the scroll on its way
 	dragScroll      int
 	dragX, dragOver float32
@@ -336,14 +335,15 @@ func (v *termView) colAt(x float32) int {
 }
 
 // dragScrollAt is where a selection drag at y scrolls the view: -1 above
-// the grid's top margin, 1 below its bottom one, 0 inside; over is how far
-// past that margin it is in DIPs.
+// the grid's top, 1 below its bottom, 0 on it, its first and last rows
+// whole, so that a click on them that wobbles stays a click; over is how
+// far past that edge it is in DIPs.
 func (v *termView) dragScrollAt(y float32) (dir int, over float32) {
 	if v.cellW == 0 || v.rows <= 0 {
 		return 0, 0
 	}
-	top := termPad + v.cellH*dragMargin
-	bottom := termPad + float32(v.rows)*v.cellH - v.cellH*dragMargin
+	top := float32(termPad)
+	bottom := termPad + float32(v.rows)*v.cellH
 	switch {
 	case y < top:
 		return -1, top - y
@@ -353,7 +353,7 @@ func (v *termView) dragScrollAt(y float32) (dir int, over float32) {
 	return 0, 0
 }
 
-// dragRate is the lines a second a selection drag past the margin scrolls
+// dragRate is the lines a second a selection drag past the edge scrolls
 // the view: slowest at it, fastest dragScrollRamp rows past.
 func (v *termView) dragRate() float32 {
 	if v.cellH <= 0 || v.rows <= 0 {
@@ -363,9 +363,8 @@ func (v *termView) dragRate() float32 {
 	return dragScrollSlow + (dragScrollFast-dragScrollSlow)*f
 }
 
-// autoScroll moves the view on as a selection drag held past its margin
-// scrolls it, at the painter's clock, and asks for the frame that moves it
-// again.
+// autoScroll moves the view on as a selection drag held past its edge
+// scrolls it, at the painter's clock.
 func (v *termView) autoScroll(p *ui.Painter) {
 	if !v.selecting || v.dragScroll == 0 {
 		return
@@ -375,15 +374,25 @@ func (v *termView) autoScroll(p *ui.Painter) {
 		v.dragAt = now
 	}
 	// A frame long after the last, as after the window was hid, scrolls no
-	// further than dragScrollStep does.
-	dt := min(now.Sub(v.dragAt), dragScrollStep)
+	// further than dragScrollStep does; one painted at a refresh before the
+	// event that started it, none.
+	dt := max(min(now.Sub(v.dragAt), dragScrollStep), 0)
 	v.dragAt = now
 	v.dragAcc += float32(dt.Seconds()) * v.dragRate()
 	if n := int(v.dragAcc); n > 0 {
 		v.dragAcc -= float32(n)
 		v.offset = max(v.offset-v.dragScroll*n, 0)
 	}
-	p.AnimationFrameRate(dragScrollRate)
+}
+
+// dragScrolls reports whether the view s shows can still scroll the way a
+// selection drag scrolls it: not past the live screen, the scrollback's
+// first line, nor on the alternate screen, which has none.
+func (v *termView) dragScrolls(s *vt.Snapshot) bool {
+	if v.dragScroll > 0 {
+		return s.Offset > 0
+	}
+	return s.Offset < s.Scrollback
 }
 
 // dragExtend puts the end of a selection drag at the row the view scrolled
@@ -394,7 +403,7 @@ func (v *termView) dragExtend() {
 		line = v.first + v.rows - 1
 	}
 	v.selB = vt.Pos{Line: line, Col: v.colAt(v.dragX)}
-	v.selected = true
+	v.selected = v.selA != v.selB || v.selected
 }
 
 func (v *termView) shape(text string, bold, italic bool) []ui.Glyph {
@@ -556,6 +565,13 @@ func (v *termView) paint(p *ui.Painter, r ui.Rect, pal *theme.Terminal, focused 
 	v.offset, v.first = snap.Offset, snap.First
 	if v.selecting && v.dragScroll != 0 {
 		v.dragExtend()
+		// The frames that move it, while it can move: none held at the
+		// live screen or the scrollback's top.
+		if v.dragScrolls(snap) {
+			p.AnimationFrameRate(dragScrollRate)
+		} else {
+			v.dragAt = time.Time{}
+		}
 	}
 	v.w, v.h = r.W, r.H
 	if !v.clear {
@@ -1130,7 +1146,6 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 			}
 			if v.dragScroll != 0 {
 				// The frame that scrolls puts the end on the row it goes by.
-				v.selected = true
 				return true
 			}
 			p := v.cellAt(ev.X, ev.Y)

@@ -104,3 +104,26 @@ func TestTerminalDragScrollsSelection(t *testing.T) {
 		t.Fatalf("let go: selecting %v, scrolling %d", v.selecting, v.dragScroll)
 	}
 }
+
+// TestTerminalEdgeRowClickStaysClick: a click on the grid's first or last
+// row that wobbles within its cell neither scrolls the view nor selects,
+// so an Alt click there still moves the shell's cursor.
+func TestTerminalEdgeRowClickStaysClick(t *testing.T) {
+	f := newDragScrollFixture(t)
+	v, tt := f.v, f.tt
+	v.offset = 50
+	tt.Frame()
+	x := termPad + 5*v.cellW + v.cellW/2
+	for _, y := range []float32{
+		termPad + v.cellH*0.1,                           // the first row's top
+		termPad + float32(v.rows)*v.cellH - v.cellH*0.1, // the last row's bottom
+	} {
+		tt.Press(x, y)
+		tt.Move(x+1, y)
+		tt.Frame()
+		if v.dragScroll != 0 || v.offset != 50 || v.selected {
+			t.Errorf("a click at y %v: scrolling %d, offset %d, selected %v", y, v.dragScroll, v.offset, v.selected)
+		}
+		tt.Release(x+1, y)
+	}
+}
