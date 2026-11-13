@@ -143,6 +143,10 @@ type Settings struct {
 	// CopyOnSelect copies text to the clipboard as it is selected in a
 	// terminal.
 	CopyOnSelect bool `json:"copyOnSelect,omitempty"`
+	// TerminalTransfers lets a terminal take ZMODEM (rz, sz) and trzsz
+	// (trz, tsz) transfers its shell starts, each confirmed first. A host
+	// can turn them off for itself.
+	TerminalTransfers bool `json:"terminalTransfers"`
 	// OSC52Write is whether a remote program may copy to the local
 	// clipboard: allow, ask (the default) or deny.
 	OSC52Write string `json:"osc52Write"`
@@ -694,7 +698,7 @@ const (
 
 // Default returns the defaults.
 func Default() Settings {
-	return Settings{Background: DefaultBackground(), Theme: theme.Auto, CloseBehavior: CloseToTray, TrayIcon: TrayIconColor, TrayClick: TrayClickPanel, TrayMaterial: MaterialTranslucent, TrayHeight: DefaultTrayHeight, CheckUpdates: true, UpdateIntervalHours: 1, TerminalFontSize: 13, TerminalLineHeight: 100, TerminalCharWidth: 100, TerminalCursorStyle: CursorBlock, TerminalCursorBlink: true, KeepAliveSeconds: 30, AutoReconnect: true, SidebarWidth: 240, ChromeMaterial: MaterialTranslucent, ContentMaterial: MaterialOpaque, MonospacedOnly: true, TransferConcurrency: 3, OpenConfirmMB: 10, FilesSplit: 50, FilesEdge: FilesRight, TerminalRightClick: RightClickMenu, EditorTreeWidth: 240, OSC52Write: OSC52Ask, OSC52MaxBytes: OSC52MaxDefault, OSC52Notify: true, MetricsEnabled: true, MetricsInterval: 2,
+	return Settings{Background: DefaultBackground(), Theme: theme.Auto, CloseBehavior: CloseToTray, TrayIcon: TrayIconColor, TrayClick: TrayClickPanel, TrayMaterial: MaterialTranslucent, TrayHeight: DefaultTrayHeight, CheckUpdates: true, UpdateIntervalHours: 1, TerminalFontSize: 13, TerminalLineHeight: 100, TerminalCharWidth: 100, TerminalCursorStyle: CursorBlock, TerminalCursorBlink: true, KeepAliveSeconds: 30, AutoReconnect: true, SidebarWidth: 240, ChromeMaterial: MaterialTranslucent, ContentMaterial: MaterialOpaque, MonospacedOnly: true, TransferConcurrency: 3, OpenConfirmMB: 10, FilesSplit: 50, FilesEdge: FilesRight, TerminalRightClick: RightClickMenu, EditorTreeWidth: 240, TerminalTransfers: true, OSC52Write: OSC52Ask, OSC52MaxBytes: OSC52MaxDefault, OSC52Notify: true, MetricsEnabled: true, MetricsInterval: 2,
 		AIDefaultAgent: "builtin", AIDefaultMode: "ask", AIReviewStrictness: AIReviewStandard, AIContextLines: 200, AIAuditRetentionDays: 90, AIRequestTimeout: DefaultAIRequestTimeout, AIRedact: true, MCPPort: MCPPortDefault, LocalKeys: true, Highlight: Highlight{On: true}, RenewalNotify: true}
 }
 

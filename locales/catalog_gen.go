@@ -18670,3 +18670,327 @@ func ErrChallengeUnattended(host string) string {
 func (msgs Messages) ErrChallengeUnattended(host string) string {
 	return Catalog.Format(msgs.locale, "errChallengeUnattended", map[string]any{"host": host})
 }
+
+// TermXferSection says "File transfer in the terminal"
+// in the language the app shows.
+func TermXferSection() string { return In(i18n.Locale()).TermXferSection() }
+
+// TermXferSection says "File transfer in the terminal"
+// in the language of msgs.
+func (msgs Messages) TermXferSection() string {
+	return Catalog.Format(msgs.locale, "termXferSection", nil)
+}
+
+// TermXferSetting says "rz/sz and trz/tsz"
+// in the language the app shows.
+func TermXferSetting() string { return In(i18n.Locale()).TermXferSetting() }
+
+// TermXferSetting says "rz/sz and trz/tsz"
+// in the language of msgs.
+func (msgs Messages) TermXferSetting() string {
+	return Catalog.Format(msgs.locale, "termXferSetting", nil)
+}
+
+// TermXferSettingNote says "Lets a terminal take the ZMODEM (rz, sz) and trzsz (trz, tsz) transfers its shell starts. Each is confirmed first."
+// in the language the app shows.
+func TermXferSettingNote() string { return In(i18n.Locale()).TermXferSettingNote() }
+
+// TermXferSettingNote says "Lets a terminal take the ZMODEM (rz, sz) and trzsz (trz, tsz) transfers its shell starts. Each is confirmed first."
+// in the language of msgs.
+func (msgs Messages) TermXferSettingNote() string {
+	return Catalog.Format(msgs.locale, "termXferSettingNote", nil)
+}
+
+// TermXferHost says "Take rz/sz and trz/tsz transfers"
+// in the language the app shows.
+func TermXferHost() string { return In(i18n.Locale()).TermXferHost() }
+
+// TermXferHost says "Take rz/sz and trz/tsz transfers"
+// in the language of msgs.
+func (msgs Messages) TermXferHost() string {
+	return Catalog.Format(msgs.locale, "termXferHost", nil)
+}
+
+// TermXferHostHint says "Files the server sends with sz or tsz are saved on this computer once you agree; rz and trz receive the files you cho…"
+// in the language the app shows.
+func TermXferHostHint() string { return In(i18n.Locale()).TermXferHostHint() }
+
+// TermXferHostHint says "Files the server sends with sz or tsz are saved on this computer once you agree; rz and trz receive the files you cho…"
+// in the language of msgs.
+func (msgs Messages) TermXferHostHint() string {
+	return Catalog.Format(msgs.locale, "termXferHostHint", nil)
+}
+
+// TermXferDisabledGlobally says "Turned off for every host in Settings › Terminal."
+// in the language the app shows.
+func TermXferDisabledGlobally() string { return In(i18n.Locale()).TermXferDisabledGlobally() }
+
+// TermXferDisabledGlobally says "Turned off for every host in Settings › Terminal."
+// in the language of msgs.
+func (msgs Messages) TermXferDisabledGlobally() string {
+	return Catalog.Format(msgs.locale, "termXferDisabledGlobally", nil)
+}
+
+// TermXferReceiveTitle says "Receive files?"
+// in the language the app shows.
+func TermXferReceiveTitle() string { return In(i18n.Locale()).TermXferReceiveTitle() }
+
+// TermXferReceiveTitle says "Receive files?"
+// in the language of msgs.
+func (msgs Messages) TermXferReceiveTitle() string {
+	return Catalog.Format(msgs.locale, "termXferReceiveTitle", nil)
+}
+
+// TermXferReceiveBody says "{host} wants to send files over {protocol}."
+// in the language the app shows.
+func TermXferReceiveBody(host string, protocol string) string {
+	return In(i18n.Locale()).TermXferReceiveBody(host, protocol)
+}
+
+// TermXferReceiveBody says "{host} wants to send files over {protocol}."
+// in the language of msgs.
+func (msgs Messages) TermXferReceiveBody(host string, protocol string) string {
+	return Catalog.Format(msgs.locale, "termXferReceiveBody", map[string]any{"host": host, "protocol": protocol})
+}
+
+// TermXferSendTitle says "Send files?"
+// in the language the app shows.
+func TermXferSendTitle() string { return In(i18n.Locale()).TermXferSendTitle() }
+
+// TermXferSendTitle says "Send files?"
+// in the language of msgs.
+func (msgs Messages) TermXferSendTitle() string {
+	return Catalog.Format(msgs.locale, "termXferSendTitle", nil)
+}
+
+// TermXferSendBody says "{host} is waiting for files over {protocol}."
+// in the language the app shows.
+func TermXferSendBody(host string, protocol string) string {
+	return In(i18n.Locale()).TermXferSendBody(host, protocol)
+}
+
+// TermXferSendBody says "{host} is waiting for files over {protocol}."
+// in the language of msgs.
+func (msgs Messages) TermXferSendBody(host string, protocol string) string {
+	return Catalog.Format(msgs.locale, "termXferSendBody", map[string]any{"host": host, "protocol": protocol})
+}
+
+// TermXferNoOverwrite says "Nothing is written over: a name already taken gets a number."
+// in the language the app shows.
+func TermXferNoOverwrite() string { return In(i18n.Locale()).TermXferNoOverwrite() }
+
+// TermXferNoOverwrite says "Nothing is written over: a name already taken gets a number."
+// in the language of msgs.
+func (msgs Messages) TermXferNoOverwrite() string {
+	return Catalog.Format(msgs.locale, "termXferNoOverwrite", nil)
+}
+
+// TermXferChooseFolder says "Choose Folder…"
+// in the language the app shows.
+func TermXferChooseFolder() string { return In(i18n.Locale()).TermXferChooseFolder() }
+
+// TermXferChooseFolder says "Choose Folder…"
+// in the language of msgs.
+func (msgs Messages) TermXferChooseFolder() string {
+	return Catalog.Format(msgs.locale, "termXferChooseFolder", nil)
+}
+
+// TermXferChooseFiles says "Choose Files…"
+// in the language the app shows.
+func TermXferChooseFiles() string { return In(i18n.Locale()).TermXferChooseFiles() }
+
+// TermXferChooseFiles says "Choose Files…"
+// in the language of msgs.
+func (msgs Messages) TermXferChooseFiles() string {
+	return Catalog.Format(msgs.locale, "termXferChooseFiles", nil)
+}
+
+// TermXferSaveDownloads says "Save to Downloads"
+// in the language the app shows.
+func TermXferSaveDownloads() string { return In(i18n.Locale()).TermXferSaveDownloads() }
+
+// TermXferSaveDownloads says "Save to Downloads"
+// in the language of msgs.
+func (msgs Messages) TermXferSaveDownloads() string {
+	return Catalog.Format(msgs.locale, "termXferSaveDownloads", nil)
+}
+
+// TermXferWaiting says "Waiting for {protocol}…"
+// in the language the app shows.
+func TermXferWaiting(protocol string) string { return In(i18n.Locale()).TermXferWaiting(protocol) }
+
+// TermXferWaiting says "Waiting for {protocol}…"
+// in the language of msgs.
+func (msgs Messages) TermXferWaiting(protocol string) string {
+	return Catalog.Format(msgs.locale, "termXferWaiting", map[string]any{"protocol": protocol})
+}
+
+// TermXferReceiving says "Receiving {name}"
+// in the language the app shows.
+func TermXferReceiving(name string) string { return In(i18n.Locale()).TermXferReceiving(name) }
+
+// TermXferReceiving says "Receiving {name}"
+// in the language of msgs.
+func (msgs Messages) TermXferReceiving(name string) string {
+	return Catalog.Format(msgs.locale, "termXferReceiving", map[string]any{"name": name})
+}
+
+// TermXferSending says "Sending {name}"
+// in the language the app shows.
+func TermXferSending(name string) string { return In(i18n.Locale()).TermXferSending(name) }
+
+// TermXferSending says "Sending {name}"
+// in the language of msgs.
+func (msgs Messages) TermXferSending(name string) string {
+	return Catalog.Format(msgs.locale, "termXferSending", map[string]any{"name": name})
+}
+
+// TermXferCount says "File {n} of {total}"
+// in the language the app shows.
+func TermXferCount(n string, total string) string { return In(i18n.Locale()).TermXferCount(n, total) }
+
+// TermXferCount says "File {n} of {total}"
+// in the language of msgs.
+func (msgs Messages) TermXferCount(n string, total string) string {
+	return Catalog.Format(msgs.locale, "termXferCount", map[string]any{"n": n, "total": total})
+}
+
+// TermXferBytes says "{done} of {size}"
+// in the language the app shows.
+func TermXferBytes(done string, size string) string {
+	return In(i18n.Locale()).TermXferBytes(done, size)
+}
+
+// TermXferBytes says "{done} of {size}"
+// in the language of msgs.
+func (msgs Messages) TermXferBytes(done string, size string) string {
+	return Catalog.Format(msgs.locale, "termXferBytes", map[string]any{"done": done, "size": size})
+}
+
+// TermXferCancel says "Stop transfer (Ctrl+C)"
+// in the language the app shows.
+func TermXferCancel() string { return In(i18n.Locale()).TermXferCancel() }
+
+// TermXferCancel says "Stop transfer (Ctrl+C)"
+// in the language of msgs.
+func (msgs Messages) TermXferCancel() string {
+	return Catalog.Format(msgs.locale, "termXferCancel", nil)
+}
+
+// TermXferStopped says "The {protocol} transfer was stopped"
+// in the language the app shows.
+func TermXferStopped(protocol string) string { return In(i18n.Locale()).TermXferStopped(protocol) }
+
+// TermXferStopped says "The {protocol} transfer was stopped"
+// in the language of msgs.
+func (msgs Messages) TermXferStopped(protocol string) string {
+	return Catalog.Format(msgs.locale, "termXferStopped", map[string]any{"protocol": protocol})
+}
+
+// TermXferRefused says "{host} cancelled the {protocol} transfer"
+// in the language the app shows.
+func TermXferRefused(host string, protocol string) string {
+	return In(i18n.Locale()).TermXferRefused(host, protocol)
+}
+
+// TermXferRefused says "{host} cancelled the {protocol} transfer"
+// in the language of msgs.
+func (msgs Messages) TermXferRefused(host string, protocol string) string {
+	return Catalog.Format(msgs.locale, "termXferRefused", map[string]any{"host": host, "protocol": protocol})
+}
+
+// TermXferFailed says "The {protocol} transfer failed"
+// in the language the app shows.
+func TermXferFailed(protocol string) string { return In(i18n.Locale()).TermXferFailed(protocol) }
+
+// TermXferFailed says "The {protocol} transfer failed"
+// in the language of msgs.
+func (msgs Messages) TermXferFailed(protocol string) string {
+	return Catalog.Format(msgs.locale, "termXferFailed", map[string]any{"protocol": protocol})
+}
+
+// TermXferReceived says "Received from {host}: {n} file(s)"
+// in the language the app shows.
+func TermXferReceived(host string, n string) string {
+	return In(i18n.Locale()).TermXferReceived(host, n)
+}
+
+// TermXferReceived says "Received from {host}: {n} file(s)"
+// in the language of msgs.
+func (msgs Messages) TermXferReceived(host string, n string) string {
+	return Catalog.Format(msgs.locale, "termXferReceived", map[string]any{"host": host, "n": n})
+}
+
+// TermXferSent says "Sent to {host}: {n} file(s)"
+// in the language the app shows.
+func TermXferSent(host string, n string) string { return In(i18n.Locale()).TermXferSent(host, n) }
+
+// TermXferSent says "Sent to {host}: {n} file(s)"
+// in the language of msgs.
+func (msgs Messages) TermXferSent(host string, n string) string {
+	return Catalog.Format(msgs.locale, "termXferSent", map[string]any{"host": host, "n": n})
+}
+
+// TermXferSavedRemote says "Saved {n} file(s) to {dir}"
+// in the language the app shows.
+func TermXferSavedRemote(n string, dir string) string {
+	return In(i18n.Locale()).TermXferSavedRemote(n, dir)
+}
+
+// TermXferSavedRemote says "Saved {n} file(s) to {dir}"
+// in the language of msgs.
+func (msgs Messages) TermXferSavedRemote(n string, dir string) string {
+	return Catalog.Format(msgs.locale, "termXferSavedRemote", map[string]any{"n": n, "dir": dir})
+}
+
+// TermXferDropTitle says "Send {n} item(s) to {host}?"
+// in the language the app shows.
+func TermXferDropTitle(n string, host string) string {
+	return In(i18n.Locale()).TermXferDropTitle(n, host)
+}
+
+// TermXferDropTitle says "Send {n} item(s) to {host}?"
+// in the language of msgs.
+func (msgs Messages) TermXferDropTitle(n string, host string) string {
+	return Catalog.Format(msgs.locale, "termXferDropTitle", map[string]any{"n": n, "host": host})
+}
+
+// TermXferDropBody says "SSHYard types the command that receives them at the prompt, then sends them."
+// in the language the app shows.
+func TermXferDropBody() string { return In(i18n.Locale()).TermXferDropBody() }
+
+// TermXferDropBody says "SSHYard types the command that receives them at the prompt, then sends them."
+// in the language of msgs.
+func (msgs Messages) TermXferDropBody() string {
+	return Catalog.Format(msgs.locale, "termXferDropBody", nil)
+}
+
+// TermXferDropDirs says "Folders go with trz only (trzsz)."
+// in the language the app shows.
+func TermXferDropDirs() string { return In(i18n.Locale()).TermXferDropDirs() }
+
+// TermXferDropDirs says "Folders go with trz only (trzsz)."
+// in the language of msgs.
+func (msgs Messages) TermXferDropDirs() string {
+	return Catalog.Format(msgs.locale, "termXferDropDirs", nil)
+}
+
+// TermXferDropRz says "Send with rz"
+// in the language the app shows.
+func TermXferDropRz() string { return In(i18n.Locale()).TermXferDropRz() }
+
+// TermXferDropRz says "Send with rz"
+// in the language of msgs.
+func (msgs Messages) TermXferDropRz() string {
+	return Catalog.Format(msgs.locale, "termXferDropRz", nil)
+}
+
+// TermXferDropTrz says "Send with trz"
+// in the language the app shows.
+func TermXferDropTrz() string { return In(i18n.Locale()).TermXferDropTrz() }
+
+// TermXferDropTrz says "Send with trz"
+// in the language of msgs.
+func (msgs Messages) TermXferDropTrz() string {
+	return Catalog.Format(msgs.locale, "termXferDropTrz", nil)
+}

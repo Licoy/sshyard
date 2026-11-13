@@ -149,6 +149,8 @@ func (a *App) View(c *ui.Context) {
 	a.migrationView(c, m)
 	a.promptsView(c, m)
 	a.oscAskView(c, m)
+	a.xferAskView(c, m)
+	a.xferDropView(c, m)
 	a.aiSheets(c, m)
 	a.aiAttachmentPreviewView(c, m, tok)
 	a.contextMenuView(c)

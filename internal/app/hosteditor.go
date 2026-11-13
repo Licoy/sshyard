@@ -64,6 +64,9 @@ type hostForm struct {
 	sessionLog bool
 	// sftpSudo runs the host's SFTP through sudo (Host.SFTPSudo)
 	sftpSudo bool
+	// transfers lets the host's terminals take ZMODEM and trzsz
+	// transfers (not Host.TransfersOff)
+	transfers bool
 	// osc52 is the override's label once Advanced is open; osc52Code is
 	// the saved policy ("", allow, ask, deny), so a save before that
 	// keeps it. advOpen shows Advanced.
@@ -132,11 +135,12 @@ func (a *App) openEditor(h *assets.Host) {
 		return
 	}
 
-	f := &hostForm{isNew: h == nil, port: "22", cwdFollow: true, encoding: vt.EncodingUTF8}
+	f := &hostForm{isNew: h == nil, port: "22", cwdFollow: true, encoding: vt.EncodingUTF8, transfers: true}
 	f.loadStream(h)
 	f.loadRenewal(h, time.Now())
 	if h != nil {
 		f.orig = *h
+		f.transfers = !h.TransfersOff
 		f.name, f.address, f.port = h.Name, h.Address, strconv.Itoa(h.Port)
 		f.user, f.group, f.favorite, f.cwdFollow = h.User, h.Group, h.Favorite, h.CwdFollow
 		f.icon, f.color = h.Icon, h.Color
@@ -291,6 +295,7 @@ func (a *App) SaveForm(m locales.Messages) bool {
 	h.Term = f.term
 	h.SessionLog = f.sessionLog
 	h.SFTPSudo = f.sftpSudo
+	h.TransfersOff = !f.transfers
 	if h.SSH() && h.Tmux != "" && !session.TmuxNameOK(h.Tmux) {
 		f.err = m.TmuxNameInvalid()
 		return false
@@ -506,6 +511,7 @@ func (a *App) editorView(c *ui.Context, m locales.Messages) {
 							a.termTypeField(c, m, tok, f)
 						}
 						sessionLogField(c, m, tok, f)
+						a.transfersField(c, m, tok, f)
 						ui.Field(c, "", func() {
 							ui.Collapsible(c.Key("f:renewal"), m.RenewalSection(), &f.renewOpen, func() {
 								a.renewalFields(c, m, tok, f)
@@ -695,6 +701,21 @@ func sessionLogField(c *ui.Context, m locales.Messages, tok theme.Tokens, f *hos
 		ui.Column(c).Gap(4).FillWidth().Children(func() {
 			formCheckbox(c.Key("f:log"), &f.sessionLog, m.LogAuto())
 			ui.Text(c, m.LogAutoHint()).FontSize(theme.Caption).TextColor(tok.TextMuted)
+		})
+	})
+}
+
+// transfersField lets the host's terminals take ZMODEM and trzsz
+// transfers, which the global setting turned off turns off for all.
+func (a *App) transfersField(c *ui.Context, m locales.Messages, tok theme.Tokens, f *hostForm) {
+	ui.Field(c, m.TermXferSection(), func() {
+		ui.Column(c).Gap(4).FillWidth().Children(func() {
+			formCheckbox(c.Key("f:xfer"), &f.transfers, m.TermXferHost())
+			hint := m.TermXferHostHint()
+			if !a.settings.TerminalTransfers {
+				hint = m.TermXferDisabledGlobally()
+			}
+			ui.Text(c, hint).FontSize(theme.Caption).TextColor(tok.TextMuted)
 		})
 	})
 }

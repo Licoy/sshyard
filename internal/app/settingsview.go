@@ -627,6 +627,14 @@ func (a *App) prefTerminal(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 			}
 		})
 	})
+	a.settingsSection(c, tok, icons.MoveTo, m.TermXferSection(), func(g *settingsGroup) {
+		g.row(m.TermXferSetting(), m.TermXferSettingNote(), func() {
+			on := s.TerminalTransfers
+			if formSwitch(c.Key("termxfer"), &on).Label(m.TermXferSetting()).Changed() {
+				s.TerminalTransfers, *changed = on, true
+			}
+		})
+	})
 }
 
 func (a *App) prefMonitoring(c *ui.Context, m locales.Messages, tok theme.Tokens, s *settings.Settings, changed *bool) {

@@ -221,6 +221,8 @@ type conn struct {
 	log      *termlog.Recorder
 	logConns int
 	autoLog  bool
+	// xfer is a terminal's ZMODEM and trzsz transfers (armTransfers).
+	xfer *xferPane
 }
 
 func (c *conn) item() layout.Item { return layout.Item{Kind: c.kind, ID: c.id} }
@@ -420,6 +422,10 @@ type App struct {
 	osc52KiB                 float64
 	clip                     clipGate
 	clipAsk                  *oscAsk
+	// xfer is the questions of the terminals' transfers, and xferOn
+	// settings.TerminalTransfers, read off the UI thread.
+	xfer   xferState
+	xferOn atomic.Bool
 	// sbWidth is the sidebar's width; sbSeen and sbAt are its value last
 	// seen and since when, to save it once it rests.
 	sbWidth, sbSeen float32
@@ -697,6 +703,7 @@ func (disabledUpdates) OnChange(func()) (off func()) { return func() {} }
 
 func (a *App) syncChoices() {
 	a.lkOn.Store(a.settings.LocalKeys)
+	a.xferOn.Store(a.settings.TerminalTransfers)
 	a.lkMCP.Store(a.settings.LocalKeys && a.settings.LocalKeysMCP)
 	a.langChoice = a.settings.Language
 	a.fontChoice = float64(a.settings.TerminalFontSize)
@@ -750,6 +757,7 @@ func (a *App) ApplySettings(s settings.Settings) error {
 		}
 	}
 	a.settings = s
+	a.xferOn.Store(s.TerminalTransfers)
 	if old.Background != s.Background {
 		a.background.preview = nil
 		a.invalidate()
@@ -958,6 +966,7 @@ func (a *App) Close() {
 	a.stopACPProbes()
 	a.waitACP()
 	a.clipAsk = nil
+	a.xfer = xferState{}
 	a.fwds = map[string]*fwdRun{}
 	if a.kc != nil && (!a.unlock.busy || a.unlock.completed) {
 		a.closeSecrets(a.kc)
@@ -1077,6 +1086,7 @@ func (a *App) makeConn(hostID string, kind layout.Kind, link int) (*conn, error)
 		c.tv.family = a.termFamily()
 		a.spaceTerm(c.tv)
 		a.armOSC52(c)
+		a.armTransfers(c)
 		if a.termSeq == nil {
 			a.termSeq = map[string]int{}
 		}
@@ -1427,6 +1437,7 @@ func (a *App) finishCloseSession(c *conn) {
 	if a.clipAsk != nil && a.clipAsk.pane == id {
 		a.clipAsk = nil
 	}
+	a.dropXferAsk(id)
 	a.keepRailWidth(c)
 	a.ws.Close(id)
 	delete(a.conns, id)

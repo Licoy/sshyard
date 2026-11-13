@@ -112,6 +112,9 @@ type Host struct {
 	// OSC52 overrides the global OSC 52 write policy (allow, ask or
 	// deny). Empty follows the global setting.
 	OSC52 string `json:"osc52,omitempty"`
+	// TransfersOff keeps the host's terminals from taking ZMODEM and
+	// trzsz transfers, whatever the global setting.
+	TransfersOff bool `json:"transfersOff,omitempty"`
 	// Metrics is whether this host shows the metrics bar: follow the
 	// global setting, always, or never.
 	Metrics MetricsMode `json:"metrics,omitempty"`

@@ -487,6 +487,7 @@ func (a *App) paneView(c *ui.Context, t *layout.Tab, n *layout.Node, tok theme.T
 				a.filesBody(c, t, n, cn, pane.Bounds().W, tok, m)
 			default:
 				a.termElement(c, t, n, cn, &pal, m)
+				a.xferBanner(c, cn, tok, m)
 				if st.State == session.Connected {
 					h := cn.host
 					if cur, ok := a.host(cn.host.ID); ok {
@@ -605,7 +606,8 @@ func (a *App) termElement(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn
 	}
 	tv.local = isLocal(cn.host.ID)
 	// Files dropped on a local terminal type their paths at its prompt,
-	// as macOS Terminal does; a remote one takes none.
+	// as macOS Terminal does; on a remote one they are sent with rz or
+	// trz, as the user chooses.
 	if tv.local {
 		if files := term.DroppedFiles(); len(files) > 0 {
 			// pasteNow writes to this terminal alone, never to those typed
@@ -615,6 +617,11 @@ func (a *App) termElement(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn
 			}
 			t.Focus = n.ID
 			a.focusReq = cn.id
+		}
+	} else if a.settings.TerminalTransfers && cn.s.Status().State == session.Connected {
+		if files := term.DroppedFiles(); len(files) > 0 {
+			a.dropOnRemote(cn, files)
+			t.Focus = n.ID
 		}
 	}
 	has := term.Focused()
@@ -653,6 +660,11 @@ func (a *App) termElement(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn
 		tv.rightClick, tv.copyOnSelect = a.settings.TerminalRightClick, a.settings.CopyOnSelect
 		tv.openLink = svc.OpenURL
 		tv.zoomFont = a.stepTermFont
+		// While a transfer has the shell, Ctrl+C stops it and the other
+		// keys go nowhere.
+		if a.xferKey(cn, ev) {
+			return true
+		}
 		// A program reading the mouse takes the right click too.
 		return tv.input(ev, svc) || a.contextPress(tb, ev, entries)
 	})

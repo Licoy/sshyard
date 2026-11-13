@@ -403,6 +403,23 @@ func TestRenewalNotifyDefault(t *testing.T) {
 	}
 }
 
+func TestTerminalTransfersDefault(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "s.json")
+	// A file from before the setting takes transfers, each asked about.
+	os.WriteFile(p, []byte(`{"theme":"dark"}`), 0o600)
+	s, err := Load(p)
+	if err != nil || !s.TerminalTransfers {
+		t.Fatalf("loaded %v %v", s.TerminalTransfers, err)
+	}
+	s.TerminalTransfers = false
+	if err := Save(p, s); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := Load(p); err != nil || got.TerminalTransfers {
+		t.Fatalf("reloaded %v %v", got.TerminalTransfers, err)
+	}
+}
+
 func TestSessionLogDir(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "s.json")
 	dir := filepath.Join(t.TempDir(), "logs")

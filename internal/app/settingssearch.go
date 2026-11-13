@@ -102,6 +102,8 @@ var settingEntries = []settingEntry{
 	{prefTerminal, locales.Messages.Osc52Title, locales.Messages.Osc52Note},
 	{prefTerminal, locales.Messages.Osc52Limit, locales.Messages.Osc52LimitHint},
 	{prefTerminal, locales.Messages.Osc52Notify, locales.Messages.Osc52NotifyNote},
+	{prefTerminal, locales.Messages.TermXferSection, nil},
+	{prefTerminal, locales.Messages.TermXferSetting, locales.Messages.TermXferSettingNote},
 	{prefMonitoring, locales.Messages.MetricsBar, locales.Messages.MetricsBarNote},
 	{prefMonitoring, locales.Messages.MetricsInterval, nil},
 	{prefMonitoring, locales.Messages.MetricsMount, locales.Messages.MetricsMountNote},
