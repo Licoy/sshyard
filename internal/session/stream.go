@@ -124,6 +124,7 @@ func (s *Session) serveStream(ctx context.Context, p Stream) error {
 	case <-ctx.Done():
 	}
 	stop()
+	s.endTakeover()
 	s.Term.ResetInputModes(false)
 	p.Close()
 	<-out.done

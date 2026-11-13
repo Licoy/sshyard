@@ -150,6 +150,15 @@ type Session struct {
 	// outAt is when the shell last wrote to the terminal, in Unix
 	// nanoseconds, 0 before its first output.
 	outAt atomic.Int64
+	// takeover finds transfers in the output (SetTakeover).
+	takeover atomic.Pointer[Takeover]
+	// outMu orders the output: the terminal, or the transfer that took
+	// the stream over (taken), gets it in order. tail is the end of what
+	// the terminal last got. taken changes holding outMu, and is read
+	// without it too: the output may be stuck in the terminal holding it.
+	outMu sync.Mutex
+	taken atomic.Pointer[takenOver]
+	tail  []byte
 }
 
 // New returns a session of cols×rows; Start connects it.
@@ -314,6 +323,7 @@ func (s *Session) Close() {
 	if stream != nil {
 		stream.Close()
 	}
+	s.endTakeover()
 	s.changed()
 }
 
@@ -648,6 +658,7 @@ func (s *Session) serve(ctx context.Context) error {
 		err = errors.Join(errConnectionLost, e)
 	case <-ctx.Done():
 	}
+	s.endTakeover()
 	// What the program asked of the mouse goes with it.
 	s.Term.ResetInputModes(false)
 	if err != nil {
@@ -815,7 +826,46 @@ type termWriter struct {
 }
 
 func (w *termWriter) Write(p []byte) (int, error) {
-	n, err := w.s.Term.Write(p)
+	s := w.s
+	for {
+		s.outMu.Lock()
+		t := s.taken.Load()
+		if t == nil {
+			err := w.show(p)
+			s.outMu.Unlock()
+			return len(p), err
+		}
+		s.outMu.Unlock()
+		if t.q.Add(p) {
+			s.outAt.Store(time.Now().UnixNano())
+			return len(p), nil
+		}
+		// The transfer ended: what it left goes to the terminal first.
+		<-t.done
+	}
+}
+
+// show gives p to the terminal, or from where a transfer starts in it,
+// to the transfer. Called holding outMu.
+func (w *termWriter) show(p []byte) error {
+	if fn := w.s.takeover.Load(); fn != nil {
+		if before, from, run := w.s.find(*fn, p); run != nil {
+			if len(before) > 0 {
+				w.print(before)
+			}
+			if w.s.startTakeover(from, run) {
+				w.s.changed()
+				return nil
+			}
+			p = from
+		}
+	}
+	w.s.keepTail(p)
+	return w.print(p)
+}
+
+func (w *termWriter) print(p []byte) error {
+	_, err := w.s.Term.Write(p)
 	if tap := w.s.tap.Load(); tap != nil {
 		(*tap)(p)
 	}
@@ -831,5 +881,5 @@ func (w *termWriter) Write(p []byte) (int, error) {
 			w.in.answer(answer)
 		}
 	}
-	return n, err
+	return err
 }

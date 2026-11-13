@@ -84,6 +84,15 @@ func (w *serializedInput) Write(p []byte) (int, error) {
 	return w.WriteCloser.Write(p)
 }
 
+// raw is where bytes go to the shell as they are, never as typed: a
+// transfer that took the stream over writes there.
+func (w *serializedInput) raw() io.Writer {
+	if w.reply != nil {
+		return w.reply
+	}
+	return w.WriteCloser
+}
+
 // Terminal protocol replies already run off the UI thread and must wait for a
 // whole paste to finish. Capture before launching so reconnect cannot redirect
 // a reply intended for the old shell into the new one.

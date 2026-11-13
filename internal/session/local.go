@@ -71,6 +71,7 @@ func (s *Session) serveLocal(ctx context.Context, p localPTY) error {
 	case <-waited:
 	case <-ctx.Done():
 	}
+	s.endTakeover()
 	s.Term.ResetInputModes(false)
 	p.Close()
 	<-out.done
