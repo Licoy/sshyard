@@ -34,6 +34,10 @@ type Modes struct {
 	Mouse          MouseMode
 	MouseSGR       bool // 1006: SGR encoding of mouse reports
 	FocusReport    bool // 1004
+	// LinuxKeys sends the keys as the Linux console does (TERM=linux):
+	// F1–F5 ESC [ [ A–E, Home and End ESC [ 1 ~ and ESC [ 4 ~. It is the
+	// terminal's, set with SetLinuxKeys, which no program changes.
+	LinuxKeys bool
 }
 
 type cursor struct {
@@ -57,6 +61,7 @@ type Terminal struct {
 	primary    screen
 	alt        screen
 	altActive  bool
+	linuxKeys  bool // Modes.LinuxKeys
 
 	scrollback    history
 	maxScrollback int
@@ -246,7 +251,15 @@ func (t *Terminal) Modes() Modes {
 	defer t.mu.Unlock()
 	m := t.modes
 	m.AltScreen = t.altActive
+	m.LinuxKeys = t.linuxKeys
 	return m
+}
+
+// SetLinuxKeys makes the keys those of the Linux console (Modes.LinuxKeys).
+func (t *Terminal) SetLinuxKeys(on bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.linuxKeys = on
 }
 
 // Generation increases every time the terminal changes.

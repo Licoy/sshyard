@@ -16701,6 +16701,66 @@ func (msgs Messages) TerminalEncodingHint() string {
 	return Catalog.Format(msgs.locale, "terminalEncodingHint", nil)
 }
 
+// TermType says "Terminal type"
+// in the language the app shows.
+func TermType() string { return In(i18n.Locale()).TermType() }
+
+// TermType says "Terminal type"
+// in the language of msgs.
+func (msgs Messages) TermType() string {
+	return Catalog.Format(msgs.locale, "termType", nil)
+}
+
+// TermTypeNote says "The TERM new terminals report; programs pick their keys and colors by it. With linux, F1–F5, Home and End send the …"
+// in the language the app shows.
+func TermTypeNote() string { return In(i18n.Locale()).TermTypeNote() }
+
+// TermTypeNote says "The TERM new terminals report; programs pick their keys and colors by it. With linux, F1–F5, Home and End send the …"
+// in the language of msgs.
+func (msgs Messages) TermTypeNote() string {
+	return Catalog.Format(msgs.locale, "termTypeNote", nil)
+}
+
+// TermTypeHint says "New terminals of this host report this TERM."
+// in the language the app shows.
+func TermTypeHint() string { return In(i18n.Locale()).TermTypeHint() }
+
+// TermTypeHint says "New terminals of this host report this TERM."
+// in the language of msgs.
+func (msgs Messages) TermTypeHint() string {
+	return Catalog.Format(msgs.locale, "termTypeHint", nil)
+}
+
+// TermTypeFollow says "Follow global ({term})"
+// in the language the app shows.
+func TermTypeFollow(term string) string { return In(i18n.Locale()).TermTypeFollow(term) }
+
+// TermTypeFollow says "Follow global ({term})"
+// in the language of msgs.
+func (msgs Messages) TermTypeFollow(term string) string {
+	return Catalog.Format(msgs.locale, "termTypeFollow", map[string]any{"term": term})
+}
+
+// TermTypeCustom says "Custom"
+// in the language the app shows.
+func TermTypeCustom() string { return In(i18n.Locale()).TermTypeCustom() }
+
+// TermTypeCustom says "Custom"
+// in the language of msgs.
+func (msgs Messages) TermTypeCustom() string {
+	return Catalog.Format(msgs.locale, "termTypeCustom", nil)
+}
+
+// TermTypeInvalid says "Use 1 to 64 letters, digits, “.”, “_”, “+” or “-”, without a leading “-”."
+// in the language the app shows.
+func TermTypeInvalid() string { return In(i18n.Locale()).TermTypeInvalid() }
+
+// TermTypeInvalid says "Use 1 to 64 letters, digits, “.”, “_”, “+” or “-”, without a leading “-”."
+// in the language of msgs.
+func (msgs Messages) TermTypeInvalid() string {
+	return Catalog.Format(msgs.locale, "termTypeInvalid", nil)
+}
+
 // ErrSerialNotFound says "{device} isn’t connected. Plug in the device or choose another port."
 // in the language the app shows.
 func ErrSerialNotFound(device string) string { return In(i18n.Locale()).ErrSerialNotFound(device) }

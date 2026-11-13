@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/internal/settings"
 	"github.com/Licoy/sshyard/internal/theme"
 	"github.com/mattn/go-runewidth"
@@ -127,6 +128,9 @@ type Host struct {
 	// Encoding is the output encoding the host's new terminals decode
 	// with, a vt.OutputEncoding; empty is UTF-8.
 	Encoding string `json:"encoding,omitempty"`
+	// Term is the TERM the host's new terminals report; empty is the
+	// setting's (settings.TerminalType).
+	Term string `json:"term,omitempty"`
 	// SessionLog logs each of the host's terminals from when it
 	// connects.
 	SessionLog bool `json:"sessionLog,omitempty"`
@@ -208,6 +212,7 @@ func (h *Host) Normalize() {
 	if h.Encoding = strings.TrimSpace(h.Encoding); h.Encoding == "UTF-8" {
 		h.Encoding = ""
 	}
+	h.Term = strings.TrimSpace(h.Term)
 	h.Renewal.normalize()
 	h.Icon = IconText(h.Icon)
 	if _, ok := theme.LightTokens().TintNamed(h.Color); !ok {
@@ -302,6 +307,9 @@ func cleanRemotePaths(in []string) []string {
 
 // Validate checks a normalized host.
 func (h Host) Validate() error {
+	if h.Term != "" && !session.TermOK(h.Term) {
+		return &FieldError{"term", "invalid"}
+	}
 	if !h.SSH() {
 		return h.validateStream()
 	}

@@ -55,6 +55,10 @@ type hostForm struct {
 	// encoding is the output encoding of the host's new terminals
 	// (Host.Encoding)
 	encoding vt.OutputEncoding
+	// term is the TERM of the host's new terminals (Host.Term), ""
+	// the setting's; termCustom edits it as text rather than a preset.
+	term       string
+	termCustom bool
 	// sessionLog logs the host's terminals as they connect
 	// (Host.SessionLog)
 	sessionLog bool
@@ -150,6 +154,8 @@ func (a *App) openEditor(h *assets.Host) {
 		if e := vt.OutputEncoding(h.Encoding); slices.Contains(vt.OutputEncodings(), e) {
 			f.encoding = e
 		}
+		f.term = h.Term
+		f.termCustom = h.Term != "" && !slices.Contains(termPresets, h.Term)
 		f.dirsOpen = f.termDir != "" || f.remoteDir != "" || f.localDir != ""
 		f.osc52Code = h.OSC52
 		f.advOpen = h.OSC52 != ""
@@ -224,6 +230,8 @@ func fieldError(m locales.Messages, err error) string {
 		return m.InvalidPort()
 	case fe.Field == "serial":
 		return m.InvalidSerialSettings()
+	case fe.Field == "term":
+		return m.TermTypeInvalid()
 	case fe.Field == "jump" && fe.Reason == "not ssh":
 		return m.JumpNotSSH()
 	case fe.Field == "host" && fe.Reason == "not ssh":
@@ -280,6 +288,7 @@ func (a *App) SaveForm(m locales.Messages) bool {
 	h.TerminalDir, h.RemoteDir, h.LocalDir = f.termDir, f.remoteDir, f.localDir
 	h.Tmux = strings.TrimSpace(f.tmux)
 	h.Encoding = string(f.encoding)
+	h.Term = f.term
 	h.SessionLog = f.sessionLog
 	h.SFTPSudo = f.sftpSudo
 	if h.SSH() && h.Tmux != "" && !session.TmuxNameOK(h.Tmux) {
@@ -493,6 +502,9 @@ func (a *App) editorView(c *ui.Context, m locales.Messages) {
 							a.streamTermFields(c, m, tok, f)
 						}
 						encodingField(c, m, tok, f)
+						if f.protocol() != assets.ProtoSerial {
+							a.termTypeField(c, m, tok, f)
+						}
 						sessionLogField(c, m, tok, f)
 						ui.Field(c, "", func() {
 							ui.Collapsible(c.Key("f:renewal"), m.RenewalSection(), &f.renewOpen, func() {

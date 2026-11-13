@@ -205,3 +205,22 @@ func TestHostDefaultDirsNormalize(t *testing.T) {
 		t.Fatalf("tmux %q", h.Tmux)
 	}
 }
+
+func TestHostTerm(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "hosts.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, err := s.Add(Host{Name: "box", Address: "10.0.0.5", User: "root", Term: " linux "})
+	if err != nil || h.Term != "linux" {
+		t.Fatalf("saved %q, %v", h.Term, err)
+	}
+	for _, h := range []Host{
+		{Name: "ssh", Address: "10.0.0.6", User: "root", Term: "xterm 256color"},
+		{Name: "telnet", Protocol: ProtoTelnet, Address: "switch.lan", Term: "vt100\r\nexit"},
+	} {
+		if _, err := s.Add(h); !fieldIs(err, "term", "invalid") {
+			t.Errorf("%s with TERM %q: %v", h.Name, h.Term, err)
+		}
+	}
+}

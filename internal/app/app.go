@@ -6,6 +6,7 @@
 package app
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"net"
@@ -506,6 +507,11 @@ type App struct {
 	metEvery      int
 	metMount      string
 	metMountFocus bool
+	// termCustom shows the terminal type setting's custom field, termText
+	// its text; termFocus is set while it has the keyboard (termTypeRow).
+	termCustom bool
+	termText   string
+	termFocus  bool
 	// newGate, newTools and newModel are test seams. Nil uses
 	// policy.NewGate, the host's remote tools, and the OpenAI client.
 	newGate  func(mode func() policy.Mode, ask policy.Prompter) policy.Gate
@@ -1036,6 +1042,7 @@ func (a *App) makeConn(hostID string, kind layout.Kind, link int) (*conn, error)
 		AutoReconnect: a.settings.AutoReconnect,
 		NoShell:       kind != layout.Terminal,
 		Local:         isLocal(h.ID),
+		Term:          cmp.Or(h.Term, a.settings.TerminalType),
 	}
 	var cfg session.Config
 	switch {

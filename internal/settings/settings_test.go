@@ -418,3 +418,14 @@ func TestSessionLogDir(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeTerminalType(t *testing.T) {
+	for in, want := range map[string]string{"": "", " linux ": "linux", "xterm-256color": "", "vt 100": "", "-x": ""} {
+		s := Default()
+		s.TerminalType = in
+		s.Normalize()
+		if s.TerminalType != want {
+			t.Errorf("TerminalType %q normalized to %q, want %q", in, s.TerminalType, want)
+		}
+	}
+}

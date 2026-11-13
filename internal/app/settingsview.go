@@ -579,6 +579,9 @@ func (a *App) prefTerminal(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 				*changed = true
 			}
 		})
+		g.row(m.TermType(), m.TermTypeNote(), func() {
+			a.termTypeRow(c, m, tok, s, changed)
+		})
 	})
 	a.settingsSection(c, tok, icons.Paste, m.ClipboardSection(), func(g *settingsGroup) {
 		g.row(m.RightClick(), m.RightClickNote(), func() {

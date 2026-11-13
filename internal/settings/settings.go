@@ -49,6 +49,9 @@ type Settings struct {
 	KeepAliveSeconds    int     `json:"keepAliveSeconds"`
 	AutoReconnect       bool    `json:"autoReconnect"`
 	SidebarWidth        float32 `json:"sidebarWidth"`
+	// TerminalType is the TERM new terminals report, unless their host
+	// names its own (Host.Term); "" is session.DefaultTerm.
+	TerminalType string `json:"terminalType,omitempty"`
 	// UpdateProxy is how the checks for updates and their downloads go
 	// out: "" the system's proxy settings, ProxyDirect none, else a
 	// proxy's ID.
@@ -760,6 +763,9 @@ func (s *Settings) Normalize() {
 	}
 	if s.KeepAliveSeconds < 0 || s.KeepAliveSeconds > 600 {
 		s.KeepAliveSeconds = d.KeepAliveSeconds
+	}
+	if s.TerminalType = strings.TrimSpace(s.TerminalType); s.TerminalType == session.DefaultTerm || !session.TermOK(s.TerminalType) {
+		s.TerminalType = ""
 	}
 	if !materialOK(s.ChromeMaterial) {
 		s.ChromeMaterial = d.ChromeMaterial

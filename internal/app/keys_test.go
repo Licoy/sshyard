@@ -30,3 +30,32 @@ func TestEncodeKeySuperArrowsAreHomeEnd(t *testing.T) {
 		}
 	}
 }
+
+func TestEncodeKeyLinuxKeys(t *testing.T) {
+	linux := vt.Modes{LinuxKeys: true}
+	for _, tc := range []struct {
+		name string
+		key  ui.Key
+		mods ui.Modifiers
+		m    vt.Modes
+		want string
+	}{
+		{"F1", ui.KeyF1, 0, linux, "\x1b[[A"},
+		{"F5", ui.KeyF5, 0, linux, "\x1b[[E"},
+		{"F6 as xterm", ui.KeyF6, 0, linux, "\x1b[17~"},
+		{"Home", ui.KeyHome, 0, linux, "\x1b[1~"},
+		{"End", ui.KeyEnd, 0, linux, "\x1b[4~"},
+		{"Home with app cursor keys", ui.KeyHome, 0, vt.Modes{LinuxKeys: true, AppCursorKeys: true}, "\x1b[1~"},
+		{"cmd left is Home", ui.KeyLeft, ui.Super, linux, "\x1b[1~"},
+		{"up as xterm", ui.KeyUp, 0, linux, "\x1b[A"},
+		{"ctrl Home as xterm", ui.KeyHome, ui.Ctrl, linux, "\x1b[1;5H"},
+		{"shift F1 as xterm", ui.KeyF1, ui.Shift, linux, "\x1b[1;2P"},
+		{"xterm F1", ui.KeyF1, 0, vt.Modes{}, "\x1bOP"},
+		{"xterm F5", ui.KeyF5, 0, vt.Modes{}, "\x1b[15~"},
+		{"xterm Home", ui.KeyHome, 0, vt.Modes{}, "\x1b[H"},
+	} {
+		if got, ok := EncodeKey(tc.key, tc.mods, tc.m); !ok || string(got) != tc.want {
+			t.Errorf("%s: EncodeKey = %q, %v; want %q", tc.name, got, ok, tc.want)
+		}
+	}
+}

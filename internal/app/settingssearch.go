@@ -95,6 +95,7 @@ var settingEntries = []settingEntry{
 	{prefTerminal, locales.Messages.ConnectionSection, nil},
 	{prefTerminal, locales.Messages.KeepAlive, nil},
 	{prefTerminal, locales.Messages.AutoReconnect, nil},
+	{prefTerminal, locales.Messages.TermType, locales.Messages.TermTypeNote},
 	{prefTerminal, locales.Messages.ClipboardSection, nil},
 	{prefTerminal, locales.Messages.RightClick, locales.Messages.RightClickNote},
 	{prefTerminal, locales.Messages.CopyOnSelect, locales.Messages.CopyOnSelectNote},

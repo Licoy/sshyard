@@ -45,7 +45,8 @@ type Options struct {
 	// Backoff is the first retry delay, doubled each attempt up to
 	// MaxBackoff; 0 are 1 and 30 seconds.
 	Backoff, MaxBackoff time.Duration
-	// Term is the TERM to request; "" is xterm-256color.
+	// Term is the TERM to request; "" (or one TermOK refuses) is
+	// DefaultTerm. The Linux console's ("linux") sends its keys too.
 	Term string
 	// Scrollback is the terminal's scrollback; 0 is vt.DefaultScrollback.
 	Scrollback int
@@ -165,11 +166,12 @@ func New(cfg Config, opts Options, cols, rows int) *Session {
 	if opts.MaxBackoff == 0 {
 		opts.MaxBackoff = 30 * time.Second
 	}
-	if opts.Term == "" {
-		opts.Term = "xterm-256color"
+	if !TermOK(opts.Term) {
+		opts.Term = DefaultTerm
 	}
 	s := &Session{cfg: cfg, opts: opts, cols: max(cols, 1), rows: max(rows, 1), wake: make(chan struct{}, 1), done: make(chan struct{}), probeNote: make(chan struct{}, 1), tag: newTag()}
 	s.Term = vt.New(s.cols, s.rows)
+	s.Term.SetLinuxKeys(linuxTerm(opts.Term))
 	if opts.Scrollback > 0 {
 		s.Term.SetScrollback(opts.Scrollback)
 	}
