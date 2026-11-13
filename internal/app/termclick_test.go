@@ -101,8 +101,9 @@ func TestCopyOnSelect(t *testing.T) {
 	}
 
 	a.openSettings(prefTerminal)
-	tt.SetSize(1200, 2600)
+	tt.SetSize(1200, 760)
 	tt.Frame()
+	scrollToSetting(t, tt, "Copy or paste")
 	mustClick(t, tt, "Copy or paste")
 	tt.Frame()
 	if a.settings.TerminalRightClick != settings.RightClickCopyPaste {
