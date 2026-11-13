@@ -190,6 +190,24 @@ func TestMigrationConsentPersistenceAndCache(t *testing.T) {
 		t.Fatal("encrypted credential reopen failed")
 	}
 }
+func TestMigrationInvalidRowStartsUnselected(t *testing.T) {
+	a, _ := newTestApp(t)
+	bad := migrationEntry("bad", "bad host")
+	bad.Issues = []migration.Issue{{Code: "invalid-entry", Name: "bad", Field: "address"}}
+	f := migrationDraft(a, bad, migrationEntry("good", "good"))
+	if f.rows[0].selected || !f.rows[1].selected {
+		t.Fatal("invalid row selected by default")
+	}
+	f.rows[0].selected = true
+	want := en.MigrationRowError("bad", migrationIssue(en, bad.Issues[0]))
+	if n, err := a.saveMigration(en, f); n != 0 || err == nil || err.Error() != want || a.store.Len() != 0 {
+		t.Fatalf("selected invalid row: %d %v", n, err)
+	}
+	f.rows[0].selected = false
+	if n, err := a.saveMigration(en, f); err != nil || n != 1 || a.store.Len() != 1 {
+		t.Fatalf("valid rows: %d %v", n, err)
+	}
+}
 func TestMigrationStaleAndDependencies(t *testing.T) {
 	a, _ := newTestApp(t)
 	e := migrationEntry("host", "host")

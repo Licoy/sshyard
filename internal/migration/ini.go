@@ -15,9 +15,13 @@ type iniPair struct {
 	key, value string
 	line       int
 }
+
+// iniSection is a [name] and its pairs; skipped are the numbers of its
+// lines that are neither, left out so the others still read.
 type iniSection struct {
-	name  string
-	pairs []iniPair
+	name    string
+	pairs   []iniPair
+	skipped []int
 }
 
 func (s iniSection) get(key string) string {
@@ -44,11 +48,17 @@ func iniText(data []byte) (string, error) {
 	default:
 		out, _, err = legacyText(data, Options{})
 	}
-	if err != nil || bytes.ContainsRune(out, '\x00') || bytes.Contains(out, []byte("\uFFFD")) {
+	// A NUL or U+FFFD in a setting nothing imports is no reason to fail the
+	// file; validateEntry checks the fields that are imported.
+	if err != nil {
 		return "", ErrFormat
 	}
 	return string(out), nil
 }
+
+// iniRead reads sections of key=value lines. A line is a section only
+// when it is all [name] without =, so a key may start with [; a line that
+// is neither is noted in its section's skipped.
 func iniRead(data []byte) ([]iniSection, error) {
 	text, err := iniText(data)
 	if err != nil {
@@ -60,18 +70,16 @@ func iniRead(data []byte) ([]iniSection, error) {
 		if line == "" || strings.HasPrefix(line, ";") || (strings.HasPrefix(line, "#") && !strings.Contains(line, "=")) {
 			continue
 		}
-		if strings.HasPrefix(line, "[") {
-			if !strings.HasSuffix(line, "]") || len(line) < 3 {
-				return nil, &FormatError{Line: n + 1}
-			}
+		i := len(sections) - 1
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") && len(line) >= 3 && !strings.Contains(line, "=") {
 			sections = append(sections, iniSection{name: line[1 : len(line)-1]})
 			continue
 		}
 		key, value, ok := strings.Cut(line, "=")
 		if !ok || strings.TrimSpace(key) == "" {
-			return nil, &FormatError{Line: n + 1}
+			sections[i].skipped = append(sections[i].skipped, n+1)
+			continue
 		}
-		i := len(sections) - 1
 		sections[i].pairs = append(sections[i].pairs, iniPair{strings.TrimSpace(key), strings.TrimSpace(value), n + 1})
 	}
 	return sections, nil

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 const MaxFiles = 1024
@@ -211,7 +212,19 @@ func parseData(s Source, data []byte, name string) (Result, error) {
 	}
 	return Result{}, ErrFormat
 }
+
+// validateEntry checks the fields an entry imports, trimmed as hosts are
+// saved: a control character makes it invalid, a U+FFFD only warns, since
+// a file may hold one that something before misdecoded.
 func validateEntry(e *Entry) {
+	e.Name, e.Address, e.User = strings.TrimSpace(e.Name), strings.TrimSpace(e.Address), strings.TrimSpace(e.User)
+	for _, f := range []struct{ name, value string }{{"name", e.Name}, {"address", e.Address}, {"user", e.User}, {"group", e.Group}} {
+		if f.name != "address" && strings.ContainsFunc(f.value, unicode.IsControl) {
+			e.Issues = append(e.Issues, Issue{Code: "invalid-entry", Name: e.Name, Field: f.name})
+		} else if strings.ContainsRune(f.value, utf8.RuneError) {
+			e.Issues = append(e.Issues, Issue{Code: "unreadable-text", Name: e.Name, Field: f.name})
+		}
+	}
 	address := e.Address
 	if strings.HasPrefix(address, "[") && strings.HasSuffix(address, "]") {
 		address = address[1 : len(address)-1]
@@ -225,7 +238,7 @@ func validateEntry(e *Entry) {
 	if e.Name == "" {
 		e.Name = e.Address
 	}
-	if e.Address == "" || strings.ContainsAny(e.Address, "\x00/@") || strings.ContainsFunc(e.Address, unicode.IsSpace) || strings.Contains(e.Address, ":") && !validIP(e.Address) {
+	if e.Address == "" || strings.ContainsAny(e.Address, "/@") || strings.ContainsFunc(e.Address, func(r rune) bool { return unicode.IsSpace(r) || unicode.IsControl(r) }) || strings.Contains(e.Address, ":") && !validIP(e.Address) {
 		e.Issues = append(e.Issues, Issue{Code: "invalid-entry", Name: e.Name, Field: "address"})
 	}
 	if e.Port < 1 || e.Port > 65535 {

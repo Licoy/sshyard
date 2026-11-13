@@ -136,14 +136,34 @@ func TestMobaXtermDefaultUser(t *testing.T) {
 	}
 }
 
-func TestINIFormatErrorLine(t *testing.T) {
-	path := writeExport(t, "broken.mxtsessions", "[Bookmarks]\ngood=#109#0%example.org%22%alice#font\n\ngarbage\n", nil)
-	_, err := Read(MobaXterm, []string{path}, Options{})
-	var fe *FormatError
-	if !errors.As(err, &fe) || fe.File != "broken.mxtsessions" || fe.Line != 4 || !errors.Is(err, ErrFormat) {
-		t.Fatalf("got %v", err)
+func TestINISkipsMalformedLines(t *testing.T) {
+	sections, err := iniRead([]byte("[ok]\na=b\ngarbage\n[bad\n[prod] web=x\n[next]"))
+	if err != nil || len(sections) != 3 || sections[2].name != "next" {
+		t.Fatalf("sections %#v %v", sections, err)
 	}
-	if _, err := iniRead([]byte("[ok]\na=b\n[bad")); !errors.As(err, &fe) || fe.Line != 3 {
-		t.Fatalf("section: %v", err)
+	if ok := sections[1]; len(ok.pairs) != 2 || ok.pairs[1].key != "[prod] web" || len(ok.skipped) != 2 || ok.skipped[0] != 3 || ok.skipped[1] != 4 {
+		t.Fatalf("section %#v", ok)
+	}
+}
+
+func TestMobaXtermTolerantFile(t *testing.T) {
+	data := "[Misc]\nNote=bad\x00\uFFFD\uFFFD\n[Bookmarks]\nSubRep=team\ngood=#109#0%example.org%22%alice#font\ngarbage\n[prod] web=#109#0%  web.example.org \t%0%bob#font\n"
+	r, err := Read(MobaXterm, []string{writeExport(t, "MobaXterm.ini", data, nil)}, Options{})
+	if err != nil || len(r.Entries) != 2 {
+		t.Fatalf("entries %#v %v", r, err)
+	}
+	if e := r.Entries[1]; e.Name != "[prod] web" || e.Address != "web.example.org" || e.Port != 22 || e.User != "bob" || e.Group != "team" || len(e.Issues) != 0 {
+		t.Fatalf("entry %#v", e)
+	}
+	if len(r.Issues) != 1 || r.Issues[0] != (Issue{Code: "damaged-entry", Line: 6}) {
+		t.Fatalf("issues %#v", r.Issues)
+	}
+	// Sessions in a section other than Bookmarks are found by SubRep.
+	r, err = parseMobaXterm([]byte("[Sessions]\nSubRep=\nnode=#109#0%example.org%22%alice#font"), "sessions")
+	if err != nil || len(r.Entries) != 1 {
+		t.Fatalf("SubRep section: %#v %v", r, err)
+	}
+	if _, err = parseMobaXterm([]byte("[Misc]\nDefaultLoginName=ops\n"), "MobaXterm.ini"); !errors.Is(err, ErrNoSessions) || !errors.Is(err, ErrFormat) {
+		t.Fatalf("no sessions: %v", err)
 	}
 }

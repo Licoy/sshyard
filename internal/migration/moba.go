@@ -5,6 +5,21 @@ import (
 	"strings"
 )
 
+// mobaBookmarks reports a section of sessions: [Bookmarks], [Bookmarks_n]
+// or another that names its folder by SubRep.
+func mobaBookmarks(s iniSection) bool {
+	lower := strings.ToLower(s.name)
+	if lower == "bookmarks" || strings.HasPrefix(lower, "bookmarks_") {
+		return true
+	}
+	for _, p := range s.pairs {
+		if strings.EqualFold(p.key, "SubRep") {
+			return true
+		}
+	}
+	return false
+}
+
 func parseMobaXterm(data []byte, name string) (Result, error) {
 	sections, err := iniRead(data)
 	if err != nil {
@@ -15,8 +30,7 @@ func parseMobaXterm(data []byte, name string) (Result, error) {
 	// MobaXterm.ini names the user a session logs in as by <default>.
 	defaultUser := ""
 	for _, s := range sections {
-		lower := strings.ToLower(s.name)
-		if lower != "bookmarks" && !strings.HasPrefix(lower, "bookmarks_") {
+		if !mobaBookmarks(s) {
 			if v := s.get("DefaultLoginName"); v != "" {
 				defaultUser = v
 			}
@@ -30,10 +44,13 @@ func parseMobaXterm(data []byte, name string) (Result, error) {
 			}
 			continue
 		}
-		if lower != "bookmarks" && !strings.HasPrefix(lower, "bookmarks_") {
+		if !mobaBookmarks(s) {
 			continue
 		}
 		found = true
+		for _, line := range s.skipped {
+			r.Issues = append(r.Issues, Issue{Code: "damaged-entry", Line: line})
+		}
 		for _, p := range s.pairs {
 			if strings.EqualFold(p.key, "SubRep") || strings.EqualFold(p.key, "ImgNum") {
 				continue
@@ -54,7 +71,12 @@ func parseMobaXterm(data []byte, name string) (Result, error) {
 				r.Issues = append(r.Issues, Issue{Code: "unsupported-protocol", Name: p.key, Field: "SessionType", Line: p.line})
 				continue
 			}
-			e := Entry{Name: p.key, Address: fields[1], Port: iniPort(fields[2]), User: fields[3], Group: strings.ReplaceAll(s.get("SubRep"), "\\", "/")}
+			port := strings.TrimSpace(fields[2])
+			e := Entry{Name: p.key, Address: fields[1], Port: iniPort(port), User: strings.TrimSpace(fields[3]), Group: strings.ReplaceAll(s.get("SubRep"), "\\", "/")}
+			// MobaXterm writes port 0 for its default.
+			if port == "0" {
+				e.Port = 0
+			}
 			if e.User == "<default>" {
 				e.User = defaultUser
 				if e.User == "" {
@@ -83,7 +105,7 @@ func parseMobaXterm(data []byte, name string) (Result, error) {
 		}
 	}
 	if !found {
-		return r, ErrFormat
+		return r, ErrNoSessions
 	}
 	return r, nil
 }

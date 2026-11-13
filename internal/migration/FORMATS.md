@@ -8,15 +8,23 @@ in memory and are excluded from JSON/YAML serialization.
 SSH entries and 10,000 diagnostics; a file error rejects the batch; non-SSH rows and unsupported options
 produce machine-readable diagnostics; unknown or damaged schemas fail explicitly.
 A directory contributes only its relative subdirectory path to group names.
-A malformed INI line fails its file with the file name and line number.
+An INI line is a section only when it is all `[name]` without `=`, so a key may
+start with `[`; any other line without `=` is skipped instead of failing its file.
+Characters are checked in the fields imported, never in the rest of a file:
+names, addresses and users are trimmed, a control character makes the entry
+invalid and a U+FFFD is a warning. An invalid entry starts unselected in the
+preview so it does not hold back the others.
 
 Exports of Xshell, MobaXterm, PuTTY, Remmina, mRemoteNG and WinSCP that are
 neither UTF-8 nor UTF-16 with a byte order mark are in a legacy code page: the
 one chosen in the preview, else the first that decodes them cleanly among the
 Windows ANSI code page, the interface language's (GB18030, Big5, Shift_JIS,
 EUC-KR, else Windows-1252) and then those in that order. A MobaXterm bookmark
-that cannot be read is skipped with its line number while the others import,
-and `<default>` users take `DefaultLoginName` from the same file.
+or line that cannot be read is skipped with its line number while the others
+import, port 0 is the default port, sessions are read from `[Bookmarks]`,
+`[Bookmarks_n]` and any section with a `SubRep`, a file without them fails as
+having no sessions, and `<default>` users take `DefaultLoginName` from the same
+file.
 `ParseText` keeps the same size, entry and diagnostic bounds for typed text.
 
 ## Text host list

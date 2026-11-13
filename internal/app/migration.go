@@ -97,6 +97,9 @@ func (a *App) newMigration(source migration.Source, result migration.Result) *mi
 		r := &migrationRow{entry: e, name: e.Name, group: e.Group, selected: true, saveSecret: true}
 		if f.editable() {
 			a.editableRow(r, saved)
+		} else {
+			// An invalid row starts unselected so it does not hold back the others.
+			r.selected = !slices.ContainsFunc(e.Issues, func(i migration.Issue) bool { return i.Code == "invalid-entry" })
 		}
 		f.rows = append(f.rows, r)
 	}
@@ -423,6 +426,8 @@ func migrationReadError(m locales.Messages, err error) string {
 		return m.MigrationEmpty()
 	case errors.Is(err, migration.ErrTooLarge):
 		return m.MigrationTooLarge()
+	case errors.Is(err, migration.ErrNoSessions):
+		return m.MigrationNoSessions()
 	case errors.As(err, &fe) && fe.Line > 0:
 		return m.MigrationFormatErrorAt(strconv.Itoa(fe.Line), fe.File)
 	case errors.Is(err, migration.ErrFormat):

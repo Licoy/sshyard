@@ -63,7 +63,12 @@ func TestMigrationValidation(t *testing.T) {
 			t.Fatal("invalid address accepted")
 		}
 	}
-	e := Entry{Address: "fe80::1%en0"}
+	e := Entry{Address: " host\t", User: "bad\x01user", Name: "name\uFFFD"}
+	validateEntry(&e)
+	if e.Address != "host" || hasIssue(e.Issues, "invalid-entry", "address") || !hasIssue(e.Issues, "invalid-entry", "user") || !hasIssue(e.Issues, "unreadable-text", "name") {
+		t.Fatalf("fields not checked: %#v", e)
+	}
+	e = Entry{Address: "fe80::1%en0"}
 	validateEntry(&e)
 	if len(e.Issues) != 0 || e.Port != 22 {
 		t.Fatal("IPv6 zone rejected")

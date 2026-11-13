@@ -36,7 +36,7 @@ func (a *App) migrationSnapshot(m locales.Messages, f *migrationForm) (assets.Sn
 		}
 		for _, issue := range r.entry.Issues {
 			if issue.Code == "missing-reference" || issue.Code == "duplicate-id" || issue.Code == "invalid-entry" {
-				return snap, nil, errors.New(m.MigrationDependency())
+				return snap, nil, errors.New(m.MigrationRowError(r.name, migrationIssue(m, issue)))
 			}
 		}
 		h := assets.Host{ID: assets.NewID(), Auth: assets.AuthAsk, CwdFollow: true, Created: time.Now()}
@@ -319,6 +319,8 @@ func migrationIssue(m locales.Messages, issue migration.Issue) string {
 		text = m.MigrationEmpty()
 	case "unclosed-quote":
 		text = m.MigrationUnclosedQuote()
+	case "unreadable-text":
+		text = m.MigrationUnreadableText()
 	default:
 		text = m.MigrationUnsupportedField()
 	}

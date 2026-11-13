@@ -3,6 +3,7 @@ package migration
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 )
 
@@ -65,6 +66,9 @@ var (
 	ErrNoEntries = errors.New("no SSH entries found")
 	ErrRead      = errors.New("cannot read migration input")
 	ErrEncrypted = errors.New("encrypted migration input is not supported")
+	// ErrNoSessions is an ErrFormat for a file without the sections a
+	// source keeps its sessions in.
+	ErrNoSessions = fmt.Errorf("%w: no session section", ErrFormat)
 )
 
 // FormatError is an ErrFormat at a line of a file: File is its base name,

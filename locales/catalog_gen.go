@@ -15917,6 +15917,38 @@ func (msgs Messages) MigrationUnclosedQuote() string {
 	return Catalog.Format(msgs.locale, "migrationUnclosedQuote", nil)
 }
 
+// MigrationNoSessions says "The file was read but has no session section (such as [Bookmarks]); check the source and export file you chose"
+// in the language the app shows.
+func MigrationNoSessions() string { return In(i18n.Locale()).MigrationNoSessions() }
+
+// MigrationNoSessions says "The file was read but has no session section (such as [Bookmarks]); check the source and export file you chose"
+// in the language of msgs.
+func (msgs Messages) MigrationNoSessions() string {
+	return Catalog.Format(msgs.locale, "migrationNoSessions", nil)
+}
+
+// MigrationUnreadableText says "Contains an unreadable character (�); check it before saving"
+// in the language the app shows.
+func MigrationUnreadableText() string { return In(i18n.Locale()).MigrationUnreadableText() }
+
+// MigrationUnreadableText says "Contains an unreadable character (�); check it before saving"
+// in the language of msgs.
+func (msgs Messages) MigrationUnreadableText() string {
+	return Catalog.Format(msgs.locale, "migrationUnreadableText", nil)
+}
+
+// MigrationRowError says "{name}: {issue}"
+// in the language the app shows.
+func MigrationRowError(name string, issue string) string {
+	return In(i18n.Locale()).MigrationRowError(name, issue)
+}
+
+// MigrationRowError says "{name}: {issue}"
+// in the language of msgs.
+func (msgs Messages) MigrationRowError(name string, issue string) string {
+	return Catalog.Format(msgs.locale, "migrationRowError", map[string]any{"name": name, "issue": issue})
+}
+
 // MigrationBatchEdit says "Edit selected hosts"
 // in the language the app shows.
 func MigrationBatchEdit() string { return In(i18n.Locale()).MigrationBatchEdit() }
