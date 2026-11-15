@@ -249,7 +249,8 @@ func (a *App) monitorConn(cn *conn) *conn {
 }
 
 // monitorPanel is the focused session's host as its metrics read: the
-// system, then a card each for CPU, memory, network, disks and GPUs.
+// system, then a card each for CPU, memory, network, disks, GPUs and
+// who is logged in.
 func (a *App) monitorPanel(c *ui.Context, m locales.Messages, tok theme.Tokens) {
 	cn := a.focused()
 	if cn == nil {
@@ -279,7 +280,9 @@ func (a *App) monitorPanel(c *ui.Context, m locales.Messages, tok theme.Tokens) 
 	}
 	a.panelCard(c, tok, "sys", icons.Host, hostTint(tok, h), m.SysSection(), "", func() {
 		osName, lat, up := dash, dash, dash
-		if rd.OS != "" {
+		if rd.OSName != "" {
+			osName = rd.OSName
+		} else if rd.OS != "" {
 			osName = rd.OS
 		}
 		if tc != nil && connected {
@@ -291,7 +294,12 @@ func (a *App) monitorPanel(c *ui.Context, m locales.Messages, tok theme.Tokens) 
 				tickDur(c, d)
 			}
 		}
-		facts(c, tok, fam, m.FieldHost(), a.pv(h.Label()), m.SysOS(), osName, m.SysLatency(), lat, m.SysConnectedFor(), up, m.SysAddress(), a.pv(h.Target()))
+		kv := []string{m.FieldHost(), a.pv(h.Label()), m.SysOS(), osName, m.SysLatency(), lat, m.SysConnectedFor(), up}
+		// A BSD release already names its kernel.
+		if rd.Kernel != "" && !strings.Contains(osName, rd.Kernel) {
+			kv = append(kv, m.SysKernel(), rd.Kernel)
+		}
+		facts(c, tok, fam, append(kv, m.SysAddress(), a.pv(h.Target()))...)
 	})
 	switch {
 	case tc == nil:
@@ -328,6 +336,9 @@ func (a *App) monitorPanel(c *ui.Context, m locales.Messages, tok theme.Tokens) 
 	a.diskCard(c, m, tok, fam, rd)
 	if len(rd.GPUs) > 0 {
 		a.gpuCard(c, m, tok, fam, rd)
+	}
+	if rd.LoginsOK {
+		a.loginCard(c, m, tok, fam, rd)
 	}
 }
 
@@ -467,6 +478,72 @@ func (a *App) gpuCard(c *ui.Context, m locales.Messages, tok theme.Tokens, fam s
 			_, mem, temp := gpuBits(m, g)
 			usageRow(c, tok, fam, "GPU "+strconv.Itoa(i), float64(g.Util), g.UtilOK, mem+" · "+temp)
 		}
+		if rd.GPUProcsOK {
+			gpuProcs(c, m, tok, fam, rd)
+		}
+	})
+}
+
+// gpuProcs is the processes holding GPU memory: each with its GPU, its
+// pid and how much it holds.
+func gpuProcs(c *ui.Context, m locales.Messages, tok theme.Tokens, fam string, rd session.Reading) {
+	if rd.GPUProcCount == 0 {
+		panelNote(c, tok, m.GpuProcsNone())
+		return
+	}
+	ui.Text(c, m.GpuProcesses(rd.GPUProcCount)).FontSize(theme.Caption).TextColor(tok.TextMuted).SingleLine()
+	ui.Column(c).Gap(2).FillWidth().Children(func() {
+		for _, p := range rd.GPUProcs {
+			name, mem := m.MetricsDash(), m.MetricsDash()
+			if p.Name != "" {
+				name = p.Name
+			}
+			if p.MemOK {
+				mem = fmtKB(uint64(p.MemMiB) * 1024)
+			}
+			meta := m.GpuProcPid(strconv.FormatUint(p.PID, 10))
+			if p.GPU >= 0 {
+				meta = "GPU " + strconv.Itoa(p.GPU) + " · " + meta
+			}
+			ui.Row(c).Gap(8).FillWidth().Padding(5, 8).Radius(theme.RadiusSmall).Background(tok.Fill).AlignItems(ui.Center).Children(func() {
+				ui.Column(c).Gap(1).Grow(1).Shrink(1).MinWidth(0).Children(func() {
+					ui.Text(c, name).Font(fam).FontSize(theme.Footnote).SingleLine()
+					ui.Text(c, meta).Font(fam).FontSize(theme.Caption).TextColor(tok.TextMuted).SingleLine()
+				})
+				ui.Text(c, mem).Font(fam).FontSize(theme.Footnote).FontWeight(600).SingleLine().Shrink(0)
+			})
+		}
+	})
+}
+
+// loginCard is who is logged in on the host: each session's user and
+// line, where it came from and since when, as the server says.
+func (a *App) loginCard(c *ui.Context, m locales.Messages, tok theme.Tokens, fam string, rd session.Reading) {
+	a.panelCard(c, tok, "logins", icons.Logins, tok.TintAt(5), m.LoginSection(), m.LoginCount(rd.LoginCount), func() {
+		if len(rd.Logins) == 0 {
+			panelNote(c, tok, m.LoginsNone())
+			return
+		}
+		ui.Column(c).Gap(2).FillWidth().Children(func() {
+			for _, l := range rd.Logins {
+				var detail []string
+				if l.From != "" {
+					detail = append(detail, a.pv(l.From))
+				}
+				if l.When != "" {
+					detail = append(detail, l.When)
+				}
+				ui.Row(c).Gap(8).FillWidth().Padding(5, 8).Radius(theme.RadiusSmall).Background(tok.Fill).AlignItems(ui.Center).Children(func() {
+					ui.Column(c).Gap(1).Grow(1).Shrink(1).MinWidth(0).Children(func() {
+						ui.Text(c, a.pv(l.User)).FontSize(theme.Footnote).FontWeight(500).SingleLine()
+						if len(detail) > 0 {
+							ui.Text(c, strings.Join(detail, " · ")).Font(fam).FontSize(theme.Caption).TextColor(tok.TextMuted).SingleLine()
+						}
+					})
+					ui.Text(c, l.Line).Font(fam).FontSize(theme.Caption).TextColor(tok.TextMuted).SingleLine().Shrink(0)
+				})
+			}
+		})
 	})
 }
 
