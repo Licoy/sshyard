@@ -25,6 +25,8 @@ func TestSecurityErrorTranslations(t *testing.T) {
 		{errors.New("sftp: invalid path"), "The file path is invalid", "文件路径无效"},
 		{errors.New("sftp: parent is not a directory"), "The parent path is not a folder", "父路径不是文件夹"},
 		{errors.New("sftp: not a regular file"), "The path is not a regular file", "路径不是普通文件"},
+		{sftpsvc.ErrUnsafeRemoteName, "The name isn’t safe to use on the destination server", "该名称在目标服务器上不安全"},
+		{sftpsvc.ErrIntoItself, "A folder can’t be copied into itself", "无法将文件夹复制到它自身之中"},
 		{netproxy.ErrClientLimit, "The proxy active connection limit has been reached", "代理活跃连接数已达上限"},
 		{netproxy.ErrHandshakeTooLarge, "The proxy handshake exceeds the size limit", "代理握手数据超过大小上限"},
 	}

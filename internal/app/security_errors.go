@@ -15,7 +15,7 @@ func securityErrorText(m locales.Messages, err error) string {
 	if err == nil {
 		return ""
 	}
-	for _, known := range []error{sftpsvc.ErrReadLimit, sftpsvc.ErrUnsafePath, sftpsvc.ErrUnsafeDestination, sftpsvc.ErrPartChanged, sftpsvc.ErrOperationsBusy, netproxy.ErrClientLimit, netproxy.ErrHandshakeTooLarge} {
+	for _, known := range []error{sftpsvc.ErrReadLimit, sftpsvc.ErrUnsafePath, sftpsvc.ErrUnsafeDestination, sftpsvc.ErrPartChanged, sftpsvc.ErrOperationsBusy, sftpsvc.ErrUnsafeRemoteName, sftpsvc.ErrIntoItself, netproxy.ErrClientLimit, netproxy.ErrHandshakeTooLarge} {
 		if errors.Is(err, known) {
 			return securityText(m, known.Error())
 		}
@@ -58,6 +58,10 @@ func securityText(m locales.Messages, s string) string {
 		return m.SecuritySftpNotDirectory()
 	case "not a regular file":
 		return m.SecuritySftpNotRegular()
+	case "not a safe file name on a server":
+		return m.SecuritySftpUnsafeRemoteName()
+	case "a folder can't be copied into itself":
+		return m.SecuritySftpIntoItself()
 	}
 	return s
 }

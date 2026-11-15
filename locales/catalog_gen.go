@@ -5297,6 +5297,38 @@ func (msgs Messages) PlanningUpload() string {
 	return Catalog.Format(msgs.locale, "planningUpload", nil)
 }
 
+// PlanningCopy says "Preparing the copy…"
+// in the language the app shows.
+func PlanningCopy() string { return In(i18n.Locale()).PlanningCopy() }
+
+// PlanningCopy says "Preparing the copy…"
+// in the language of msgs.
+func (msgs Messages) PlanningCopy() string {
+	return Catalog.Format(msgs.locale, "planningCopy", nil)
+}
+
+// CopySkipped says "Left out of the copy: {count}"
+// in the language the app shows.
+func CopySkipped(count string) string { return In(i18n.Locale()).CopySkipped(count) }
+
+// CopySkipped says "Left out of the copy: {count}"
+// in the language of msgs.
+func (msgs Messages) CopySkipped(count string) string {
+	return Catalog.Format(msgs.locale, "copySkipped", map[string]any{"count": count})
+}
+
+// TransferFromHost says "From {host}: {path}"
+// in the language the app shows.
+func TransferFromHost(host string, path string) string {
+	return In(i18n.Locale()).TransferFromHost(host, path)
+}
+
+// TransferFromHost says "From {host}: {path}"
+// in the language of msgs.
+func (msgs Messages) TransferFromHost(host string, path string) string {
+	return Catalog.Format(msgs.locale, "transferFromHost", map[string]any{"host": host, "path": path})
+}
+
 // CancelPlanning says "Cancel"
 // in the language the app shows.
 func CancelPlanning() string { return In(i18n.Locale()).CancelPlanning() }
@@ -10501,6 +10533,26 @@ func SecuritySftpNotRegular() string { return In(i18n.Locale()).SecuritySftpNotR
 // in the language of msgs.
 func (msgs Messages) SecuritySftpNotRegular() string {
 	return Catalog.Format(msgs.locale, "securitySftpNotRegular", nil)
+}
+
+// SecuritySftpUnsafeRemoteName says "The name isn’t safe to use on the destination server"
+// in the language the app shows.
+func SecuritySftpUnsafeRemoteName() string { return In(i18n.Locale()).SecuritySftpUnsafeRemoteName() }
+
+// SecuritySftpUnsafeRemoteName says "The name isn’t safe to use on the destination server"
+// in the language of msgs.
+func (msgs Messages) SecuritySftpUnsafeRemoteName() string {
+	return Catalog.Format(msgs.locale, "securitySftpUnsafeRemoteName", nil)
+}
+
+// SecuritySftpIntoItself says "A folder can’t be copied into itself"
+// in the language the app shows.
+func SecuritySftpIntoItself() string { return In(i18n.Locale()).SecuritySftpIntoItself() }
+
+// SecuritySftpIntoItself says "A folder can’t be copied into itself"
+// in the language of msgs.
+func (msgs Messages) SecuritySftpIntoItself() string {
+	return Catalog.Format(msgs.locale, "securitySftpIntoItself", nil)
 }
 
 // SecurityProxyClientLimit says "The proxy active connection limit has been reached"

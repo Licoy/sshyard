@@ -55,6 +55,7 @@ SSHYard is a native desktop SSH / SFTP client for macOS, Windows and Linux, brin
   - Tabbed built-in editor with a folder tree
   - File access through sudo when you need it
   - Drag-and-drop support and folder transfers; uploads keep permissions and modification times
+  - Copy files and folders straight from one server to another by drag-and-drop or copy and paste, streamed through the app without touching the local disk
   - Transfer queue with pause, resume and retry, keeping the computer awake while files transfer
 
 - **AI assistant**

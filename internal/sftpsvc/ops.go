@@ -136,6 +136,47 @@ const (
 // server refuses that session, or it breaks (a protocol error, from the
 // folder it broke in on), is each folder read whole first.
 func (c *Client) PlanDownload(ctx context.Context, srcs []string, localDir string) ([]Item, []Skip, error) {
+	return c.planRemote(ctx, srcs, planTarget{
+		name: SafeName,
+		dst:  func(rel string) (string, error) { return LocalPath(localDir, rel) },
+		exists: func(p string) (bool, error) {
+			_, err := os.Lstat(p)
+			return err == nil, nil
+		},
+	})
+}
+
+// PlanRelay lists what copying the paths of this server into remoteDir
+// on the server of to copies, as PlanDownload does for a local folder:
+// the same walk, links, limits and skips, but names are checked as names
+// on a server (RemoteName: a single name, without "/", "\" or NUL), as
+// any other is allowed there. Where each item goes stays in remoteDir.
+// to may be c itself (another folder of the same server).
+func (c *Client) PlanRelay(ctx context.Context, srcs []string, to *Client, remoteDir string) ([]Item, []Skip, error) {
+	return c.planRemote(ctx, srcs, planTarget{
+		name: RemoteName,
+		dst:  func(rel string) (string, error) { return RemotePath(remoteDir, rel) },
+		exists: func(p string) (bool, error) {
+			_, err := withCtx(ctx, func() (os.FileInfo, error) { return to.c.Lstat(p) })
+			if cerr := ctx.Err(); cerr != nil {
+				return false, cerr
+			}
+			return err == nil, nil
+		},
+	})
+}
+
+// planTarget is where a plan of a server's paths copies them to: name
+// checks each name the server sent, dst makes a path below the folder
+// chosen, and exists says something is already at one.
+type planTarget struct {
+	name   func(string) error
+	dst    func(rel string) (string, error)
+	exists func(p string) (bool, error)
+}
+
+// planRemote is PlanDownload and PlanRelay, to the target to.
+func (c *Client) planRemote(ctx context.Context, srcs []string, to planTarget) ([]Item, []Skip, error) {
 	var (
 		out     []Item
 		skips   []Skip
@@ -164,13 +205,13 @@ func (c *Client) PlanDownload(ctx context.Context, srcs []string, localDir strin
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		// The names come from the server: each must be safe as a local
-		// name, and where it goes must stay in localDir.
-		if SafeName(path.Base(rel)) != nil {
+		// The names come from the server: each must be safe where it
+		// goes, and where it goes must stay in the folder chosen.
+		if to.name(path.Base(rel)) != nil {
 			skips = append(skips, Skip{Src: p, Rel: rel, Reason: SkipName})
 			return nil
 		}
-		dst, err := LocalPath(localDir, rel)
+		dst, err := to.dst(rel)
 		if err != nil {
 			return fmt.Errorf("sftp: %w", err)
 		}
@@ -191,8 +232,9 @@ func (c *Client) PlanDownload(ctx context.Context, srcs []string, localDir strin
 		it := Item{Src: p, Dst: dst, Rel: rel, IsDir: fi.IsDir()}
 		if !it.IsDir {
 			it.Size = fi.Size()
-			_, err := os.Lstat(dst)
-			it.Exists = err == nil
+			if it.Exists, err = to.exists(dst); err != nil {
+				return err
+			}
 			out = append(out, it)
 			return nil
 		}
@@ -255,7 +297,7 @@ func (c *Client) PlanDownload(ctx context.Context, srcs []string, localDir strin
 		// server that treats it as a separator, so the stat would miss
 		// the file instead of leaving it out.
 		base := path.Base(src)
-		if SafeName(base) != nil {
+		if to.name(base) != nil {
 			skips = append(skips, Skip{Src: src, Rel: base, Reason: SkipName})
 			continue
 		}

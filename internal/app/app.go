@@ -452,6 +452,8 @@ type App struct {
 	// seen and since when, to save it once it rests.
 	filesSplit, splitSeen float32
 	splitAt               time.Time
+	// fileClip is what Copy took on a side of a files pane, for Paste.
+	fileClip *fileClip
 	// winSvc are the services of the editor windows, by their conn,
 	// which invalidate redraws too. Under mu.
 	winSvc map[int]ui.Services
