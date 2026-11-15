@@ -16,8 +16,9 @@ import (
 // tabHeight and tabWidth size a tab, which stands on the title bar's
 // foot; tabs narrow alike when there are many, as a browser's, down to
 // tabMinWidth. tabInset is the track's padding at its sides, room for the
-// active tab's flare, which curves as wide: the content's gutter, so that
-// the first tab stands over the edge of the panes below; tabGap the room
+// active tab's flare, which curves as wide: the content's gutter. Beside
+// the sidebar the track has none at its start: the first tab stands on the
+// sidebar's separator, its side going on up the line. tabGap is the room
 // between two; tabRadius rounds a tab's top.
 const (
 	tabHeight   = 36
@@ -137,7 +138,11 @@ func (a *App) tabs(c *ui.Context, m locales.Messages, tok theme.Tokens) {
 	fill := a.contentFill(tok.Canvas, canvasAlpha)
 	area.Children(func() {
 		if len(shown) > 0 {
-			track := ui.Row(c.Key("tabs")).Shrink(1).MinWidth(0).Height(tabHeight).Padding(0, tabInset).Gap(tabGap).AlignItems(ui.End)
+			lead := float32(tabInset)
+			if !a.sidebarHidden() {
+				lead = 0 // the first tab stands on the sidebar's separator
+			}
+			track := ui.Row(c.Key("tabs")).Shrink(1).MinWidth(0).Height(tabHeight).Padding(0, tabInset, 0, lead).Gap(tabGap).AlignItems(ui.End)
 			track.Children(func() {
 				for j, t := range shown {
 					i := start + j
@@ -246,7 +251,7 @@ func (a *App) tab(c *ui.Context, m locales.Messages, tok theme.Tokens, fill ui.C
 		box := ui.Rect{X: r.X, Y: r.Y + 3, W: r.W, H: r.H - foot - 6}
 		switch {
 		case on:
-			tabEdge(p, r, fill, tok.Line)
+			tabEdge(p, r, fill, tok.Line, j == 0 && !a.sidebarHidden())
 			tabTintBar(p, r, r.Y+2, tint, tinted)
 			return
 		case hovered[j]:
@@ -337,17 +342,25 @@ func (a *App) tabDrops(c *ui.Context, chip ui.Element, t *layout.Tab, tok theme.
 // tabEdge draws the active tab in r into the content below it: its flare,
 // in the content's fill, curving out on to the title bar's foot either
 // side, and its hairline round the sides and the top, where it stands on
-// the title bar.
-func tabEdge(p *ui.Painter, r ui.Rect, fill, line ui.Color) {
+// the title bar. A flush tab, the first beside the sidebar, has no flare
+// on its left: its side runs straight down the sidebar's separator, just
+// left of it, into the line below.
+func tabEdge(p *ui.Painter, r ui.Rect, fill, line ui.Color, flush bool) {
 	const R, F = tabRadius, tabInset
 	l, rt, top, b := r.X, r.X+r.W, r.Y, r.Y+r.H
 	var flare ui.Path
-	flare.MoveTo(l-F, b).QuadTo(l, b, l, b-F).LineTo(l, b).Close()
+	if !flush {
+		flare.MoveTo(l-F, b).QuadTo(l, b, l, b-F).LineTo(l, b).Close()
+	}
 	flare.MoveTo(rt+F, b).QuadTo(rt, b, rt, b-F).LineTo(rt, b).Close()
 	p.FillPath(&flare, fill)
 	var edge ui.Path
-	edge.MoveTo(l-F, b-0.5).QuadTo(l+0.5, b-0.5, l+0.5, b-F).LineTo(l+0.5, top+R).QuadTo(l+0.5, top+0.5, l+R, top+0.5).
-		LineTo(rt-R, top+0.5).QuadTo(rt-0.5, top+0.5, rt-0.5, top+R).LineTo(rt-0.5, b-F).QuadTo(rt-0.5, b-0.5, rt+F, b-0.5)
+	if flush {
+		edge.MoveTo(l-0.5, b).LineTo(l-0.5, top+R).QuadTo(l-0.5, top+0.5, l+R, top+0.5)
+	} else {
+		edge.MoveTo(l-F, b-0.5).QuadTo(l+0.5, b-0.5, l+0.5, b-F).LineTo(l+0.5, top+R).QuadTo(l+0.5, top+0.5, l+R, top+0.5)
+	}
+	edge.LineTo(rt-R, top+0.5).QuadTo(rt-0.5, top+0.5, rt-0.5, top+R).LineTo(rt-0.5, b-F).QuadTo(rt-0.5, b-0.5, rt+F, b-0.5)
 	p.StrokePath(&edge, 1, line)
 }
 
