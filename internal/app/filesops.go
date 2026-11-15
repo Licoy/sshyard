@@ -2,10 +2,12 @@ package app
 
 import (
 	"cmp"
+	"context"
 	"errors"
 	"fmt"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -72,6 +74,10 @@ type conflictAsk struct {
 	at     int // the item asked about
 	all    bool
 	last   resolution
+	// from is the server a Relay copies from (its pane's transfer
+	// client), fromName its host's name.
+	from     func(context.Context) (*sftpsvc.Client, error)
+	fromName string
 }
 
 // left is how many files already there are not yet answered for.
@@ -131,6 +137,7 @@ func (a *App) fileEntries(cn *conn, remote bool, m locales.Messages) []menuEntry
 			}
 		}
 		out = append(out,
+			menuEntry{Icon: icons.Copy, Label: m.Copy(), Mods: toggleMods, Key: ui.KeyC, Do: func() { a.copyEntries(cn, remote, paths) }},
 			menuEntry{Icon: icons.CopyPath, Label: m.CopyPath(), Do: func() { a.svc.WriteClipboard(strings.Join(paths, "\n")) }},
 			menuEntry{Icon: icons.Info, Label: m.GetInfo(), Mods: toggleMods, Key: ui.KeyI, Disabled: remote && off, Do: func() { a.openInfo(cn, remote, es) }},
 			menuSep,
@@ -154,6 +161,7 @@ func (a *App) folderEntries(cn *conn, remote bool, m locales.Messages) []menuEnt
 	return []menuEntry{
 		{Icon: icons.NewFolder, Label: m.NewFolderItem(), Disabled: off, Do: func() { fs.ask, fs.askOpen = &nameAsk{kind: askMkdir, remote: remote}, true }},
 		{Icon: icons.NewFile, Label: m.NewFileItem(), Disabled: off, Do: func() { fs.ask, fs.askOpen = &nameAsk{kind: askNewFile, remote: remote}, true }},
+		{Icon: icons.Paste, Label: m.Paste(), Mods: toggleMods, Key: ui.KeyV, Disabled: !a.canPaste(cn, remote), Do: func() { a.paste(cn, remote) }},
 		menuSep,
 		{Icon: icons.SelectAll, Label: m.SelectAll(), Mods: toggleMods, Key: ui.KeyA, Disabled: len(sd.entries) == 0, Do: func() {
 			for _, e := range sd.entries {
@@ -161,6 +169,69 @@ func (a *App) folderEntries(cn *conn, remote bool, m locales.Messages) []menuEnt
 			}
 		}},
 		{Icon: icons.Refresh, Label: m.Refresh(), Disabled: off, Do: func() { a.listAgain(cn, remote) }},
+	}
+}
+
+// fileClip is entries Copy took: their paths on one side of a files
+// pane. Paste copies them into the folder of a side, the way dropping
+// them there does.
+type fileClip struct {
+	pane   int
+	remote bool
+	paths  []string
+}
+
+// copyEntries takes the paths of entries of a side of cn, for Paste.
+func (a *App) copyEntries(cn *conn, remote bool, paths []string) {
+	if len(paths) > 0 {
+		a.fileClip = &fileClip{pane: cn.id, remote: remote, paths: slices.Clone(paths)}
+	}
+}
+
+// pasteFrom is the files pane the copied entries are on, and whether
+// they can be pasted on a side of cn: a server's into either side (a
+// copy from server to server, or a download), this computer's onto a
+// server (an upload), but not onto this computer itself.
+func (a *App) pasteFrom(cn *conn, remote bool) (*conn, bool) {
+	k := a.fileClip
+	if k == nil || !k.remote && !remote || cn.fs == nil {
+		return nil, false
+	}
+	from := a.conns[k.pane]
+	switch {
+	case remote && cn.fs.remote.client == nil, !remote && cn.fs.local.dir == "":
+		return nil, false
+	case !k.remote:
+		return from, true
+	case from == nil || from.fs == nil || from.fs.remote.client == nil:
+		return nil, false
+	}
+	return from, true
+}
+
+// canPaste says Paste can copy what was copied into the folder of a side
+// of cn.
+func (a *App) canPaste(cn *conn, remote bool) bool {
+	_, ok := a.pasteFrom(cn, remote)
+	return ok
+}
+
+// paste copies what was copied into the folder of a side of cn.
+func (a *App) paste(cn *conn, remote bool) {
+	from, ok := a.pasteFrom(cn, remote)
+	if !ok {
+		return
+	}
+	k := a.fileClip
+	switch {
+	case !k.remote:
+		a.Upload(cn, k.paths, cn.fs.remote.dir)
+	case remote:
+		a.Relay(from, cn, k.paths, cn.fs.remote.dir)
+	default:
+		// a download goes in the queue of the pane on its server, as when
+		// its rows are dropped here
+		a.Download(from, k.paths, cn.fs.local.dir)
 	}
 }
 
@@ -377,7 +448,7 @@ func (a *App) conflictView(c *ui.Context, cn *conn, m locales.Messages) {
 	}), tok)
 	if !fs.conflictOpen {
 		fs.conflict = nil // canceled: nothing of the plan is queued
-		if ask.dir == sftpsvc.Download {
+		if ask.dir != sftpsvc.Upload {
 			fs.skipped = nil // nor is what it left out of interest
 		}
 	}
@@ -413,6 +484,19 @@ func transferLabel(m locales.Messages, t sftpsvc.Transfer) string {
 		return m.TransferCanceled()
 	}
 	return ""
+}
+
+// transferTip is the tooltip of a transfer's name: where it went, once
+// done, and for a copy from another server, which one and what it copies.
+func (a *App) transferTip(m locales.Messages, t sftpsvc.Transfer) string {
+	var lines []string
+	if t.Dir == sftpsvc.Relay {
+		lines = append(lines, m.TransferFromHost(a.pv(t.From), shownName(t.Src)))
+	}
+	if t.Destination != "" {
+		lines = append(lines, t.Destination)
+	}
+	return strings.Join(lines, "\n")
 }
 
 func shortDuration(d time.Duration) string {
@@ -550,13 +634,16 @@ func (a *App) transfersSheet(c *ui.Context, cn *conn, tok theme.Tokens, m locale
 					}
 					row.Children(func() {
 						ic := icons.Upload
-						if t.Dir == sftpsvc.Download {
+						switch t.Dir {
+						case sftpsvc.Download:
 							ic = icons.Download
+						case sftpsvc.Relay:
+							ic = icons.Relay
 						}
 						ui.Icon(c, ic.SVG).Width(14).Height(14).Shrink(0).TextColor(tok.TextMuted)
 						name := ui.Text(c, t.Name).FontSize(theme.Footnote).SingleLine().Width(200).Shrink(0)
-						if t.Destination != "" {
-							name.Tooltip(t.Destination)
+						if tip := a.transferTip(m, t); tip != "" {
+							name.Tooltip(tip)
 						}
 						if broke {
 							ui.Text(c, transferLabel(m, t)).FontSize(theme.Caption).TextColor(tok.Danger).Grow(1).Shrink(1).MinWidth(0)
@@ -614,8 +701,11 @@ func (a *App) planningView(c *ui.Context, cn *conn, tok theme.Tokens, m locales.
 		return
 	}
 	col, icon, text := tok.Accent, icons.Download, m.PlanningDownload()
-	if run.dir == sftpsvc.Upload {
+	switch run.dir {
+	case sftpsvc.Upload:
 		icon, text = icons.Upload, m.PlanningUpload()
+	case sftpsvc.Relay:
+		icon, text = icons.Relay, m.PlanningCopy()
 	}
 	ui.Row(c.Key("planning")).FillWidth().Padding(6, 8, 6, 12).Gap(8).AlignItems(ui.Center).
 		Radius(theme.RadiusControl).Background(col.Alpha(0.12)).Border(1, col.Alpha(0.22)).Children(func() {
@@ -624,7 +714,7 @@ func (a *App) planningView(c *ui.Context, cn *conn, tok theme.Tokens, m locales.
 		if pill(c, m.CancelPlanning(), false, false, false) {
 			run.cancel()
 			cn.fs.planning = nil
-			if run.dir == sftpsvc.Download {
+			if run.dir != sftpsvc.Upload {
 				cn.fs.skipped = nil // as when its question is canceled
 			}
 		}
@@ -698,7 +788,11 @@ func (a *App) skippedView(c *ui.Context, cn *conn, tok theme.Tokens, m locales.M
 		Radius(theme.RadiusControl).Background(col.Alpha(0.12)).Border(1, col.Alpha(0.22)).Children(func() {
 		ui.Icon(c, icons.Warning.SVG).Size(14, 14).Shrink(0).TextColor(col).Margin(3, 0, 0, 0)
 		ui.Column(c).Grow(1).Shrink(1).Gap(2).Children(func() {
-			ui.Text(c, m.DownloadSkipped(strconv.Itoa(len(sk)))).FontSize(theme.Footnote)
+			head := m.DownloadSkipped(strconv.Itoa(len(sk)))
+			if cn.fs.skippedCopy {
+				head = m.CopySkipped(strconv.Itoa(len(sk)))
+			}
+			ui.Text(c, head).FontSize(theme.Footnote)
 			for i, s := range sk {
 				if i == skippedShown {
 					ui.Text(c, m.SkippedMore(strconv.Itoa(len(sk)-i))).FontSize(theme.Footnote).TextColor(tok.TextMuted)

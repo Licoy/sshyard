@@ -25,7 +25,16 @@ type Direction int
 const (
 	Upload Direction = iota
 	Download
+	// Relay copies a file from another server (Transfer.From) to this
+	// queue's: what one SFTP channel reads goes straight to the other,
+	// through this process's memory only, never through a local file, and
+	// neither server is given the other's address or any credential.
+	Relay
 )
+
+// remoteDst says a transfer of direction d writes on the server: all but
+// a download.
+func remoteDst(d Direction) bool { return d != Download }
 
 // TransferState is where a transfer is.
 type TransferState int
@@ -74,7 +83,12 @@ type Transfer struct {
 	Offset int64
 	// Speed is the recent rate in bytes per second while it runs.
 	Speed float64
+	// From names the server a Relay copies from, as the list shows it.
+	From string
 
+	// from is a Relay's source server, as Transfers.Client is the
+	// destination's.
+	from   func(ctx context.Context) (*Client, error)
 	cancel context.CancelCauseFunc
 	// stopping is set while a transfer asked to pause or cancel is still
 	// running: State already says what was last asked (a resume or retry
@@ -204,14 +218,25 @@ func (ts *Transfers) List() []Transfer {
 // Add queues copying src to dst (full paths: local to remote for an
 // Upload, remote to local for a Download). name is what the list shows.
 func (ts *Transfers) Add(dir Direction, src, dst, name string) int {
+	return ts.add(&Transfer{Name: name, Dir: dir, Src: src, Dst: dst})
+}
+
+// AddRelay queues a Relay: copying the file src of the server from
+// returns (waiting for its connection, as Client does) to dst on this
+// queue's server. fromName is what the list says it comes from.
+func (ts *Transfers) AddRelay(from func(ctx context.Context) (*Client, error), fromName, src, dst, name string) int {
+	return ts.add(&Transfer{Name: name, Dir: Relay, Src: src, Dst: dst, From: fromName, from: from})
+}
+
+func (ts *Transfers) add(t *Transfer) int {
 	ts.mu.Lock()
 	ts.next++
-	t := &Transfer{ID: ts.next, Name: name, Dir: dir, Src: src, Dst: dst}
+	t.ID = ts.next
 	var token [16]byte
 	if _, err := rand.Read(token[:]); err != nil {
 		panic(err)
 	}
-	t.part = PartName(dst, dir == Upload) + "-" + hex.EncodeToString(token[:])
+	t.part = PartName(t.Dst, remoteDst(t.Dir)) + "-" + hex.EncodeToString(token[:])
 	ts.list = append(ts.list, t)
 	ts.pump()
 	id := t.ID
@@ -243,7 +268,7 @@ func (ts *Transfers) pump() {
 // being removed: t would write it meanwhile. Under ts.mu.
 func (ts *Transfers) partBusy(t *Transfer) bool {
 	return slices.ContainsFunc(ts.list, func(u *Transfer) bool {
-		return u != t && (u.removing || u.State == Running || u.stopping) && u.Dir == t.Dir && u.Dst == t.Dst
+		return u != t && (u.removing || u.State == Running || u.stopping) && remoteDst(u.Dir) == remoteDst(t.Dir) && u.Dst == t.Dst
 	})
 }
 
@@ -322,7 +347,7 @@ func (ts *Transfers) attempts(ctx context.Context, t *Transfer) error {
 // permanent reports a failure that trying again cannot change: a missing
 // file, a refusal, or a path or folder the safety checks reject.
 func permanent(err error) bool {
-	for _, e := range []error{fs.ErrNotExist, fs.ErrPermission, ErrUnsafeName, ErrDstIsDir, ErrUnsafePath, ErrUnsafeDestination, ErrPartChanged} {
+	for _, e := range []error{fs.ErrNotExist, fs.ErrPermission, ErrUnsafeName, ErrUnsafeRemoteName, ErrDstIsDir, ErrUnsafePath, ErrUnsafeDestination, ErrPartChanged} {
 		if errors.Is(err, e) {
 			return true
 		}
@@ -354,7 +379,20 @@ func (ts *Transfers) client(ctx context.Context) (*Client, error) {
 // the shared client, the terminals and the other transfers go on. When
 // the server opens no more channels, the attempt uses the shared client.
 func (ts *Transfers) channel(ctx context.Context, t *Transfer) (*Client, func(), error) {
-	shared, err := ts.client(ctx)
+	return ts.channelOn(ctx, ts.client, t)
+}
+
+// source is channel on the server a Relay copies from.
+func (ts *Transfers) source(ctx context.Context, t *Transfer) (*Client, func(), error) {
+	if t.from == nil {
+		return nil, nil, errors.New("sftp: no connection")
+	}
+	return ts.channelOn(ctx, t.from, t)
+}
+
+// channelOn is channel on the connection of the client get returns.
+func (ts *Transfers) channelOn(ctx context.Context, get func(context.Context) (*Client, error), t *Transfer) (*Client, func(), error) {
+	shared, err := get(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -388,12 +426,32 @@ func (ts *Transfers) copy(ctx context.Context, t *Transfer) error {
 	defer done()
 	remote := remoteFS{c, ctx}
 	var src, dst fileSide
-	if t.Dir == Upload {
+	switch t.Dir {
+	case Upload:
 		if err := remote.checkParents(path.Dir(t.Dst)); err != nil {
 			return err
 		}
 		src, dst = localFS{}, remote
-	} else {
+	case Relay:
+		// Plans check the names the source server sent; one queued to an
+		// unsafe name anyway must not reach a part file in another folder.
+		if err := RemoteName(path.Base(t.Dst)); err != nil {
+			return err
+		}
+		if err := remote.checkParents(path.Dir(t.Dst)); err != nil {
+			return err
+		}
+		// The source's own channel, which ending ctx closes as it does
+		// the destination's. What it reads is written to the other as it
+		// comes (io.Copy below): the bytes held at once are bounded by the
+		// SFTP reads in flight, never the file's size.
+		from, fromDone, err := ts.source(ctx, t)
+		if err != nil {
+			return err
+		}
+		defer fromDone()
+		src, dst = remoteFS{from, ctx}, remote
+	default:
 		local, err := destinationRoot(t.Dst)
 		if err != nil {
 			return err
@@ -456,7 +514,7 @@ func (ts *Transfers) copy(ctx context.Context, t *Transfer) error {
 		ts.mu.Lock()
 		t.partReady = false
 		ts.mu.Unlock()
-		if err := dst.mkdirAll(dirOf(t.Dst, t.Dir == Upload)); err != nil {
+		if err := dst.mkdirAll(dirOf(t.Dst, remoteDst(t.Dir))); err != nil {
 			return err
 		}
 	}

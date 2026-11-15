@@ -282,6 +282,9 @@ type filesState struct {
 	// dismissed or the next download (planned, failing to be, or its
 	// question about files already there canceled).
 	skipped []sftpsvc.Skip
+	// skippedCopy says skipped is from a copy from another server (or
+	// folder of this one) rather than a download.
+	skippedCopy bool
 	// planning is the transfer being planned, until it is ready, fails or
 	// is canceled (a newer one cancels it too).
 	planning *planRun
@@ -605,26 +608,62 @@ func (a *App) listAgain(cn *conn, remote bool) {
 // Upload copies local files and folders into the remote folder dir,
 // asking about those already there.
 func (a *App) Upload(cn *conn, paths []string, dir string) {
-	a.plan(cn, sftpsvc.Upload, paths, dir)
+	a.plan(cn, nil, sftpsvc.Upload, paths, dir)
 }
 
 // Download copies remote files and folders into the local folder dir,
 // asking about those already there.
 func (a *App) Download(cn *conn, paths []string, dir string) {
-	a.plan(cn, sftpsvc.Download, paths, dir)
+	a.plan(cn, nil, sftpsvc.Download, paths, dir)
 }
 
-func (a *App) plan(cn *conn, d sftpsvc.Direction, paths []string, dir string) {
+// Relay copies files and folders of the server of the files pane from
+// into the folder dir of the server of the files pane to, asking about
+// those already there, in to's queue. Each file streams from one
+// server's SFTP channel to the other's through this app's memory:
+// nothing is saved on this computer, and neither server logs into the
+// other or is given any credential. from may be to (another folder of
+// the same server), where a folder is not copied into itself.
+func (a *App) Relay(from, to *conn, paths []string, dir string) {
+	if from == nil || from.fs == nil || to.fs == nil || len(paths) == 0 || dir == "" {
+		return
+	}
+	if sameServer(from, to) {
+		if err := sftpsvc.CheckInto(paths, dir); err != nil {
+			a.filesErr(to, true, err)
+			return
+		}
+	}
+	a.plan(to, from, sftpsvc.Relay, paths, dir)
+}
+
+// sameServer says the files panes from and to are on the same server as
+// the same user: the same pane, connection or saved host.
+func sameServer(from, to *conn) bool {
+	return from == to || from.s == to.s || from.host.ID != "" && from.host.ID == to.host.ID
+}
+
+// plan lists what a transfer of paths into dir copies, then asks about
+// what is already there and queues the rest in cn's queue. A Relay's
+// paths are on the server of from.
+func (a *App) plan(cn, from *conn, d sftpsvc.Direction, paths []string, dir string) {
 	c := cn.fs.remote.client
 	if c == nil || len(paths) == 0 || dir == "" {
 		return
+	}
+	var src *sftpsvc.Client
+	if d == sftpsvc.Relay {
+		if src = from.fs.remote.client; src == nil {
+			return
+		}
 	}
 	if cn.fs.planning != nil {
 		cn.fs.planning.cancel()
 	}
 	// The previous failure is done with; this plan's own failure, if it
 	// has one, is set when it finishes and must survive the refresh.
-	a.filesErr(cn, d == sftpsvc.Upload, nil)
+	remote := d != sftpsvc.Download
+	a.filesErr(cn, remote, nil)
 	ctx, cancel := context.WithCancel(context.Background())
 	run := &planRun{dir: d, cancel: cancel}
 	cn.fs.planning = run
@@ -633,9 +672,12 @@ func (a *App) plan(cn *conn, d sftpsvc.Direction, paths []string, dir string) {
 		var items []sftpsvc.Item
 		var skips []sftpsvc.Skip
 		var err error
-		if d == sftpsvc.Upload {
+		switch d {
+		case sftpsvc.Upload:
 			items, err = c.PlanUpload(ctx, paths, dir)
-		} else {
+		case sftpsvc.Relay:
+			items, skips, err = src.PlanRelay(ctx, paths, c, dir)
+		default:
 			items, skips, err = c.PlanDownload(ctx, paths, dir)
 		}
 		a.post(func() {
@@ -643,17 +685,18 @@ func (a *App) plan(cn *conn, d sftpsvc.Direction, paths []string, dir string) {
 				return // canceled, or a newer plan took its place
 			}
 			cn.fs.planning = nil
+			if d != sftpsvc.Upload {
+				// this plan's skips, none when it failed: not the last one's
+				cn.fs.skipped, cn.fs.skippedCopy = skips, d == sftpsvc.Relay
+			}
 			if err != nil {
-				if d == sftpsvc.Download {
-					cn.fs.skipped = nil // the last download's, not this one's
-				}
-				a.filesErr(cn, d == sftpsvc.Upload, err)
+				a.filesErr(cn, remote, err)
 				return
 			}
-			if d == sftpsvc.Download {
-				cn.fs.skipped = skips
-			}
 			ask := &conflictAsk{dir: d, items: items, choice: make([]resolution, len(items))}
+			if d == sftpsvc.Relay {
+				ask.from, ask.fromName = a.transferClient(from), from.host.Label()
+			}
 			a.resolveConflicts(cn, ask)
 		})
 	}()
@@ -712,7 +755,7 @@ func (a *App) resolveConflicts(cn *conn, ask *conflictAsk) {
 func (a *App) enqueue(cn *conn, ask *conflictAsk) {
 	ts := cn.fs.transfers
 	get := ts.Client
-	up := ask.dir == sftpsvc.Upload
+	up := ask.dir != sftpsvc.Download // made on the server: an upload's or a relay's
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
@@ -744,7 +787,11 @@ func (a *App) enqueue(cn *conn, ask *conflictAsk) {
 					dst = sftpsvc.UniqueName(dst, up, taken)
 				}
 				chosen[dst] = true
-				ts.Add(ask.dir, it.Src, dst, it.Rel)
+				if ask.dir == sftpsvc.Relay {
+					ts.AddRelay(ask.from, ask.fromName, it.Src, dst, it.Rel)
+				} else {
+					ts.Add(ask.dir, it.Src, dst, it.Rel)
+				}
 			}
 			if err != nil {
 				a.post(func() { a.filesErr(cn, up, err) })
@@ -1125,8 +1172,9 @@ func (a *App) calcSize(cn *conn, remote bool, name string) {
 
 // fileKeys are the keys of a side's table while it has the focus: Delete
 // (Cmd+Backspace on macOS), Cmd+I (Ctrl+I elsewhere) for the entries'
-// information, Space to preview an image, F2 to rename, Escape to choose
-// none and Shift+F10 for the menu.
+// information, Space to preview an image, F2 to rename, Cmd+C and Cmd+V
+// (Ctrl elsewhere) to copy entries and paste them, as a file list does,
+// Escape to choose none and Shift+F10 for the menu.
 func (a *App) fileKeys(c *ui.Context, cn *conn, remote bool, tb ui.Element, entries func() []menuEntry) {
 	fs := cn.fs
 	sd := fs.side(remote)
@@ -1141,8 +1189,13 @@ func (a *App) fileKeys(c *ui.Context, cn *conn, remote bool, tb ui.Element, entr
 		a.openPreview(cn, remote, es[0].Name)
 	case len(es) == 1 && tb.Shortcut(0, ui.KeyF2):
 		fs.ask, fs.askOpen = &nameAsk{kind: askRename, remote: remote, path: sidePath(remote, sd.dir, es[0].Name), value: es[0].Name}, true
+	case tb.Shortcut(toggleMods, ui.KeyC):
+		a.copyEntries(cn, remote, sd.paths(remote, es))
 	case tb.Shortcut(0, ui.KeyEscape):
 		sd.chosen.Clear()
+	}
+	if a.canPaste(cn, remote) && tb.Shortcut(toggleMods, ui.KeyV) {
+		a.paste(cn, remote)
 	}
 	if tb.Shortcut(ui.Shift, ui.KeyF10) {
 		b := tb.Bounds()
@@ -1336,11 +1389,16 @@ func (a *App) filesBody(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, 
 				}
 				// local rows upload here, from this pane or another one: the
 				// local disk is the same for all. Remote rows of another pane
-				// are not taken (no copying between remotes).
-				if d, ok := ui.Drop[filesDrag](remote); ok && !d.remote {
-					a.Upload(cn, d.paths, s.dir)
+				// copy here from their server (Relay); this pane's own rows
+				// dropped back on it are left alone.
+				if d, ok := ui.Drop[filesDrag](remote); ok {
+					if src := a.conns[d.pane]; !d.remote {
+						a.Upload(cn, d.paths, s.dir)
+					} else if d.pane != cn.id && src != nil && src.fs != nil {
+						a.Relay(src, cn, d.paths, s.dir)
+					}
 				}
-				if d, ok := ui.DragOver[filesDrag](remote); remote.FileDragOver() || ok && !d.remote {
+				if d, ok := ui.DragOver[filesDrag](remote); remote.FileDragOver() || ok && (!d.remote || d.pane != cn.id) {
 					remote.Background(tok.Accent.Alpha(0.08))
 				}
 			})

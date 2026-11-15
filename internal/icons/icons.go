@@ -138,6 +138,7 @@ var (
 	Privacy      = load("eye-off-line")
 	PrivacyOn    = load("eye-off-fill")
 	Transfers    = Network
+	Relay        = Forward // a copy from one server straight to another
 	LocalShell   = load("terminal-window-line")
 	TelnetHost   = load("terminal-line")
 	SerialHost   = load("usb-line")
