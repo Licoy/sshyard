@@ -163,6 +163,12 @@ func TestMiddleClickClosesTab(t *testing.T) {
 	if len(a.ws.Tabs) != 2 {
 		t.Fatal("let go off the tab, it closed")
 	}
+	// A press the system took back commits nothing.
+	in(ui.InputEvent{Kind: ui.InputPointerDown, Button: 2, X: 10, Y: 10})
+	in(ui.InputEvent{Kind: ui.InputPointerUp, Button: 2, X: 20, Y: 12, Canceled: true})
+	if len(a.ws.Tabs) != 2 {
+		t.Fatal("a canceled middle press closed the tab")
+	}
 	in(ui.InputEvent{Kind: ui.InputPointerDown, Button: 2, X: 10, Y: 10})
 	in(ui.InputEvent{Kind: ui.InputPointerUp, Button: 2, X: 20, Y: 12})
 	if len(a.ws.Tabs) != 1 || a.ws.Tabs[0] == first {

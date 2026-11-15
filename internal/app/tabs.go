@@ -371,7 +371,7 @@ func (a *App) middleClose(t *layout.Tab, b ui.Rect) func(ui.InputEvent) bool {
 		case ui.InputPointerDown:
 			return true // and so the release
 		case ui.InputPointerUp:
-			if ev.X >= 0 && ev.Y >= 0 && ev.X < b.W && ev.Y < b.H && slices.Contains(a.ws.Tabs, t) {
+			if !ev.Canceled && ev.X >= 0 && ev.Y >= 0 && ev.X < b.W && ev.Y < b.H && slices.Contains(a.ws.Tabs, t) {
 				a.closeTab(t)
 			}
 			return true

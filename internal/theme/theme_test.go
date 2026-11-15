@@ -70,7 +70,7 @@ func TestContrast(t *testing.T) {
 func TestApply(t *testing.T) {
 	base := ui.Theme{Font: "Inter", Accent: ui.Hex("#ff0000")}
 	th := DarkTokens().Apply(base)
-	if !th.Dark || th.Accent != Brand || th.Font != "Inter" || th.Radius != RadiusControl {
+	if !th.Dark || th.Accent != Brand || th.InactiveAccent != Brand || th.Font != "Inter" || th.Radius != RadiusControl {
 		t.Errorf("Apply: %+v", th)
 	}
 	if base.Accent == Brand {

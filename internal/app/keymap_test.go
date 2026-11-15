@@ -149,6 +149,27 @@ func TestRecordShortcut(t *testing.T) {
 	}
 }
 
+// TestRecordShortcutWaitsForKey: a modifier or Caps Lock pressed on its
+// own, as before the key of a shortcut, neither records nor refuses
+// anything; the key pressed with it then records the shortcut.
+func TestRecordShortcutWaitsForKey(t *testing.T) {
+	a, _ := newTestApp(t)
+	m := locales.In("en")
+	mods := shortcutMods(runtime.GOOS, false)
+	a.recording = actQuickConnect
+	for _, code := range []ui.KeyCode{ui.CodeSuperLeft, ui.CodeShiftLeft, ui.CodeCapsLock} {
+		a.recordKey(m, ui.InputEvent{Kind: ui.InputKeyDown, Key: ui.KeyUnknown, Code: code, Mods: mods})
+	}
+	if a.recording != actQuickConnect || a.recordErr != "" || len(a.settings.Shortcuts) != 0 {
+		t.Fatalf("after modifiers alone: recording %q, error %q, shortcuts %v", a.recording, a.recordErr, a.settings.Shortcuts)
+	}
+	rec := keymap.Combo{Mods: mods | ui.Alt, Key: ui.KeyJ}
+	a.recordKey(m, ui.InputEvent{Kind: ui.InputKeyDown, Key: rec.Key, PhysicalKey: rec.Key, Mods: rec.Mods})
+	if a.recording != "" || a.settings.Shortcuts[actQuickConnect] != rec.String() {
+		t.Fatalf("recording %q, shortcuts %v", a.recording, a.settings.Shortcuts)
+	}
+}
+
 // TestEditorRecordedSave saves the editor's file with the shortcut
 // recorded for it, and no longer with the default.
 func TestEditorRecordedSave(t *testing.T) {

@@ -875,6 +875,9 @@ func (a *App) recordKey(m locales.Messages, ev ui.InputEvent) {
 	if key == ui.KeyUnknown {
 		key = ev.PhysicalKey
 	}
+	if key == ui.KeyUnknown {
+		return // a modifier on its own, or Caps Lock: the key comes next
+	}
 	if key == ui.KeyEscape && ev.Mods == 0 {
 		a.recording, a.recordErr = "", ""
 		return

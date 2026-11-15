@@ -318,6 +318,9 @@ func (t Tokens) Apply(base ui.Theme) *ui.Theme {
 	th.Background, th.Surface, th.SurfaceHover, th.SurfacePressed = t.Background, t.Surface, t.SurfaceHover, t.SurfacePressed
 	th.Border, th.Text, th.TextMuted = t.Border, t.Text, t.TextMuted
 	th.Accent, th.AccentHover, th.AccentPressed, th.AccentText = t.Accent, t.AccentHover, t.AccentPressed, t.AccentText
+	// The brand accent stays in windows behind another, where MyGo would
+	// fade it to gray.
+	th.InactiveAccent = t.Accent
 	th.Danger, th.Warning, th.Success = t.Danger, t.Warning, t.Success
 	th.Selection, th.Focus = t.Selection, t.Focus
 	th.Inverse, th.InverseText = t.Inverse, t.InverseText

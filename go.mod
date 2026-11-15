@@ -8,7 +8,7 @@ require (
 	github.com/coder/acp-go-sdk v0.13.5
 	github.com/creack/pty v1.1.24
 	github.com/ebitengine/purego v0.11.1
-	github.com/egoist/mygo v0.7.4
+	github.com/egoist/mygo v0.9.1
 	github.com/mattn/go-runewidth v0.0.31
 	github.com/pkg/sftp v1.13.12
 	github.com/studio-b12/gowebdav v0.13.0

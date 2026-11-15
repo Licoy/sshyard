@@ -29,7 +29,7 @@ type LinuxServiceError struct {
 func (e *LinuxServiceError) Error() string { return e.Err.Error() }
 func (e *LinuxServiceError) Unwrap() error { return e.Err }
 
-// MyGo v0.7.4 discards GError domain/code, so only its own loader/bus
+// MyGo (v0.9.1) discards GError domain/code, so only its own loader/bus
 // messages and complete retained GDBus remote error names are reliable.
 func mapLinuxServiceError(err error) error {
 	message, ok := strings.CutPrefix(err.Error(), "mygo: secrets: ")
