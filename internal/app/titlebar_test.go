@@ -8,6 +8,7 @@ import (
 	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/session"
+	"github.com/Licoy/sshyard/locales"
 )
 
 // TestTitleBarMultipleShells exercises shell-named tabs on every platform,
@@ -325,5 +326,38 @@ func TestNewTabButton(t *testing.T) {
 	tt.Frame()
 	if a.quick == nil || a.menu.key != "" || len(a.ws.Tabs) != 1 {
 		t.Fatalf("quick %v, menu %q, %d tabs", a.quick != nil, a.menu.key, len(a.ws.Tabs))
+	}
+}
+
+// TestDuplicateTab: the tab's menu opens a new session on its host in a
+// new tab, a files pane for a files pane.
+func TestDuplicateTab(t *testing.T) {
+	a, tt := newTestApp(t)
+	h, err := a.Store().Add(assets.Host{Name: "web", Address: "127.0.0.1", Port: 1, User: "root", Auth: assets.AuthAgent})
+	if err != nil {
+		t.Fatal(err)
+	}
+	duplicate := func(i int) *conn {
+		t.Helper()
+		a.openContext(10, 10, func() []menuEntry { return a.tabEntries(locales.In("en"), i) })
+		tt.Frame()
+		if err := chooseMenu(a, tt, "Duplicate Session"); err != nil {
+			t.Fatalf("%v: %q", err, menuOf(a))
+		}
+		tt.Frame()
+		return a.focused()
+	}
+	if _, err := a.open(localID, layout.Terminal, openAt{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.OpenFiles(h.ID, openAt{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if cn := duplicate(0); len(a.ws.Tabs) != 3 || a.ws.Active != 2 || cn.kind != layout.Terminal || cn.host.ID != localID {
+		t.Fatalf("terminal: %d tabs, active %d, %+v", len(a.ws.Tabs), a.ws.Active, cn)
+	}
+	if cn := duplicate(1); len(a.ws.Tabs) != 4 || a.ws.Active != 3 || cn.kind != layout.Files || cn.host.ID != h.ID {
+		t.Fatalf("files: %d tabs, active %d, %+v", len(a.ws.Tabs), a.ws.Active, cn)
 	}
 }

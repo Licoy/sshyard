@@ -156,6 +156,7 @@ var (
 	Detach      = load("logout-box-r-line")
 	OpenInTab   = load("window-line")
 	AppWindow   = OpenInTab
+	Duplicate   = WinRestore
 	Halt        = load("stop-line")
 	Logs        = load("file-list-3-line")
 	Backup      = load("safe-2-line")

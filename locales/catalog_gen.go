@@ -1495,11 +1495,11 @@ func (msgs Messages) OpenInNewTab() string {
 	return Catalog.Format(msgs.locale, "openInNewTab", nil)
 }
 
-// DuplicateSession says "Duplicate session"
+// DuplicateSession says "Duplicate Session"
 // in the language the app shows.
 func DuplicateSession() string { return In(i18n.Locale()).DuplicateSession() }
 
-// DuplicateSession says "Duplicate session"
+// DuplicateSession says "Duplicate Session"
 // in the language of msgs.
 func (msgs Messages) DuplicateSession() string {
 	return Catalog.Format(msgs.locale, "duplicateSession", nil)

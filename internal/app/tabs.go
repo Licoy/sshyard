@@ -520,6 +520,8 @@ func (a *App) tabEntries(m locales.Messages, i int) []menuEntry {
 	return []menuEntry{
 		{Icon: icons.Rename, Label: m.RenameTabEllipsis(), Do: func() { a.openTabRename(t) }},
 		menuSep,
+		{Icon: icons.Duplicate, Label: m.DuplicateSession(), Disabled: host == "", Do: func() { a.duplicateTab(m, t) }},
+		menuSep,
 		{Icon: icons.Close, Label: m.CloseTab(), Do: closing(func(j int, _ *layout.Tab) bool { return j == i })},
 		{Label: m.CloseOtherTabs(), Disabled: n < 2, Do: closing(func(j int, _ *layout.Tab) bool { return j != i })},
 		{Label: m.CloseTabsLeft(), Disabled: i == 0, Do: closing(func(j int, _ *layout.Tab) bool { return j < i })},
@@ -529,6 +531,22 @@ func (a *App) tabEntries(m locales.Messages, i int) []menuEntry {
 		{Label: m.CloseOtherHostTabs(), Disabled: others == 0, Do: closing(func(_ int, t *layout.Tab) bool { return a.tabHost(t) != host })},
 		menuSep,
 		{Icon: icons.Clear, Label: m.CloseAllTabs(), Danger: true, Do: closing(func(int, *layout.Tab) bool { return true })},
+	}
+}
+
+// duplicateTab opens a new session on tab t's host in a new tab: a files
+// pane for a files pane, a terminal for any other.
+func (a *App) duplicateTab(m locales.Messages, t *layout.Tab) {
+	cn := a.conns[t.Focused().ID]
+	if cn == nil || cn.host.ID == "" {
+		return
+	}
+	kind := layout.Terminal
+	if cn.kind == layout.Files {
+		kind = layout.Files
+	}
+	if _, err := a.open(cn.host.ID, kind, openAt{}, cn); err != nil {
+		a.toastError(m.ErrGeneric(err.Error()))
 	}
 }
 
