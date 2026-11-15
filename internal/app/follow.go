@@ -86,6 +86,7 @@ func (a *App) followCwd(c *ui.Context) {
 			if d := followDir(tc.s.Term.Cwd()); d != "" && d != tc.cwd && a.cwdOnHost(tc, tc.s.Term.CwdHost()) {
 				a.cwdSeq++
 				tc.cwd, tc.cwdSeq = d, a.cwdSeq
+				tc.noteCwd(d, tc.s.Status().Connects)
 			}
 		}
 		for _, it := range items {
@@ -168,6 +169,7 @@ func (a *App) probeCwd(tc *conn, now time.Time) bool {
 			if tc.s.Term.Cwd() == "" && d != tc.cwd {
 				a.cwdSeq++
 				tc.cwd, tc.cwdSeq = d, a.cwdSeq
+				tc.noteCwd(d, connects)
 			}
 		})
 	}()

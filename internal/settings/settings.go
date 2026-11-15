@@ -44,11 +44,14 @@ type Settings struct {
 	CheckUpdates bool `json:"checkUpdates"`
 	// UpdateIntervalHours is the time between automatic checks for
 	// updates, one of UpdateIntervals. The updater reads it at launch.
-	UpdateIntervalHours int     `json:"updateIntervalHours"`
-	TerminalFontSize    int     `json:"terminalFontSize"`
-	KeepAliveSeconds    int     `json:"keepAliveSeconds"`
-	AutoReconnect       bool    `json:"autoReconnect"`
-	SidebarWidth        float32 `json:"sidebarWidth"`
+	UpdateIntervalHours int  `json:"updateIntervalHours"`
+	TerminalFontSize    int  `json:"terminalFontSize"`
+	KeepAliveSeconds    int  `json:"keepAliveSeconds"`
+	AutoReconnect       bool `json:"autoReconnect"`
+	// ReturnToFolder takes an SSH terminal whose connection came back
+	// to the folder its shell was in before, as the shell reported it.
+	ReturnToFolder bool    `json:"returnToFolder"`
+	SidebarWidth   float32 `json:"sidebarWidth"`
 	// TerminalType is the TERM new terminals report, unless their host
 	// names its own (Host.Term); "" is session.DefaultTerm.
 	TerminalType string `json:"terminalType,omitempty"`
@@ -115,6 +118,9 @@ type Settings struct {
 	// TransferConcurrency is how many SFTP transfers of a files pane run
 	// at once, 1 to 10.
 	TransferConcurrency int `json:"transferConcurrency"`
+	// KeepAwake keeps the computer from sleeping while files transfer:
+	// the display may still turn off.
+	KeepAwake bool `json:"keepAwake"`
 	// OpenConfirmMB is the size, in MB, from which opening a remote file
 	// (in the editor or a local program) asks first, 1 to 1024.
 	OpenConfirmMB int `json:"openConfirmMB"`
@@ -698,7 +704,7 @@ const (
 
 // Default returns the defaults.
 func Default() Settings {
-	return Settings{Background: DefaultBackground(), Theme: theme.Auto, CloseBehavior: CloseToTray, TrayIcon: TrayIconColor, TrayClick: TrayClickPanel, TrayMaterial: MaterialTranslucent, TrayHeight: DefaultTrayHeight, CheckUpdates: true, UpdateIntervalHours: 1, TerminalFontSize: 13, TerminalLineHeight: 100, TerminalCharWidth: 100, TerminalCursorStyle: CursorBlock, TerminalCursorBlink: true, KeepAliveSeconds: 30, AutoReconnect: true, SidebarWidth: 240, ChromeMaterial: MaterialTranslucent, ContentMaterial: MaterialOpaque, MonospacedOnly: true, TransferConcurrency: 3, OpenConfirmMB: 10, FilesSplit: 50, FilesEdge: FilesRight, TerminalRightClick: RightClickMenu, EditorTreeWidth: 240, TerminalTransfers: true, OSC52Write: OSC52Ask, OSC52MaxBytes: OSC52MaxDefault, OSC52Notify: true, MetricsEnabled: true, MetricsInterval: 2,
+	return Settings{Background: DefaultBackground(), Theme: theme.Auto, CloseBehavior: CloseToTray, TrayIcon: TrayIconColor, TrayClick: TrayClickPanel, TrayMaterial: MaterialTranslucent, TrayHeight: DefaultTrayHeight, CheckUpdates: true, UpdateIntervalHours: 1, TerminalFontSize: 13, TerminalLineHeight: 100, TerminalCharWidth: 100, TerminalCursorStyle: CursorBlock, TerminalCursorBlink: true, KeepAliveSeconds: 30, AutoReconnect: true, ReturnToFolder: true, SidebarWidth: 240, ChromeMaterial: MaterialTranslucent, ContentMaterial: MaterialOpaque, MonospacedOnly: true, TransferConcurrency: 3, KeepAwake: true, OpenConfirmMB: 10, FilesSplit: 50, FilesEdge: FilesRight, TerminalRightClick: RightClickMenu, EditorTreeWidth: 240, TerminalTransfers: true, OSC52Write: OSC52Ask, OSC52MaxBytes: OSC52MaxDefault, OSC52Notify: true, MetricsEnabled: true, MetricsInterval: 2,
 		AIDefaultAgent: "builtin", AIDefaultMode: "ask", AIReviewStrictness: AIReviewStandard, AIContextLines: 200, AIAuditRetentionDays: 90, AIRequestTimeout: DefaultAIRequestTimeout, AIRedact: true, MCPPort: MCPPortDefault, LocalKeys: true, Highlight: Highlight{On: true}, RenewalNotify: true}
 }
 

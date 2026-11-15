@@ -155,3 +155,82 @@ func TestPoolWaitersShareOneDial(t *testing.T) {
 		t.Errorf("%d logins, %d asks", srv.Logins(), asked.Load())
 	}
 }
+
+// TestPoolProbeAfterNetworkChange: a probe after the network changed
+// breaks the connections whose server no longer answers, whose sessions
+// then reconnect, or show it lost with automatic reconnection off, and
+// leaves the healthy ones alone.
+func TestPoolProbeAfterNetworkChange(t *testing.T) {
+	healthy, hung := server(t), server(t)
+	p := NewPool()
+	var asked atomic.Int32
+	hcfg := pooled(t, p, healthy.Addr, trusted(t, healthy), &asked)
+	gcfg := pooled(t, p, hung.Addr, trusted(t, hung), &asked)
+	recon := Options{AutoReconnect: true, Backoff: 20 * time.Millisecond}
+	term := New(hcfg, recon, 80, 24)
+	files := New(hcfg, Options{AutoReconnect: true, Backoff: 20 * time.Millisecond, NoShell: true}, 80, 24)
+	stuck := New(gcfg, recon, 80, 24)
+	// On the same connection as stuck, without automatic reconnection.
+	manual := New(gcfg, Options{}, 80, 24)
+	for _, s := range []*Session{term, files, stuck, manual} {
+		defer s.Close()
+		s.Start()
+		waitState(t, s, Connected)
+	}
+
+	if n := p.Probe(time.Second); n != 0 {
+		t.Fatalf("%d connections lost with every server answering", n)
+	}
+	hung.Mute.Store(true)
+	start := time.Now()
+	if n := p.Probe(200 * time.Millisecond); n != 1 {
+		t.Fatalf("%d connections lost, want the hung server's", n)
+	}
+	if d := time.Since(start); d > 2*time.Second {
+		t.Errorf("the probe took %v", d)
+	}
+	// The hung server's sessions reconnect, or not when they may not.
+	waitFor(t, "the reconnect", func() bool { st := stuck.Status(); return st.State == Connected && st.Connects == 2 })
+	if st := waitState(t, manual, Disconnected); st.Connects != 1 {
+		t.Errorf("the session without reconnection connected %d times", st.Connects)
+	}
+	// The healthy server's were left alone.
+	for _, s := range []*Session{term, files} {
+		if st := s.Status(); st.State != Connected || st.Connects != 1 {
+			t.Errorf("a healthy session is %v after %d connects", st.State, st.Connects)
+		}
+	}
+	term.Write([]byte("still\r"))
+	waitText(t, term, "you said: still")
+}
+
+// TestProbeCountsWhatTheServerSends: a keepalive left unanswered is no
+// loss while the server sends something else, as on a link busy with a
+// transfer.
+func TestProbeCountsWhatTheServerSends(t *testing.T) {
+	srv := server(t)
+	s := New(Config{Addr: srv.Addr, User: "demo", Credentials: password("secret"), HostKey: trusted(t, srv).Callback()}, Options{}, 80, 24)
+	defer s.Close()
+	s.Start()
+	waitState(t, s, Connected)
+	srv.Mute.Store(true)
+	client := s.Client()
+	if alive(client, 100*time.Millisecond) {
+		t.Fatal("a silent server counted as alive")
+	}
+	stop := make(chan struct{})
+	defer close(stop)
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			case <-time.After(10 * time.Millisecond):
+				s.Write([]byte("x\r")) // the toy shell answers each line
+			}
+		}
+	}()
+	if !alive(client, 300*time.Millisecond) {
+		t.Fatal("a server sending output counted as lost")
+	}
+}

@@ -1363,6 +1363,26 @@ func (msgs Messages) AutoReconnect() string {
 	return Catalog.Format(msgs.locale, "autoReconnect", nil)
 }
 
+// ReturnToFolder says "Return to the previous folder after reconnecting"
+// in the language the app shows.
+func ReturnToFolder() string { return In(i18n.Locale()).ReturnToFolder() }
+
+// ReturnToFolder says "Return to the previous folder after reconnecting"
+// in the language of msgs.
+func (msgs Messages) ReturnToFolder() string {
+	return Catalog.Format(msgs.locale, "returnToFolder", nil)
+}
+
+// ReturnToFolderNote says "When an SSH terminal reconnects, its new shell goes back to the folder the old one reported. Not when a tmux session …"
+// in the language the app shows.
+func ReturnToFolderNote() string { return In(i18n.Locale()).ReturnToFolderNote() }
+
+// ReturnToFolderNote says "When an SSH terminal reconnects, its new shell goes back to the folder the old one reported. Not when a tmux session …"
+// in the language of msgs.
+func (msgs Messages) ReturnToFolderNote() string {
+	return Catalog.Format(msgs.locale, "returnToFolderNote", nil)
+}
+
 // Copy says "Copy"
 // in the language the app shows.
 func Copy() string { return In(i18n.Locale()).Copy() }
@@ -4625,6 +4645,26 @@ func OpenConfirmHint() string { return In(i18n.Locale()).OpenConfirmHint() }
 // in the language of msgs.
 func (msgs Messages) OpenConfirmHint() string {
 	return Catalog.Format(msgs.locale, "openConfirmHint", nil)
+}
+
+// KeepAwake says "Keep the computer awake during transfers"
+// in the language the app shows.
+func KeepAwake() string { return In(i18n.Locale()).KeepAwake() }
+
+// KeepAwake says "Keep the computer awake during transfers"
+// in the language of msgs.
+func (msgs Messages) KeepAwake() string {
+	return Catalog.Format(msgs.locale, "keepAwake", nil)
+}
+
+// KeepAwakeNote says "While files transfer, the computer doesn’t go to sleep on its own. The display can still turn off."
+// in the language the app shows.
+func KeepAwakeNote() string { return In(i18n.Locale()).KeepAwakeNote() }
+
+// KeepAwakeNote says "While files transfer, the computer doesn’t go to sleep on its own. The display can still turn off."
+// in the language of msgs.
+func (msgs Messages) KeepAwakeNote() string {
+	return Catalog.Format(msgs.locale, "keepAwakeNote", nil)
 }
 
 // OpenLargeTitle says "Open a large file?"

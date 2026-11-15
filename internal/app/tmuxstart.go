@@ -68,6 +68,16 @@ type shellStart struct {
 	// host is the host's tmux session (Host.Tmux), "" when it has none or
 	// the terminal was opened without it
 	host string
+	// dir is the folder the shell is taken to as it starts
+	// (Host.TerminalDir), "" for its home
+	dir string
+	// ran is set once a command given once was typed: the folders the
+	// terminal then reports are not the server's
+	ran bool
+	// cwd is the folder the terminal last reported, at its connect number
+	// cwdConn; prevCwd the one before, of an earlier connect (noteCwd)
+	cwd, prevCwd      string
+	cwdConn, prevConn int
 }
 
 func (st *shellStart) setMark(k *tmuxMark) {
@@ -113,37 +123,55 @@ func tmuxStartCmd(info session.TmuxInfo, err error, mark *tmuxMark, host string,
 func (a *App) shellStartCmd(c *conn) func(context.Context, *ssh.Client) string {
 	st := c.start
 	return func(ctx context.Context, client *ssh.Client) string {
+		connects := c.s.Status().Connects
 		st.mu.Lock()
 		once, mark, host := st.once, st.mark, st.host
 		st.once = ""
+		if once != "" {
+			st.ran = true
+		}
+		back, ran, dir := st.backDir(connects), st.ran, st.dir
 		st.mu.Unlock()
 		if once != "" {
 			return once
 		}
-		if mark == nil && host == "" {
-			return ""
+		cmd := ""
+		if mark != nil || host != "" {
+			cmd = a.tmuxStart(ctx, c, client, mark, host)
 		}
-		ctx, cancel := context.WithTimeout(ctx, tmuxTimeout)
-		info, err := session.TmuxList(ctx, client, "")
-		cancel()
-		cmd, keep, note := tmuxStartCmd(info, err, mark, host, time.Now())
-		st.mu.Lock()
-		if st.mark == mark {
-			st.mark = keep
-		}
-		st.mu.Unlock()
-		if note != tmuxNoteNone {
-			name := ""
-			if mark != nil {
-				name = mark.name
-				if name == "" {
-					name = mark.id
-				}
-			}
-			a.post(func() { a.tmuxStartNote(c, note, name, err) })
+		if returnDirWanted(a.returnDirOn.Load(), connects, back, cmd, ran) {
+			cmd = returnDirOn(ctx, client, back, dir)
 		}
 		return cmd
 	}
+}
+
+// tmuxStart is the tmux command c's starting shell is given on client:
+// an attach to the session mark the terminal was in, else to the host's
+// (created when there is none), "" for none. It says what it could not
+// do.
+func (a *App) tmuxStart(ctx context.Context, c *conn, client *ssh.Client, mark *tmuxMark, host string) string {
+	st := c.start
+	ctx, cancel := context.WithTimeout(ctx, tmuxTimeout)
+	info, err := session.TmuxList(ctx, client, "")
+	cancel()
+	cmd, keep, note := tmuxStartCmd(info, err, mark, host, time.Now())
+	st.mu.Lock()
+	if st.mark == mark {
+		st.mark = keep
+	}
+	st.mu.Unlock()
+	if note != tmuxNoteNone {
+		name := ""
+		if mark != nil {
+			name = mark.name
+			if name == "" {
+				name = mark.id
+			}
+		}
+		a.post(func() { a.tmuxStartNote(c, note, name, err) })
+	}
+	return cmd
 }
 
 // tmuxStartNote says what a start of c's shell could not do: that its

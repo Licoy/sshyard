@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -130,4 +132,69 @@ func (p *Pool) Shared(key string) int {
 		return sh.refs
 	}
 	return 0
+}
+
+// DefaultProbeTimeout is how long Probe waits for a connection to show
+// it is alive.
+const DefaultProbeTimeout = 6 * time.Second
+
+// Probe checks every connection the pool holds, all at once, after the
+// network changed under them: one whose server neither answers a
+// keepalive nor sends anything else (data, a window adjustment) within
+// timeout is lost on the old path, and is reported Broken, so that the
+// sessions on it reconnect at once (or, with Options.AutoReconnect off,
+// show it disconnected) instead of waiting for TCP to give up. Healthy
+// connections, even ones busy with a transfer, are left alone. It
+// returns how many were lost.
+func (p *Pool) Probe(timeout time.Duration) int {
+	if timeout <= 0 {
+		timeout = DefaultProbeTimeout
+	}
+	p.mu.Lock()
+	var clients []*ssh.Client
+	for _, sh := range p.conns {
+		select {
+		case <-sh.ready:
+		default:
+			continue // still dialing: it is on the new path
+		}
+		if sh.client != nil && !sh.broken && sh.refs > 0 {
+			clients = append(clients, sh.client)
+		}
+	}
+	p.mu.Unlock()
+	var wg sync.WaitGroup
+	var lost atomic.Int32
+	for _, c := range clients {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if !alive(c, timeout) {
+				lost.Add(1)
+				p.Broken(c)
+			}
+		}()
+	}
+	wg.Wait()
+	return int(lost.Load())
+}
+
+// alive reports whether client's server answers a keepalive, or sends
+// anything at all, within timeout. A keepalive may wait behind what is
+// being sent on a slow link, while the server's replies keep coming.
+func alive(client *ssh.Client, timeout time.Duration) bool {
+	start := time.Now()
+	reply := make(chan error, 1)
+	go func() {
+		_, _, err := client.SendRequest("keepalive@openssh.com", true, nil)
+		reply <- err
+	}()
+	t := time.NewTimer(timeout)
+	defer t.Stop()
+	select {
+	case err := <-reply:
+		return err == nil
+	case <-t.C:
+		return heardSince(client, start)
+	}
 }
