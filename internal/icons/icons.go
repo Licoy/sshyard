@@ -86,6 +86,8 @@ var (
 	Password     = load("lock-password-line")
 	Generate     = load("magic-line")
 	OpenFile     = load("folder-open-line")
+	Completion   = load("magic-line")
+	PathList     = load("folder-open-line")
 	Paste        = load("clipboard-line")
 	InstallKey   = load("shield-check-line")
 	Proxy        = load("global-line")

@@ -185,6 +185,7 @@ type conn struct {
 	// tmuxUp when, and tmuxAt when the tmux session the terminal is in
 	// was last read (tmuxReading while it is); see watchTmux
 	start       *shellStart
+	container   bool // a container's shell, whose files are not the host's: none listed
 	tmuxConn    int
 	tmuxUp      time.Time
 	tmuxAt      time.Time
@@ -345,7 +346,9 @@ type App struct {
 	docker      *dockerState
 	tmux        *tmuxState
 	hist        *historyState
-	selected    string // host chosen in the sidebar
+	sug         *suggestState // what the terminals complete from
+	listAsk     int           // the pane whose path list its shortcut asked for, 0 none
+	selected    string        // host chosen in the sidebar
 	search      string
 	searchFocus bool // the search, its field or button, takes the focus next frame
 	searchOpen  bool // the search shows its field across the toolbar
@@ -419,6 +422,7 @@ type App struct {
 	filesEdgeChoice          int // where a files pane opens, by index
 	toolPanesChoice          int // how the rail opens its tools, by index
 	rightClickChoice         int // what a terminal's right click does, by index
+	completionChoice         int // how a terminal completes, by index
 	chromeMat, contentMat    int // the materials chosen, by materials' index
 	osc52KiB                 float64
 	clip                     clipGate

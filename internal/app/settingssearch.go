@@ -89,6 +89,8 @@ var settingEntries = []settingEntry{
 	{prefTerminal, locales.Messages.HighlightFullScreen, locales.Messages.HighlightFullScreenNote},
 	{prefTerminal, locales.Messages.HighlightPresets, nil},
 	{prefTerminal, locales.Messages.HighlightRules, nil},
+	{prefTerminal, locales.Messages.CompletionSection, nil},
+	{prefTerminal, locales.Messages.TerminalCompletion, locales.Messages.TerminalCompletionNote},
 	{prefTerminal, locales.Messages.LocalTerminal, nil},
 	{prefTerminal, locales.Messages.OpenLocalOnStart, locales.Messages.OpenLocalOnStartNote},
 	{prefTerminal, locales.Messages.DefaultShell, locales.Messages.DefaultShellNote},

@@ -337,3 +337,47 @@ func (s *Snapshot) CursorSteps(row, col int) (steps int, ok bool) {
 	}
 	return steps, true
 }
+
+// CursorText is the text of the line the cursor is on, lines that wrapped
+// counting as one, as a shell's line editor shows what is typed there:
+// before is the text up to the cursor, after the text from its cell on,
+// without the blanks that end the line. Blank cells read as spaces, a
+// wide character's two cells as the character. ok is false without the
+// cursor on the screen.
+func (s *Snapshot) CursorText() (before, after string, ok bool) {
+	cy := s.CursorY
+	if s.Cols <= 0 || cy < 0 || cy >= len(s.Lines) {
+		return "", "", false
+	}
+	top, bottom := cy, cy
+	for top > 0 && s.Lines[top-1].Wrapped {
+		top--
+	}
+	for bottom < len(s.Lines)-1 && s.Lines[bottom].Wrapped {
+		bottom++
+	}
+	cur := (cy-top)*s.Cols + max(0, min(s.CursorX, s.Cols-1))
+	var b, a strings.Builder
+	for row := top; row <= bottom; row++ {
+		l := s.Lines[row]
+		for x := 0; x < s.Cols && x < len(l.Cells); x++ {
+			c := l.Cells[x]
+			if c.Width == 0 || l.widePad && x == s.Cols-1 {
+				continue
+			}
+			w := &a
+			if (row-top)*s.Cols+x < cur {
+				w = &b
+			}
+			if c.Rune == 0 {
+				w.WriteByte(' ')
+				continue
+			}
+			w.WriteRune(c.Rune)
+			if c.Comb != 0 {
+				w.WriteString(c.Comb.String())
+			}
+		}
+	}
+	return b.String(), strings.TrimRight(a.String(), " "), true
+}

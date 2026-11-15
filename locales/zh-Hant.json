@@ -2069,5 +2069,15 @@
   "termXferDropBody": "SSHYard 會在提示字元處輸入接收指令，然後傳送它們。",
   "termXferDropDirs": "資料夾只能用 trz（trzsz）傳送。",
   "termXferDropRz": "用 rz 傳送",
-  "termXferDropTrz": "用 trz 傳送"
+  "termXferDropTrz": "用 trz 傳送",
+  "completionSection": "補全",
+  "terminalCompletion": "命令補全",
+  "terminalCompletionNote": "在游標後以淡色顯示先前執行過的命令的其餘部分，按 → 或 End 輸入。路徑可透過快速鍵或在輸入時列出資料夾中的項目。",
+  "completionOff": "關閉",
+  "completionInline": "建議",
+  "completionAuto": "建議與路徑",
+  "completePath": "補全路徑",
+  "completionList": "路徑補全",
+  "completionNoMatches": "沒有相符的項目",
+  "completionNoFolder": "無法在此讀取此資料夾"
 }

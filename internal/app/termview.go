@@ -94,6 +94,9 @@ type termView struct {
 	// each line's number and the time output reached it
 	// (settings.TerminalLineNumbers, TerminalTimestamps).
 	lineNumbers, timestamps bool
+	// suggest completes the command typed at the shell's prompt
+	// (settings.TerminalCompletion).
+	suggest termSuggest
 
 	// font
 	fontSize            float32
@@ -674,6 +677,8 @@ func (v *termView) paint(p *ui.Painter, r ui.Rect, pal *theme.Terminal, focused 
 		}
 	}
 
+	v.paintGhost(p, snap, ox, oy, pal, focused)
+
 	// cursor
 	if v.showCursor(p, focused) {
 		cx := ox + float32(min(snap.CursorX, snap.Cols-1))*cw
@@ -933,6 +938,7 @@ func clipboardHasImage(cb clipboard) bool {
 
 // pasteNow sends text as pasted, without holding it.
 func (v *termView) pasteNow(text string) {
+	v.suggest.pasted(v.target.Terminal(), text)
 	v.send(pasteBytes(text, v.target.Terminal().Modes()))
 	v.fan(func(m vt.Modes) []byte { return pasteBytes(text, m) })
 }
@@ -1001,7 +1007,11 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 				return true
 			}
 		}
+		if v.suggestKey(ev.Key, mods) {
+			return true
+		}
 		if b, ok := EncodeKey(ev.Key, mods, t.Modes()); ok {
+			v.suggest.sent(t, b)
 			v.send(b)
 			key := ev.Key
 			v.fan(func(m vt.Modes) []byte {
@@ -1028,6 +1038,7 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 			return true
 		}
 		b := []byte(strings.ReplaceAll(ev.Text, "\n", "\r"))
+		v.suggest.sent(t, b)
 		v.send(b)
 		v.fan(func(vt.Modes) []byte { return b })
 		return true

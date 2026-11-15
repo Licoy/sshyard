@@ -329,10 +329,12 @@ func (t *Terminal) oscDone() {
 	case "7":
 		if h, d := cwdURL(rest); d != "" {
 			t.cwd, t.cwdHost = d, h
+			t.cwdReports++
 		}
 	case "1337":
 		if d, ok := strings.CutPrefix(rest, "CurrentDir="); ok && strings.HasPrefix(d, "/") {
 			t.cwd, t.cwdHost = d, t.remoteHost
+			t.cwdReports++
 		} else if h, ok := strings.CutPrefix(rest, "RemoteHost="); ok {
 			// user@host: the host CurrentDir reports are on.
 			if i := strings.LastIndexByte(h, '@'); i >= 0 {

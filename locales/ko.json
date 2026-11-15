@@ -2792,5 +2792,15 @@
   "termXferDropBody": "SSHYard가 프롬프트에 받는 명령을 입력한 다음 보냅니다.",
   "termXferDropDirs": "폴더는 trz(trzsz)로만 보낼 수 있습니다.",
   "termXferDropRz": "rz로 보내기",
-  "termXferDropTrz": "trz로 보내기"
+  "termXferDropTrz": "trz로 보내기",
+  "completionSection": "자동 완성",
+  "terminalCompletion": "명령 자동 완성",
+  "terminalCompletionNote": "이전에 실행한 명령의 나머지를 커서 뒤에 흐리게 표시하며, → 또는 End로 입력합니다. 경로는 단축키로 또는 입력하는 동안 폴더의 항목을 나열합니다.",
+  "completionOff": "끄기",
+  "completionInline": "제안",
+  "completionAuto": "제안 및 경로",
+  "completePath": "경로 완성",
+  "completionList": "경로 완성 목록",
+  "completionNoMatches": "일치하는 항목 없음",
+  "completionNoFolder": "여기서 이 폴더를 읽을 수 없음"
 }

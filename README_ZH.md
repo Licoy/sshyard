@@ -40,6 +40,7 @@ SSHYard 是一款原生桌面 SSH / SFTP 客户端，支持 macOS、Windows 和 
   - 真彩色、宽字符、输入法，以及 tmux、vim、htop 鼠标操作
   - 十套内置配色方案并可导入 `.itermcolors`，支持关键字高亮、行号与时间戳，可调光标、行高和字宽
   - 多种输出编码，可按主机设置；⌘ / Ctrl + 点击打开终端中的网址
+  - 输入时根据主机的 Shell 历史提示命令，按 → 或 End 采纳，并可列出文件夹中的文件来补全路径
   - 除 SSH 外还支持 Telnet、串口和本地终端（Windows 可选 PowerShell、CMD、Git Bash 与 WSL）
   - 同一主机的多个面板共享连接，断线自动重连
 

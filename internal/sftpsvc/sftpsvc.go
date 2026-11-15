@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/sftp"
@@ -133,6 +134,60 @@ func (c *Client) ListContext(ctx context.Context, dir string) ([]Entry, error) {
 		return nil, ctx.Err()
 	}
 	return es, err
+}
+
+// peekLinks is how many links a Peek follows at most, peekWorkers how
+// many at once.
+const (
+	peekLinks   = 512
+	peekWorkers = 16
+)
+
+// Peek lists a remote directory as List does, directories first, but
+// only reads it: what an unfinished save left there stays, and of a
+// folder with many links the first peekLinks are followed, the others
+// listed as files. Closing the Client ends a Peek stalled on a silent
+// server.
+func (c *Client) Peek(ctx context.Context, dir string) ([]Entry, error) {
+	fis, err := c.readDir(ctx, dir)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Entry, 0, len(fis))
+	var links []int
+	for _, fi := range fis {
+		if n := fi.Name(); n == "" || n == "." || n == ".." || strings.ContainsAny(n, "/\x00") {
+			continue
+		}
+		if fi.Mode()&fs.ModeSymlink != 0 && len(links) < peekLinks {
+			links = append(links, len(out))
+		}
+		out = append(out, entry(fi))
+	}
+	var wg sync.WaitGroup
+	next := make(chan int)
+	for range min(peekWorkers, len(links)) {
+		wg.Go(func() {
+			for i := range next {
+				if t, err := c.c.Stat(path.Join(dir, out[i].Name)); err == nil {
+					out[i].IsDir = t.IsDir()
+				}
+			}
+		})
+	}
+	for _, i := range links {
+		if ctx.Err() != nil {
+			break
+		}
+		next <- i
+	}
+	close(next)
+	wg.Wait()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	sortEntries(out)
+	return out, nil
 }
 
 // ListUnfinished lists a remote directory, directories first, and the

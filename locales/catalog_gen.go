@@ -19014,3 +19014,103 @@ func TermXferDropTrz() string { return In(i18n.Locale()).TermXferDropTrz() }
 func (msgs Messages) TermXferDropTrz() string {
 	return Catalog.Format(msgs.locale, "termXferDropTrz", nil)
 }
+
+// CompletionSection says "Completion"
+// in the language the app shows.
+func CompletionSection() string { return In(i18n.Locale()).CompletionSection() }
+
+// CompletionSection says "Completion"
+// in the language of msgs.
+func (msgs Messages) CompletionSection() string {
+	return Catalog.Format(msgs.locale, "completionSection", nil)
+}
+
+// TerminalCompletion says "Command completion"
+// in the language the app shows.
+func TerminalCompletion() string { return In(i18n.Locale()).TerminalCompletion() }
+
+// TerminalCompletion says "Command completion"
+// in the language of msgs.
+func (msgs Messages) TerminalCompletion() string {
+	return Catalog.Format(msgs.locale, "terminalCompletion", nil)
+}
+
+// TerminalCompletionNote says "Shows the rest of a command run before, dimmed after the cursor; → or End types it. Paths list the folder's entries…"
+// in the language the app shows.
+func TerminalCompletionNote() string { return In(i18n.Locale()).TerminalCompletionNote() }
+
+// TerminalCompletionNote says "Shows the rest of a command run before, dimmed after the cursor; → or End types it. Paths list the folder's entries…"
+// in the language of msgs.
+func (msgs Messages) TerminalCompletionNote() string {
+	return Catalog.Format(msgs.locale, "terminalCompletionNote", nil)
+}
+
+// CompletionOff says "Off"
+// in the language the app shows.
+func CompletionOff() string { return In(i18n.Locale()).CompletionOff() }
+
+// CompletionOff says "Off"
+// in the language of msgs.
+func (msgs Messages) CompletionOff() string {
+	return Catalog.Format(msgs.locale, "completionOff", nil)
+}
+
+// CompletionInline says "Suggestions"
+// in the language the app shows.
+func CompletionInline() string { return In(i18n.Locale()).CompletionInline() }
+
+// CompletionInline says "Suggestions"
+// in the language of msgs.
+func (msgs Messages) CompletionInline() string {
+	return Catalog.Format(msgs.locale, "completionInline", nil)
+}
+
+// CompletionAuto says "Suggestions and paths"
+// in the language the app shows.
+func CompletionAuto() string { return In(i18n.Locale()).CompletionAuto() }
+
+// CompletionAuto says "Suggestions and paths"
+// in the language of msgs.
+func (msgs Messages) CompletionAuto() string {
+	return Catalog.Format(msgs.locale, "completionAuto", nil)
+}
+
+// CompletePath says "Complete Path"
+// in the language the app shows.
+func CompletePath() string { return In(i18n.Locale()).CompletePath() }
+
+// CompletePath says "Complete Path"
+// in the language of msgs.
+func (msgs Messages) CompletePath() string {
+	return Catalog.Format(msgs.locale, "completePath", nil)
+}
+
+// CompletionList says "Path completions"
+// in the language the app shows.
+func CompletionList() string { return In(i18n.Locale()).CompletionList() }
+
+// CompletionList says "Path completions"
+// in the language of msgs.
+func (msgs Messages) CompletionList() string {
+	return Catalog.Format(msgs.locale, "completionList", nil)
+}
+
+// CompletionNoMatches says "Nothing here matches"
+// in the language the app shows.
+func CompletionNoMatches() string { return In(i18n.Locale()).CompletionNoMatches() }
+
+// CompletionNoMatches says "Nothing here matches"
+// in the language of msgs.
+func (msgs Messages) CompletionNoMatches() string {
+	return Catalog.Format(msgs.locale, "completionNoMatches", nil)
+}
+
+// CompletionNoFolder says "This folder can't be read here"
+// in the language the app shows.
+func CompletionNoFolder() string { return In(i18n.Locale()).CompletionNoFolder() }
+
+// CompletionNoFolder says "This folder can't be read here"
+// in the language of msgs.
+func (msgs Messages) CompletionNoFolder() string {
+	return Catalog.Format(msgs.locale, "completionNoFolder", nil)
+}

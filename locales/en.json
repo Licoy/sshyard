@@ -2792,5 +2792,15 @@
   "termXferDropBody": "SSHYard types the command that receives them at the prompt, then sends them.",
   "termXferDropDirs": "Folders go with trz only (trzsz).",
   "termXferDropRz": "Send with rz",
-  "termXferDropTrz": "Send with trz"
+  "termXferDropTrz": "Send with trz",
+  "completionSection": "Completion",
+  "terminalCompletion": "Command completion",
+  "terminalCompletionNote": "Shows the rest of a command run before, dimmed after the cursor; → or End types it. Paths list the folder's entries on the shortcut, or as you type them.",
+  "completionOff": "Off",
+  "completionInline": "Suggestions",
+  "completionAuto": "Suggestions and paths",
+  "completePath": "Complete Path",
+  "completionList": "Path completions",
+  "completionNoMatches": "Nothing here matches",
+  "completionNoFolder": "This folder can't be read here"
 }

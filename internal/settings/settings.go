@@ -86,6 +86,13 @@ type Settings struct {
 	// both off by default.
 	TerminalLineNumbers bool `json:"terminalLineNumbers,omitempty"`
 	TerminalTimestamps  bool `json:"terminalTimestamps,omitempty"`
+	// TerminalCompletion is what a terminal offers while a command is
+	// typed at a shell's prompt: CompletionOff, CompletionInline (the
+	// default), the rest of a command run before shown after the
+	// cursor, or CompletionAuto, which also lists the folder of a path
+	// being typed by itself. The list opens on its shortcut too, unless
+	// off.
+	TerminalCompletion string `json:"terminalCompletion,omitempty"`
 	// TerminalFont is the terminal's font family, "" for the system's
 	// monospaced font.
 	TerminalFont string `json:"terminalFont,omitempty"`
@@ -689,6 +696,14 @@ const (
 	MinCharWidth, MaxCharWidth   = 80, 150
 )
 
+// What a terminal offers while a command is typed
+// (TerminalCompletion).
+const (
+	CompletionOff    = "off"
+	CompletionInline = "inline"
+	CompletionAuto   = "auto"
+)
+
 // Terminal cursor shapes.
 const (
 	CursorBlock     = "block"
@@ -698,7 +713,7 @@ const (
 
 // Default returns the defaults.
 func Default() Settings {
-	return Settings{Background: DefaultBackground(), Theme: theme.Auto, CloseBehavior: CloseToTray, TrayIcon: TrayIconColor, TrayClick: TrayClickPanel, TrayMaterial: MaterialTranslucent, TrayHeight: DefaultTrayHeight, CheckUpdates: true, UpdateIntervalHours: 1, TerminalFontSize: 13, TerminalLineHeight: 100, TerminalCharWidth: 100, TerminalCursorStyle: CursorBlock, TerminalCursorBlink: true, KeepAliveSeconds: 30, AutoReconnect: true, SidebarWidth: 240, ChromeMaterial: MaterialTranslucent, ContentMaterial: MaterialOpaque, MonospacedOnly: true, TransferConcurrency: 3, OpenConfirmMB: 10, FilesSplit: 50, FilesEdge: FilesRight, TerminalRightClick: RightClickMenu, EditorTreeWidth: 240, TerminalTransfers: true, OSC52Write: OSC52Ask, OSC52MaxBytes: OSC52MaxDefault, OSC52Notify: true, MetricsEnabled: true, MetricsInterval: 2,
+	return Settings{Background: DefaultBackground(), Theme: theme.Auto, CloseBehavior: CloseToTray, TrayIcon: TrayIconColor, TrayClick: TrayClickPanel, TrayMaterial: MaterialTranslucent, TrayHeight: DefaultTrayHeight, CheckUpdates: true, UpdateIntervalHours: 1, TerminalFontSize: 13, TerminalLineHeight: 100, TerminalCharWidth: 100, TerminalCursorStyle: CursorBlock, TerminalCursorBlink: true, TerminalCompletion: CompletionInline, KeepAliveSeconds: 30, AutoReconnect: true, SidebarWidth: 240, ChromeMaterial: MaterialTranslucent, ContentMaterial: MaterialOpaque, MonospacedOnly: true, TransferConcurrency: 3, OpenConfirmMB: 10, FilesSplit: 50, FilesEdge: FilesRight, TerminalRightClick: RightClickMenu, EditorTreeWidth: 240, TerminalTransfers: true, OSC52Write: OSC52Ask, OSC52MaxBytes: OSC52MaxDefault, OSC52Notify: true, MetricsEnabled: true, MetricsInterval: 2,
 		AIDefaultAgent: "builtin", AIDefaultMode: "ask", AIReviewStrictness: AIReviewStandard, AIContextLines: 200, AIAuditRetentionDays: 90, AIRequestTimeout: DefaultAIRequestTimeout, AIRedact: true, MCPPort: MCPPortDefault, LocalKeys: true, Highlight: Highlight{On: true}, RenewalNotify: true}
 }
 
@@ -755,6 +770,11 @@ func (s *Settings) Normalize() {
 	case CursorBlock, CursorBar, CursorUnderline:
 	default:
 		s.TerminalCursorStyle = d.TerminalCursorStyle
+	}
+	switch s.TerminalCompletion {
+	case CompletionOff, CompletionInline, CompletionAuto:
+	default:
+		s.TerminalCompletion = d.TerminalCompletion
 	}
 	if s.TerminalFontSize < MinFontSize || s.TerminalFontSize > MaxFontSize {
 		s.TerminalFontSize = d.TerminalFontSize

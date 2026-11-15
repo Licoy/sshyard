@@ -537,6 +537,17 @@ func (a *App) prefTerminal(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 		a.termFontPreview(c, tok)
 	})
 	a.highlightSection(c, m, tok, s, changed)
+	a.settingsSection(c, tok, icons.Completion, m.CompletionSection(), func(g *settingsGroup) {
+		g.row(m.TerminalCompletion(), m.TerminalCompletionNote(), func() {
+			codes := []string{settings.CompletionOff, settings.CompletionInline, settings.CompletionAuto}
+			a.completionChoice = max(slices.Index(codes, s.TerminalCompletion), 0)
+			if formSegmented(c.Key("completion"), &a.completionChoice, false, m.CompletionOff(), m.CompletionInline(), m.CompletionAuto()).Label(m.TerminalCompletion()).Changed() {
+				if a.completionChoice >= 0 && a.completionChoice < len(codes) {
+					s.TerminalCompletion, *changed = codes[a.completionChoice], true
+				}
+			}
+		})
+	})
 	a.settingsSection(c, tok, icons.LocalShell, m.LocalTerminal(), func(g *settingsGroup) {
 		g.row(m.OpenLocalOnStart(), m.OpenLocalOnStartNote(), func() {
 			on := s.OpenLocalOnStart
