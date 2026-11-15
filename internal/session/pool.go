@@ -183,7 +183,7 @@ func (p *Pool) Probe(timeout time.Duration) int {
 // anything at all, within timeout. A keepalive may wait behind what is
 // being sent on a slow link, while the server's replies keep coming.
 func alive(client *ssh.Client, timeout time.Duration) bool {
-	start := time.Now()
+	before := heardCount(client)
 	reply := make(chan error, 1)
 	go func() {
 		_, _, err := client.SendRequest("keepalive@openssh.com", true, nil)
@@ -195,6 +195,6 @@ func alive(client *ssh.Client, timeout time.Duration) bool {
 	case err := <-reply:
 		return err == nil
 	case <-t.C:
-		return heardSince(client, start)
+		return heardCount(client) > before
 	}
 }

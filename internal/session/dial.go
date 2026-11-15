@@ -381,20 +381,21 @@ func keysRefused(err error) bool {
 	return strings.Contains(s, "unable to authenticate") || strings.Contains(s, "Too many authentication failures")
 }
 
-// heardConn notes whether the server has sent anything, and when it
-// last did.
+// heardConn notes whether the server has sent anything, and how many
+// times it has.
 type heardConn struct {
 	net.Conn
 	heard atomic.Bool
-	// at is when something last came, in Unix nanoseconds.
-	at atomic.Int64
+	// reads counts the reads that brought something: a count, not a
+	// time, as a clock's tick may hold a read before and one after.
+	reads atomic.Uint64
 }
 
 func (c *heardConn) Read(p []byte) (int, error) {
 	n, err := c.Conn.Read(p)
 	if n > 0 {
 		c.heard.Store(true)
-		c.at.Store(time.Now().UnixNano())
+		c.reads.Add(1)
 	}
 	return n, err
 }
@@ -403,11 +404,13 @@ func (c *heardConn) Read(p []byte) (int, error) {
 // are open, by client.
 var heardBy sync.Map // *ssh.Client → *heardConn
 
-// heardSince reports whether the server of client sent anything at or
-// after t: data, a window adjustment, any reply.
-func heardSince(client *ssh.Client, t time.Time) bool {
-	v, ok := heardBy.Load(client)
-	return ok && v.(*heardConn).at.Load() >= t.UnixNano()
+// heardCount is how many times the server of client has sent something
+// so far (data, a window adjustment, any reply), 0 when unknown.
+func heardCount(client *ssh.Client) uint64 {
+	if v, ok := heardBy.Load(client); ok {
+		return v.(*heardConn).reads.Load()
+	}
+	return 0
 }
 
 func isHostKeyErr(err error) bool {
