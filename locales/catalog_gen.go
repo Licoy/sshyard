@@ -16365,6 +16365,36 @@ func (msgs Messages) ToolPanesTabs() string {
 	return Catalog.Format(msgs.locale, "toolPanesTabs", nil)
 }
 
+// RailSection says "Right Rail Items"
+// in the language the app shows.
+func RailSection() string { return In(i18n.Locale()).RailSection() }
+
+// RailSection says "Right Rail Items"
+// in the language of msgs.
+func (msgs Messages) RailSection() string {
+	return Catalog.Format(msgs.locale, "railSection", nil)
+}
+
+// RailHide says "Hide from Rail"
+// in the language the app shows.
+func RailHide() string { return In(i18n.Locale()).RailHide() }
+
+// RailHide says "Hide from Rail"
+// in the language of msgs.
+func (msgs Messages) RailHide() string {
+	return Catalog.Format(msgs.locale, "railHide", nil)
+}
+
+// RailCustomize says "Customize Rail…"
+// in the language the app shows.
+func RailCustomize() string { return In(i18n.Locale()).RailCustomize() }
+
+// RailCustomize says "Customize Rail…"
+// in the language of msgs.
+func (msgs Messages) RailCustomize() string {
+	return Catalog.Format(msgs.locale, "railCustomize", nil)
+}
+
 // FilesEdge says "Open files from a terminal"
 // in the language the app shows.
 func FilesEdge() string { return In(i18n.Locale()).FilesEdge() }

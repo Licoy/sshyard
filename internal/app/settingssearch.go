@@ -52,6 +52,7 @@ var settingEntries = []settingEntry{
 	{prefGeneral, locales.Messages.RememberLayout, locales.Messages.RememberLayoutNote},
 	{prefGeneral, locales.Messages.ToolPanes, locales.Messages.ToolPanesNote},
 	{prefGeneral, locales.Messages.RenewalNotify, locales.Messages.RenewalNotifyNote},
+	{prefGeneral, locales.Messages.RailSection, nil},
 	{prefGeneral, locales.Messages.WindowTraySection, nil},
 	{prefGeneral, locales.Messages.CloseBehavior, locales.Messages.CloseBehaviorNote},
 	{prefGeneral, locales.Messages.TrayIconStyle, locales.Messages.TrayIconStyleNote},
@@ -168,10 +169,14 @@ var settingEntries = []settingEntry{
 }
 
 // settingsIndex is everything the search finds on the pages: the
-// settings above, with the highlighting presets, the sources to migrate
-// from and the actions with a shortcut, as their pages list them.
+// settings above, with the rail's items, the highlighting presets, the
+// sources to migrate from and the actions with a shortcut, as their pages
+// list them.
 func settingsIndex() []settingEntry {
 	out := slices.Clone(settingEntries)
+	for _, it := range railItems {
+		out = append(out, settingEntry{prefGeneral, it.name, nil})
+	}
 	for _, p := range highlight.Presets {
 		id := p.ID
 		out = append(out, settingEntry{prefTerminal, func(m locales.Messages) string { return presetName(m, id) }, nil})

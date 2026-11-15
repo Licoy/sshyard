@@ -378,6 +378,7 @@ func (a *App) prefGeneral(c *ui.Context, m locales.Messages, tok theme.Tokens, s
 			}
 		})
 	})
+	a.railSection(c, m, tok, s, changed)
 	a.settingsSection(c, tok, icons.AppWindow, m.WindowTraySection(), func(g *settingsGroup) {
 		g.row(m.CloseBehavior(), m.CloseBehaviorNote(), func() {
 			cur := m.CloseToTray()
@@ -408,6 +409,23 @@ func (a *App) prefGeneral(c *ui.Context, m locales.Messages, tok theme.Tokens, s
 		a.trayPreferences(c, m, g, s, changed)
 	})
 	a.updatesSection(c, m, tok, s, changed)
+}
+
+// railSection chooses the items the right rail shows, in its order, each
+// with its icon. Hiding one keeps its pane open and its other ways in.
+func (a *App) railSection(c *ui.Context, m locales.Messages, tok theme.Tokens, s *settings.Settings, changed *bool) {
+	a.settingsSection(c, tok, icons.Rail, m.RailSection(), func(g *settingsGroup) {
+		for _, it := range railItems {
+			name := it.name(m)
+			g.row(name, "", func() {
+				on := s.RailShown(it.id)
+				if formSwitch(c.Key("railshow:"+it.id), &on).Label(name).Changed() {
+					s.SetRailShown(it.id, on)
+					*changed = true
+				}
+			}, func() { glyph(c, it.icon, tok.TextMuted, 20) })
+		}
+	})
 }
 
 func (a *App) prefAppearance(c *ui.Context, m locales.Messages, tok theme.Tokens, s *settings.Settings, changed *bool) {
