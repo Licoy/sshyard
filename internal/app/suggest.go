@@ -187,7 +187,6 @@ func (a *App) suggestFrame(c *ui.Context, cn *conn, focused bool, tb ui.Rect, m 
 		st.used++
 		h.used = st.used
 	}
-	a.readSuggestHistory(cn, c.Now())
 	s.src = connSuggest{a: a, cn: cn}
 	s.lists, s.gen = a.canListPaths(cn), st.gen
 	t := cn.s.Term
@@ -216,6 +215,8 @@ func (a *App) readSuggestHistory(cn *conn, now time.Time) {
 		if sh = a.shell(cn.host.ID); strings.HasPrefix(sh.ID, "wsl:") {
 			return
 		}
+	} else if cn.s == nil {
+		return
 	} else if client = cn.s.Client(); client == nil {
 		return
 	}
@@ -249,8 +250,13 @@ type connSuggest struct {
 
 // suggest takes the commands of cn's host first, its lines run before
 // its history files', then those of the other hosts, the last completed
-// on first.
+// on first. The history files are read once something is typed, so a
+// terminal no one types in never runs a command for them.
 func (s connSuggest) suggest(input string) string {
+	if strings.TrimSpace(input) == "" {
+		return ""
+	}
+	s.a.readSuggestHistory(s.cn, time.Now())
 	st := s.a.suggests()
 	own := st.host(s.cn.host.ID)
 	others := make([]*suggestHost, 0, len(st.hosts))
