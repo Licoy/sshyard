@@ -157,7 +157,7 @@ func (a *App) editorFor(from *conn, remote bool, dir string) (*conn, error) {
 		cn.fs.remote.dir = dir
 	} else {
 		a.nextConn++
-		cn = &conn{id: a.nextConn, kind: layout.Editor, host: a.localHost(localID), fs: newFilesState(a.invalidate)}
+		cn = &conn{id: a.nextConn, kind: layout.Editor, host: a.localHost(localID), fs: a.newFiles()}
 		a.conns[cn.id] = cn
 	}
 	cn.ed = &edWin{local: !remote, at: -1, treeW: a.settings.EditorTreeWidth}

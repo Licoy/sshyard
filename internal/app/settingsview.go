@@ -587,6 +587,12 @@ func (a *App) prefTerminal(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 				*changed = true
 			}
 		})
+		g.row(m.ReturnToFolder(), m.ReturnToFolderNote(), func() {
+			on := s.ReturnToFolder
+			if formSwitch(c.Key("returndir"), &on).Label(m.ReturnToFolder()).Changed() {
+				s.ReturnToFolder, *changed = on, true
+			}
+		})
 		g.row(m.TermType(), m.TermTypeNote(), func() {
 			a.termTypeRow(c, m, tok, s, changed)
 		})
@@ -683,6 +689,12 @@ func (a *App) prefFiles(c *ui.Context, m locales.Messages, tok theme.Tokens, s *
 			if ui.NumberInput(c.Key("conc"), &a.concChoice, 1, 10, 1).Changed() {
 				s.TransferConcurrency = int(a.concChoice)
 				*changed = true
+			}
+		})
+		g.row(m.KeepAwake(), m.KeepAwakeNote(), func() {
+			on := s.KeepAwake
+			if formSwitch(c.Key("keepawake"), &on).Label(m.KeepAwake()).Changed() {
+				s.KeepAwake, *changed = on, true
 			}
 		})
 		g.row(m.OpenConfirmMB(), m.OpenConfirmHint(), func() {

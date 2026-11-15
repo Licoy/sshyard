@@ -10,9 +10,11 @@ import (
 	"time"
 
 	"github.com/Licoy/sshyard/internal/app"
+	"github.com/Licoy/sshyard/internal/awake"
 	"github.com/Licoy/sshyard/internal/gtkfix"
 	"github.com/Licoy/sshyard/internal/keychain"
 	"github.com/Licoy/sshyard/internal/macfix"
+	"github.com/Licoy/sshyard/internal/netwatch"
 	"github.com/Licoy/sshyard/internal/settings"
 	"github.com/Licoy/sshyard/internal/theme"
 	"github.com/Licoy/sshyard/internal/updater"
@@ -61,8 +63,10 @@ func platform() app.Platform {
 			}
 			return paths[0], nil
 		},
-		OpenWith:   openWith,
-		OpenWindow: openWindow,
+		OpenWith:     openWith,
+		OpenWindow:   openWindow,
+		WatchNetwork: netwatch.Watch,
+		Awake:        awake.System(),
 	}
 }
 

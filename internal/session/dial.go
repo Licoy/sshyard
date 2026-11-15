@@ -14,6 +14,7 @@ import (
 	"net"
 	"slices"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -364,7 +365,13 @@ func dialHop(ctx context.Context, hop Hop, dial func(ctx context.Context, networ
 			cr.OnKey(id)
 		}
 	}
-	return ssh.NewClient(c, chans, reqs), nil
+	client := ssh.NewClient(c, chans, reqs)
+	heardBy.Store(client, heard)
+	go func() {
+		client.Wait()
+		heardBy.Delete(client)
+	}()
+	return client, nil
 }
 
 // keysRefused reports a login the server refused every key of, or hung up
@@ -374,18 +381,33 @@ func keysRefused(err error) bool {
 	return strings.Contains(s, "unable to authenticate") || strings.Contains(s, "Too many authentication failures")
 }
 
-// heardConn notes whether the server has sent anything.
+// heardConn notes whether the server has sent anything, and when it
+// last did.
 type heardConn struct {
 	net.Conn
 	heard atomic.Bool
+	// at is when something last came, in Unix nanoseconds.
+	at atomic.Int64
 }
 
 func (c *heardConn) Read(p []byte) (int, error) {
 	n, err := c.Conn.Read(p)
 	if n > 0 {
 		c.heard.Store(true)
+		c.at.Store(time.Now().UnixNano())
 	}
 	return n, err
+}
+
+// heardBy are the connections under the clients Dial made, while they
+// are open, by client.
+var heardBy sync.Map // *ssh.Client → *heardConn
+
+// heardSince reports whether the server of client sent anything at or
+// after t: data, a window adjustment, any reply.
+func heardSince(client *ssh.Client, t time.Time) bool {
+	v, ok := heardBy.Load(client)
+	return ok && v.(*heardConn).at.Load() >= t.UnixNano()
 }
 
 func isHostKeyErr(err error) bool {

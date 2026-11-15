@@ -201,6 +201,16 @@ func (ts *Transfers) List() []Transfer {
 	return out
 }
 
+// Busy reports whether a transfer is under way: running (copying,
+// waiting for the connection or for its retry), or queued to run once a
+// slot is free. Paused, finished, failed and canceled ones wait for the
+// user, not the computer.
+func (ts *Transfers) Busy() bool {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	return slices.ContainsFunc(ts.list, func(t *Transfer) bool { return t.State == Running || t.State == Queued })
+}
+
 // Add queues copying src to dst (full paths: local to remote for an
 // Upload, remote to local for a Download). name is what the list shows.
 func (ts *Transfers) Add(dir Direction, src, dst, name string) int {

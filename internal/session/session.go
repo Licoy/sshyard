@@ -602,16 +602,20 @@ func (s *Session) enterShell(ctx context.Context, client *ssh.Client, shell *ssh
 // Its leading space keeps it out of the history of shells that ignore
 // such lines.
 func cdLine(dir string) string {
-	quote := func(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
-	arg := quote(dir)
+	arg := ShellQuote(dir)
 	switch {
 	case dir == "~":
 		arg = "~"
 	case strings.HasPrefix(dir, "~/"):
-		arg = "~/" + quote(dir[2:])
+		arg = "~/" + ShellQuote(dir[2:])
 	}
 	return " cd " + arg + "\r"
 }
+
+// ShellQuote is s as one word for a POSIX shell: single-quoted, each
+// single quote in it closed, escaped and opened again. fish reads it the
+// same unless s holds a backslash.
+func ShellQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
 
 // serve waits for the shell to end. It returns nil when the shell exited
 // and the error when the connection was lost.

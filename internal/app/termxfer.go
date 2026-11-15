@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Licoy/sshyard/internal/awake"
 	"github.com/Licoy/sshyard/internal/icons"
 	"github.com/Licoy/sshyard/internal/sftpsvc"
 	"github.com/Licoy/sshyard/internal/theme"
@@ -74,6 +75,8 @@ type xferPane struct {
 	dropped      []string
 	droppedProto string
 	droppedUntil time.Time
+	// keep keeps the computer awake while a transfer runs; nil does not.
+	keep *awake.Keeper
 }
 
 // begin is a transfer asking; it returns the context it runs in.
@@ -93,6 +96,7 @@ func (x *xferPane) end() {
 	}
 	x.stop, x.run = nil, nil
 	x.mu.Unlock()
+	x.keep.Set(x, false)
 }
 
 // cancel stops the transfer asking or running, if any; it reports
@@ -125,6 +129,7 @@ func (x *xferPane) going(r *xferRun) {
 	x.mu.Lock()
 	x.run = r
 	x.mu.Unlock()
+	x.keep.Set(x, r != nil)
 }
 
 // takeDropped are the files dropped for a transfer over proto, which
@@ -236,7 +241,7 @@ type xferState struct {
 // armTransfers makes c's terminal take the transfers its shell starts,
 // while the setting and its host let it.
 func (a *App) armTransfers(c *conn) {
-	x := &xferPane{seen: map[string]bool{}}
+	x := &xferPane{seen: map[string]bool{}, keep: a.awake}
 	c.xfer = x
 	id, hostID, stream := c.id, c.host.ID, isStream(c.host)
 	c.s.SetTakeover(func(p []byte) (int, func(context.Context, xfer.Conn) []byte) {
