@@ -28,6 +28,8 @@ commit_parsers = [
   { message = "^build", group = "<!-- 06 -->Build" },
   { message = "^ci", group = "<!-- 07 -->CI" },
   { message = "^style", group = "<!-- 08 -->Style" },
+  # merging a branch adds nothing of its own: its commits are listed
+  { message = "^Merge (branch|remote-tracking branch|pull request) ", skip = true },
   # bump.sh's commit: the version itself is the release
   { message = "^chore\\(release\\): bump version", skip = true },
   { message = "^chore", group = "<!-- 09 -->Chores" },
