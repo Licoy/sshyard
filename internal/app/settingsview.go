@@ -378,7 +378,6 @@ func (a *App) prefGeneral(c *ui.Context, m locales.Messages, tok theme.Tokens, s
 			}
 		})
 	})
-	a.railSection(c, m, tok, s, changed)
 	a.settingsSection(c, tok, icons.AppWindow, m.WindowTraySection(), func(g *settingsGroup) {
 		g.row(m.CloseBehavior(), m.CloseBehaviorNote(), func() {
 			cur := m.CloseToTray()
@@ -409,6 +408,7 @@ func (a *App) prefGeneral(c *ui.Context, m locales.Messages, tok theme.Tokens, s
 		a.trayPreferences(c, m, g, s, changed)
 	})
 	a.updatesSection(c, m, tok, s, changed)
+	a.railSection(c, m, tok, s, changed)
 }
 
 // railSection chooses the items the right rail shows, in its order, each
