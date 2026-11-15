@@ -70,7 +70,7 @@ func (a *App) prefAgents(c *ui.Context, m locales.Messages, tok theme.Tokens, s 
 		g.row(m.McpToken(), m.McpTokenNote(), func() {
 			ui.Text(c, "••••••••••••").FontSize(theme.Body).TextColor(tok.TextMuted)
 			if iconButton(c, "mcp:token", icons.Copy, m.McpCopyToken()) {
-				c.WriteClipboard(a.mcp.token)
+				a.copySecret(c, a.mcp.token)
 				c.AddToast(ui.Toast{Title: m.Copied(), Type: "success"})
 			}
 			if (IconButton{Icon: icons.Refresh, Label: m.McpNewToken(), Danger: true}).Clicked(c, "mcp:newtoken") {

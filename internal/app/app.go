@@ -57,6 +57,10 @@ type Platform struct {
 	// SetRememberLayout changes native geometry persistence; errors leave it unchanged.
 	// A successful change returns an undo that restores its exact previous state.
 	SetRememberLayout func(bool) (undo func() error, err error)
+	// CopySecret puts a secret on the clipboard marked as confidential, so
+	// clipboard histories and other devices leave it out; nil copies it as
+	// any text.
+	CopySecret func(text string) error
 	// OpenPath opens a file in its default app; nil can't.
 	OpenPath func(path string) error
 	// Notify shows a system notification, replacing the one of the same
@@ -724,6 +728,14 @@ func (disabledUpdates) SetAutomatic(bool)            {}
 func (disabledUpdates) SetRoute(updater.Route)       {}
 func (disabledUpdates) Available() string            { return "" }
 func (disabledUpdates) OnChange(func()) (off func()) { return func() {} }
+
+// copySecret puts the secret s on the clipboard, marked as confidential
+// where the platform can (Platform.CopySecret), else as any text.
+func (a *App) copySecret(c *ui.Context, s string) {
+	if a.p.CopySecret == nil || a.p.CopySecret(s) != nil {
+		c.WriteClipboard(s)
+	}
+}
 
 func (a *App) syncChoices() {
 	a.lkOn.Store(a.settings.LocalKeys)
