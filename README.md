@@ -39,7 +39,7 @@ SSHYard is a native desktop SSH / SFTP client for macOS, Windows and Linux, brin
   - Tabs, split panes and terminal search, with tabs you can reorder and rename
   - True colour, wide characters, input methods and mouse support for tmux, vim and htop
   - Ten built-in colour schemes plus `.itermcolors` import, keyword highlighting, line numbers and timestamps, and adjustable cursor, line height and character width
-  - Many output encodings, set per host; ⌘ / Ctrl-click to open links in the terminal
+  - Many output encodings, set per host; ⌘ / Ctrl-click to open links in the terminal, ⌥ / Alt-drag for block selection
   - Telnet, serial ports and local terminals besides SSH (PowerShell, CMD, Git Bash and WSL on Windows)
   - Shared connections across panes on the same host, with automatic reconnection
 

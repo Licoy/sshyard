@@ -127,6 +127,7 @@ type termView struct {
 	// altClick is a plain left click with ⌥ (Alt elsewhere) being held:
 	// let go where it was pressed, it moves the shell's cursor there.
 	altClick bool
+	block    blockSel // the selection dragged as a block of cells
 
 	// mouse reports
 	held      bool // a button press was reported, its release not yet
@@ -455,6 +456,9 @@ func (v *termView) selection() (vt.Pos, vt.Pos, bool) {
 // selectedCols is the columns of line the selection takes, from to to
 // inclusive; from > to when it takes none.
 func (v *termView) selectedCols(line int) (from, to int) {
+	if v.block.on {
+		return v.blockCols(line)
+	}
 	a, b, ok := v.selection()
 	if !ok || line < a.Line || line > b.Line {
 		return 1, 0
@@ -474,6 +478,9 @@ func (v *termView) SelectedText() string {
 	a, b, ok := v.selection()
 	if !ok {
 		return ""
+	}
+	if v.block.on {
+		return v.blockText()
 	}
 	return v.target.Terminal().Text(a, b)
 }
@@ -589,7 +596,7 @@ func (v *termView) paint(p *ui.Painter, r ui.Rect, pal *theme.Terminal, focused 
 	for y, line := range snap.Lines {
 		ry := oy + float32(y)*ch
 		abs := snap.First + y
-		selFrom, selTo := v.selectedCols(abs)
+		selFrom, selTo := v.rowSelection(abs, line)
 		marks := v.rowMatches(abs, snap.Cols)
 		// backgrounds
 		for x := 0; x < len(line.Cells) && x < snap.Cols; x++ {
@@ -1049,7 +1056,7 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 			snap := t.Snapshot(0)
 			v.selA = vt.Pos{Line: snap.First - snap.Scrollback, Col: 0}
 			v.selB = vt.Pos{Line: snap.First + snap.Rows - 1, Col: snap.Cols - 1}
-			v.selected = true
+			v.selected, v.block.on = true, false
 			return true
 		}
 		return false
@@ -1085,6 +1092,7 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 		}
 		p := v.cellAt(ev.X, ev.Y)
 		v.altClick = ev.Button == 0 && ev.Clicks == 1 && ev.Mods&(ui.Alt|ui.Shift|ui.Ctrl|ui.Super) == ui.Alt
+		v.startBlock(ev)
 		switch {
 		case ev.Clicks == 2:
 			v.selA, v.selB = t.WordAt(p)
@@ -1131,6 +1139,9 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 			}
 		}
 		if v.selecting && ev.Button == 0 {
+			if v.holdBlock(ev.X, ev.Y) {
+				return true
+			}
 			v.dragX = ev.X
 			dir, over := v.dragScrollAt(ev.Y)
 			switch {
