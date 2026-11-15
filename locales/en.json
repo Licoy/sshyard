@@ -2532,6 +2532,7 @@
   "terminalFallbackFontNote": "Draws CJK and other characters the terminal font lacks",
   "renameTabEllipsis": "Rename Tab…",
   "copyHostIP": "Copy Host IP",
+  "revealHostInSidebar": "Reveal Host in Sidebar",
   "renameTab": "Rename Tab",
   "tabName": "Tab name",
   "tabNamePlaceholder": "Empty uses the host's name",

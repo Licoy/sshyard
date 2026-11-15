@@ -518,11 +518,13 @@ func (a *App) tabEntries(m locales.Messages, i int) []menuEntry {
 		return func() { a.closeTabs(close) }
 	}
 	t := a.ws.Tabs[i]
+	_, saved := a.store.Get(host)
 	return []menuEntry{
 		{Icon: icons.Rename, Label: m.RenameTabEllipsis(), Do: func() { a.openTabRename(t) }},
 		menuSep,
 		{Icon: icons.Duplicate, Label: m.DuplicateSession(), Disabled: host == "", Do: func() { a.duplicateTab(m, t) }},
 		{Icon: icons.Copy, Label: m.CopyHostIP(), Disabled: a.tabAddress(t) == "", Do: func() { a.copyTabAddress(t) }},
+		{Icon: icons.Locate, Label: m.RevealHostInSidebar(), Disabled: !saved, Do: func() { a.locateHost(host) }},
 		menuSep,
 		{Icon: icons.Close, Label: m.CloseTab(), Do: closing(func(j int, _ *layout.Tab) bool { return j == i })},
 		{Label: m.CloseOtherTabs(), Disabled: n < 2, Do: closing(func(j int, _ *layout.Tab) bool { return j != i })},

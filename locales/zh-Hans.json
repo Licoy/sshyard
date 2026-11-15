@@ -1809,6 +1809,7 @@
   "terminalFallbackFontNote": "用于绘制终端字体缺少的中日韩等字符",
   "renameTabEllipsis": "重命名标签页…",
   "copyHostIP": "复制主机 IP",
+  "revealHostInSidebar": "在侧边栏中定位主机",
   "renameTab": "重命名标签页",
   "tabName": "标签页名称",
   "tabNamePlaceholder": "留空则使用主机名称",

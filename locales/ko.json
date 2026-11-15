@@ -2532,6 +2532,7 @@
   "terminalFallbackFontNote": "터미널 글꼴에 없는 한중일 등의 문자를 그립니다",
   "renameTabEllipsis": "탭 이름 바꾸기…",
   "copyHostIP": "호스트 IP 복사",
+  "revealHostInSidebar": "사이드바에서 호스트 찾기",
   "renameTab": "탭 이름 바꾸기",
   "tabName": "탭 이름",
   "tabNamePlaceholder": "비워 두면 호스트 이름을 사용합니다",

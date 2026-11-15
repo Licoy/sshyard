@@ -1809,6 +1809,7 @@
   "terminalFallbackFontNote": "用於繪製終端機字型缺少的中日韓等字元",
   "renameTabEllipsis": "重新命名分頁…",
   "copyHostIP": "複製主機 IP",
+  "revealHostInSidebar": "在側邊欄中定位主機",
   "renameTab": "重新命名分頁",
   "tabName": "分頁名稱",
   "tabNamePlaceholder": "留空則使用主機名稱",

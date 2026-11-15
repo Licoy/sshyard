@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"golang.org/x/crypto/ssh"
 	"strings"
+	"time"
 )
 
 // addEntries are the entries of the sidebar's "+": a new host or group,
@@ -259,6 +260,9 @@ func (a *App) hostItem(c *ui.Context, m locales.Messages, h assets.Host, prefix 
 		// it are drawn for the sidebar's ground, not the accent.
 		it.Background(tok.Press).TextColor(tok.Text)
 	}
+	if prefix == "" {
+		a.locateMark(c, tok, it, h.ID)
+	}
 	more := "more:" + prefix + h.ID
 	shown := chosen || !a.multi.on && it.Hovered() || a.menu.key == more
 	days, soon := h.Renewal.Reminding(c.Now())
@@ -430,4 +434,65 @@ func (a *App) hostTip(m locales.Messages, h assets.Host) string {
 		return h.Target()
 	}
 	return m.ViaJumps(h.Target(), strings.Join(chain, " → "))
+}
+
+// locateFlashes and locateBlink: a host revealed in the sidebar blinks
+// three times, lit, then not, for locateBlink each.
+const (
+	locateFlashes = 3
+	locateBlink   = 250 * time.Millisecond
+)
+
+// hostLocate is the host revealed in the sidebar: to scroll to the next
+// time it is drawn, then blinking from at.
+type hostLocate struct {
+	id     string
+	scroll bool
+	at     time.Time
+}
+
+// locateHost reveals saved host id in the sidebar: shows the sidebar,
+// empties the search, unfolds the host's groups, chooses it and has it
+// scrolled to and blink.
+func (a *App) locateHost(id string) {
+	h, ok := a.store.Get(id)
+	if !ok {
+		return
+	}
+	if a.settings.SidebarHidden {
+		a.setSidebarHidden(false)
+	}
+	a.search, a.searchOpen = "", false
+	if h.Group == "" {
+		*a.section("none") = true
+	}
+	for g := h.Group; g != ""; g = assets.GroupParent(g) {
+		*a.section("g:" + g) = true
+	}
+	a.selected, a.page = id, pageWorkspace
+	a.locate = hostLocate{id: id, scroll: true}
+	a.invalidate()
+}
+
+// locateMark scrolls to it, the sidebar item of host id, when the host
+// was just revealed, and lights it while it blinks.
+func (a *App) locateMark(c *ui.Context, tok theme.Tokens, it ui.Element, id string) {
+	l := &a.locate
+	if l.id == "" || l.id != id {
+		return
+	}
+	now := c.Now()
+	if l.scroll {
+		it.ScrollIntoView()
+		l.scroll, l.at = false, now
+	}
+	gone := now.Sub(l.at)
+	if gone >= 2*locateFlashes*locateBlink {
+		*l = hostLocate{}
+		return
+	}
+	if gone/locateBlink%2 == 0 {
+		it.Background(tok.Accent.Alpha(0.24))
+	}
+	c.After(locateBlink - gone%locateBlink)
 }

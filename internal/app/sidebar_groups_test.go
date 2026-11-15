@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Licoy/sshyard/internal/assets"
+	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/locales"
 	"github.com/egoist/mygo/ui"
 )
@@ -303,4 +304,48 @@ func TestGroupEditLook(t *testing.T) {
 		t.Fatalf("new subgroup look %+v", got)
 	}
 	tt.Frame()
+}
+
+// TestRevealHostInSidebar: the tab's menu reveals its host in the
+// sidebar: shown again, the search emptied, the host's groups unfolded,
+// the host chosen and blinking a moment.
+func TestRevealHostInSidebar(t *testing.T) {
+	a, tt := newTestApp(t)
+	for _, g := range []string{"ops", "ops" + assets.GroupSep + "db"} {
+		if err := a.store.AddGroup(g); err != nil {
+			t.Fatal(err)
+		}
+	}
+	h := addGroupedHost(t, a, "pg", "ops"+assets.GroupSep+"db")
+	if _, err := a.open(localID, layout.Terminal, openAt{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.open(h.ID, layout.Terminal, openAt{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	*a.section("g:ops") = false
+	*a.section("g:ops" + assets.GroupSep + "db") = false
+	a.search = "nothing"
+	a.setSidebarHidden(true)
+	tt.Frame()
+	if _, saved := a.store.Get(a.tabHost(a.ws.Tabs[0])); saved {
+		t.Fatal("a local terminal is not in the sidebar")
+	}
+	a.openContext(10, 10, func() []menuEntry { return a.tabEntries(locales.In("en"), 1) })
+	tt.Frame()
+	if err := chooseMenu(a, tt, "Reveal Host in Sidebar"); err != nil {
+		t.Fatalf("%v: %q", err, menuOf(a))
+	}
+	tt.Frame()
+	if a.settings.SidebarHidden || a.search != "" || !*a.section("g:ops") || !*a.section("g:ops" + assets.GroupSep + "db") {
+		t.Fatalf("hidden %v, search %q, groups %v %v", a.settings.SidebarHidden, a.search, *a.section("g:ops"), *a.section("g:ops" + assets.GroupSep + "db"))
+	}
+	if a.selected != h.ID || a.locate.id != h.ID || a.locate.scroll {
+		t.Fatalf("selected %q, locate %+v: the host was not drawn", a.selected, a.locate)
+	}
+	tt.Advance(2 * locateFlashes * locateBlink)
+	tt.Frame()
+	if a.locate.id != "" {
+		t.Errorf("still blinking: %+v", a.locate)
+	}
 }

@@ -354,6 +354,7 @@ type App struct {
 	// multi is the sidebar choosing several hosts and groups
 	multi       multiSelect
 	sections    map[string]*bool
+	locate      hostLocate // the host revealed in the sidebar, blinking
 	form        *hostForm
 	editing     bool
 	deleting    bool

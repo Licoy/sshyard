@@ -16373,6 +16373,16 @@ func (msgs Messages) CopyHostIP() string {
 	return Catalog.Format(msgs.locale, "copyHostIP", nil)
 }
 
+// RevealHostInSidebar says "Reveal Host in Sidebar"
+// in the language the app shows.
+func RevealHostInSidebar() string { return In(i18n.Locale()).RevealHostInSidebar() }
+
+// RevealHostInSidebar says "Reveal Host in Sidebar"
+// in the language of msgs.
+func (msgs Messages) RevealHostInSidebar() string {
+	return Catalog.Format(msgs.locale, "revealHostInSidebar", nil)
+}
+
 // RenameTab says "Rename Tab"
 // in the language the app shows.
 func RenameTab() string { return In(i18n.Locale()).RenameTab() }
