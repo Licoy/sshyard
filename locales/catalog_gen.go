@@ -8197,6 +8197,76 @@ func (msgs Messages) NoData() string {
 	return Catalog.Format(msgs.locale, "noData", nil)
 }
 
+// SysKernel says "Kernel"
+// in the language the app shows.
+func SysKernel() string { return In(i18n.Locale()).SysKernel() }
+
+// SysKernel says "Kernel"
+// in the language of msgs.
+func (msgs Messages) SysKernel() string {
+	return Catalog.Format(msgs.locale, "sysKernel", nil)
+}
+
+// LoginSection says "Login sessions"
+// in the language the app shows.
+func LoginSection() string { return In(i18n.Locale()).LoginSection() }
+
+// LoginSection says "Login sessions"
+// in the language of msgs.
+func (msgs Messages) LoginSection() string {
+	return Catalog.Format(msgs.locale, "loginSection", nil)
+}
+
+// LoginCount says "{count, plural, one {# session} other {# sessions}}"
+// in the language the app shows.
+func LoginCount(count int) string { return In(i18n.Locale()).LoginCount(count) }
+
+// LoginCount says "{count, plural, one {# session} other {# sessions}}"
+// in the language of msgs.
+func (msgs Messages) LoginCount(count int) string {
+	return Catalog.Format(msgs.locale, "loginCount", map[string]any{"count": count})
+}
+
+// LoginsNone says "No one is logged in."
+// in the language the app shows.
+func LoginsNone() string { return In(i18n.Locale()).LoginsNone() }
+
+// LoginsNone says "No one is logged in."
+// in the language of msgs.
+func (msgs Messages) LoginsNone() string {
+	return Catalog.Format(msgs.locale, "loginsNone", nil)
+}
+
+// GpuProcesses says "{count, plural, one {# process using GPU memory} other {# processes using GPU memory}}"
+// in the language the app shows.
+func GpuProcesses(count int) string { return In(i18n.Locale()).GpuProcesses(count) }
+
+// GpuProcesses says "{count, plural, one {# process using GPU memory} other {# processes using GPU memory}}"
+// in the language of msgs.
+func (msgs Messages) GpuProcesses(count int) string {
+	return Catalog.Format(msgs.locale, "gpuProcesses", map[string]any{"count": count})
+}
+
+// GpuProcsNone says "No processes are using GPU memory."
+// in the language the app shows.
+func GpuProcsNone() string { return In(i18n.Locale()).GpuProcsNone() }
+
+// GpuProcsNone says "No processes are using GPU memory."
+// in the language of msgs.
+func (msgs Messages) GpuProcsNone() string {
+	return Catalog.Format(msgs.locale, "gpuProcsNone", nil)
+}
+
+// GpuProcPid says "PID {pid}"
+// in the language the app shows.
+func GpuProcPid(pid string) string { return In(i18n.Locale()).GpuProcPid(pid) }
+
+// GpuProcPid says "PID {pid}"
+// in the language of msgs.
+func (msgs Messages) GpuProcPid(pid string) string {
+	return Catalog.Format(msgs.locale, "gpuProcPid", map[string]any{"pid": pid})
+}
+
 // OpenPanes says "Open panes"
 // in the language the app shows.
 func OpenPanes() string { return In(i18n.Locale()).OpenPanes() }

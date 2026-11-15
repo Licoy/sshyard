@@ -132,6 +132,7 @@ var (
 	Disk         = load("hard-drive-3-line")
 	Network      = load("arrow-up-down-line")
 	GPU          = load("dashboard-3-line")
+	Logins       = load("user-line")
 	Sent         = load("arrow-up-line")
 	Received     = load("arrow-down-line")
 	Uptime       = load("time-line")

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -53,9 +54,35 @@ type GPU struct {
 	UtilOK, MemOK, TempOK         bool
 }
 
+// Login is one session logged in on the server, as who lists it. From
+// is empty for a local login; When is the server's own text for its
+// start (who prints no year).
+type Login struct {
+	User, Line, From, When string
+}
+
+// GPUProc is one process holding GPU memory. GPU is the index of its
+// device among the frame's GPUs, or -1 when unknown; Name is empty when
+// the driver did not name it.
+type GPUProc struct {
+	GPU    int
+	PID    uint64
+	Name   string
+	MemMiB int64
+	MemOK  bool
+}
+
+// A frame keeps at most this many sessions and GPU processes; the count
+// lines say how many there were.
+const (
+	maxLogins   = 8
+	maxGPUProcs = 10
+)
+
 // Sample is one metrics frame. OK flags are false when that line was absent.
 type Sample struct {
 	OS                   string
+	OSName, Kernel       string // the release ("Ubuntu 22.04.4 LTS") and kernel, "" when unknown
 	CPU                  CPU
 	CPUOK                bool
 	CPUPct               float64
@@ -69,6 +96,12 @@ type Sample struct {
 	NICs                 []NIC
 	Vols                 []Vol
 	GPUs                 []GPU
+	GPUProcs             []GPUProc
+	GPUProcCount         int
+	GPUProcsOK           bool // set by a gprocs or gproc line
+	Logins               []Login
+	LoginCount           int
+	LoginsOK             bool // set by a logins or login line
 }
 
 // Core is one core's busy percent since the previous sample.
@@ -96,6 +129,7 @@ type VolUse struct {
 // load and GPU come from the latest sample.
 type Reading struct {
 	OS                      string
+	OSName, Kernel          string
 	CPU                     float64
 	CPUOK                   bool
 	Cores                   []Core
@@ -112,6 +146,12 @@ type Reading struct {
 	NetOK                   bool
 	NICs                    []NICRate
 	GPUs                    []GPU
+	GPUProcs                []GPUProc
+	GPUProcCount            int
+	GPUProcsOK              bool
+	Logins                  []Login
+	LoginCount              int
+	LoginsOK                bool
 }
 
 // MetricsInterval returns n when it is 1, 2, 5 or 10, and 2 otherwise.
@@ -229,6 +269,34 @@ func ParseFrame(body string) (Sample, error) {
 				return Sample{}, ErrGarbage
 			}
 			s.GPUs = append(s.GPUs, g)
+		// The lines below only describe the host. One that does not
+		// read is dropped on its own: it costs the frame nothing else.
+		case "osname":
+			if v := cleanText(rest, 64); v != "" {
+				s.OSName = v
+			}
+		case "kernel":
+			if v := cleanText(rest, 64); v != "" {
+				s.Kernel = v
+			}
+		case "logins":
+			if n, ok := parseCount(rest); ok {
+				s.LoginCount, s.LoginsOK = n, true
+			}
+		case "login":
+			if l, ok := parseLogin(rest); ok && len(s.Logins) < maxLogins {
+				s.Logins = append(s.Logins, l)
+				s.LoginsOK = true
+			}
+		case "gprocs":
+			if n, ok := parseCount(rest); ok {
+				s.GPUProcCount, s.GPUProcsOK = n, true
+			}
+		case "gproc":
+			if p, ok := parseGPUProc(rest); ok && len(s.GPUProcs) < maxGPUProcs {
+				s.GPUProcs = append(s.GPUProcs, p)
+				s.GPUProcsOK = true
+			}
 		default:
 			return Sample{}, ErrGarbage
 		}
@@ -237,7 +305,100 @@ func ParseFrame(body string) (Sample, error) {
 	if !saw {
 		return Sample{}, ErrGarbage
 	}
+	s.LoginCount = max(s.LoginCount, len(s.Logins))
+	s.GPUProcCount = max(s.GPUProcCount, len(s.GPUProcs))
 	return s, nil
+}
+
+// cleanText is remote text fit to show: valid UTF-8 without control or
+// format characters (bidi overrides, zero widths), each run of spaces
+// one space, and at most n runes.
+func cleanText(s string, n int) string {
+	var b strings.Builder
+	runes, space := 0, false
+	for _, r := range strings.ToValidUTF8(s, "\uFFFD") {
+		switch {
+		case unicode.IsSpace(r):
+			space = runes > 0
+			continue
+		case unicode.IsControl(r) || unicode.Is(unicode.Cf, r):
+			continue
+		}
+		if space {
+			if runes+2 > n {
+				break
+			}
+			b.WriteByte(' ')
+			runes++
+			space = false
+		}
+		if runes >= n {
+			break
+		}
+		b.WriteRune(r)
+		runes++
+	}
+	return b.String()
+}
+
+// parseCount is a count line: one number, at most 1<<16.
+func parseCount(rest string) (int, bool) {
+	f := strings.Fields(rest)
+	if len(f) != 1 {
+		return 0, false
+	}
+	n, err := strconv.ParseUint(f[0], 10, 32)
+	if err != nil {
+		return 0, false
+	}
+	return int(min(n, 1<<16)), true
+}
+
+// parseLogin is "user line from when…", from "-" for a local login.
+func parseLogin(rest string) (Login, bool) {
+	f := strings.Fields(rest)
+	if len(f) < 3 {
+		return Login{}, false
+	}
+	l := Login{User: cleanText(f[0], 32), Line: cleanText(f[1], 32), When: cleanText(strings.Join(f[3:], " "), 32)}
+	if f[2] != "-" {
+		l.From = cleanText(f[2], 64)
+	}
+	if l.User == "" || l.Line == "" {
+		return Login{}, false
+	}
+	return l, true
+}
+
+// parseGPUProc is "gpu pid mem name…": gpu and mem may be "-", and name
+// "-" is unnamed.
+func parseGPUProc(rest string) (GPUProc, bool) {
+	f := strings.Fields(rest)
+	if len(f) < 4 {
+		return GPUProc{}, false
+	}
+	p := GPUProc{GPU: -1}
+	if f[0] != "-" {
+		i, err := strconv.Atoi(f[0])
+		if err != nil || i < 0 || i >= 64 {
+			return GPUProc{}, false
+		}
+		p.GPU = i
+	}
+	pid, err := strconv.ParseUint(f[1], 10, 32)
+	if err != nil || pid == 0 {
+		return GPUProc{}, false
+	}
+	p.PID = pid
+	mem, ok, err := parseOpt(f[2])
+	if err != nil || mem < 0 {
+		return GPUProc{}, false
+	}
+	p.MemMiB, p.MemOK = mem, ok
+	if name := strings.Join(f[3:], " "); name != "-" {
+		p.Name = cleanText(name, 64)
+	}
+	return p, true
 }
 
 func parsePct(rest string) (float64, error) {
@@ -491,7 +652,11 @@ func loopback(name string) bool { return name == "lo" || name == "lo0" }
 // backwards is a reset: that CPU is unknown, and that interface's rate
 // for the interval is 0.
 func Delta(prev, cur Sample, dt time.Duration) Reading {
-	r := Reading{OS: cur.OS, GPUs: cur.GPUs}
+	r := Reading{
+		OS: cur.OS, OSName: cur.OSName, Kernel: cur.Kernel, GPUs: cur.GPUs,
+		GPUProcs: cur.GPUProcs, GPUProcCount: cur.GPUProcCount, GPUProcsOK: cur.GPUProcsOK,
+		Logins: cur.Logins, LoginCount: cur.LoginCount, LoginsOK: cur.LoginsOK,
+	}
 	if prev.CPUOK && cur.CPUOK {
 		r.CPU, r.CPUOK = cpuPct(prev.CPU, cur.CPU)
 	} else if cur.CPUPctOK {
@@ -797,7 +962,7 @@ func execReason(err error) string {
 	return ReasonExec
 }
 
-// shortcut: frames keep at most 64 cores, 32 interfaces and 8 GPUs so they stay under 4 KB; raise those caps for a bigger host.
+// shortcut: frames keep at most 64 cores, 32 interfaces, 8 GPUs, 10 GPU processes and 8 login sessions so they stay under 4 KB; raise those caps for a bigger host.
 const metricsScript = `
 interval=$1
 mount=$2
@@ -818,8 +983,20 @@ Darwin) kind=darwin ;;
 esac
 has_gpu=0
 command -v nvidia-smi >/dev/null 2>&1 && has_gpu=1
+has_who=0
+command -v who >/dev/null 2>&1 && has_who=1
+sq=$(printf "\047")
 gpu_cache=
+gproc_cache=
+gproc_total=
 frame_n=0
+# Sessions change rarely: list them about every ten seconds.
+login_every=$((10 / interval))
+login_n=0
+login_cache=
+login_total=
+os_name=
+os_kernel=
 sent=0
 body=
 
@@ -851,6 +1028,88 @@ to_kb() {
   K|k) printf "%s" "$num" ;;
   *) printf "%s" $((num / 1024)) ;;
   esac
+}
+
+# trim_v and clip_v change v in place, without a subshell.
+trim_v() {
+  while :; do
+    case $v in
+    " "*) v=${v# } ;;
+    *" ") v=${v% } ;;
+    *) break ;;
+    esac
+  done
+}
+
+clip_v() {
+  while [ "${#v}" -gt "$1" ]; do
+    v=${v%?}
+  done
+}
+
+unquote_v() {
+  case $v in
+  \"*\") v=${v#\"}; v=${v%\"} ;;
+  "$sq"*"$sq") v=${v#"$sq"}; v=${v%"$sq"} ;;
+  esac
+}
+
+# add_lines adds each line of $1.
+add_lines() {
+  _ifs=$IFS
+  IFS=$nl
+  for line in $1; do
+    IFS=$_ifs
+    [ -n "$line" ] || continue
+    add "$line"
+  done
+  IFS=$_ifs
+}
+
+# probe_os reads the release and the kernel once: they do not change
+# while the script runs.
+probe_os() {
+  os_kernel=$(uname -r 2>/dev/null) || os_kernel=
+  case $kind in
+  linux)
+    for f in /etc/os-release /usr/lib/os-release; do
+      [ -r "$f" ] || continue
+      pretty=
+      name=
+      ver=
+      while IFS= read -r line || [ -n "$line" ]; do
+        case $line in
+        PRETTY_NAME=*) v=${line#*=}; unquote_v; pretty=$v ;;
+        NAME=*) v=${line#*=}; unquote_v; name=$v ;;
+        VERSION_ID=*) v=${line#*=}; unquote_v; ver=$v ;;
+        esac
+      done < "$f"
+      v=$pretty
+      [ -n "$v" ] || v="$name $ver"
+      trim_v
+      os_name=$v
+      break
+    done
+    ;;
+  darwin)
+    name=$(sw_vers -productName 2>/dev/null) || name=
+    ver=$(sw_vers -productVersion 2>/dev/null) || ver=
+    v="$name $ver"
+    trim_v
+    os_name=$v
+    ;;
+  *)
+    if [ -n "$os_kernel" ]; then
+      os_name="$uname_s $os_kernel"
+    fi
+    ;;
+  esac
+  v=$os_name
+  clip_v 64
+  os_name=$v
+  v=$os_kernel
+  clip_v 64
+  os_kernel=$v
 }
 
 gpu_field() {
@@ -1171,11 +1430,90 @@ read_net_bsd() {
   IFS=$_ifs
 }
 
+# scan_gprocs lists the processes holding GPU memory, at most 10, each
+# with the index of its GPU in gpu_cache, found by its UUID.
+scan_gprocs() {
+  gproc_total=
+  gproc_cache=
+  [ -n "$gpu_cache" ] || return 0
+  data=$(nvidia-smi --query-compute-apps=pid,used_memory,gpu_uuid,process_name --format=csv,noheader,nounits 2>/dev/null) || return 0
+  ids=" "
+  i=0
+  _ifs=$IFS
+  IFS=$nl
+  for line in $gpu_cache; do
+    IFS=$_ifs
+    [ -n "$line" ] || continue
+    IFS=,
+    set -- $line
+    IFS=$_ifs
+    v=$5
+    trim_v
+    case $v in
+    ""|*[!A-Za-z0-9-]*) ;;
+    *) ids="$ids$v=$i " ;;
+    esac
+    i=$((i + 1))
+  done
+  seen=0
+  IFS=$nl
+  for line in $data; do
+    IFS=,
+    set -- $line
+    if [ "$#" -lt 4 ]; then
+      IFS=$_ifs
+      continue
+    fi
+    p=$1
+    mu=$2
+    id=$3
+    shift 3
+    # A name with a comma in it was split; join it back.
+    name="$*"
+    IFS=$_ifs
+    v=$p
+    trim_v
+    num_ok "$v" || continue
+    p=$v
+    v=$mu
+    trim_v
+    num_ok "$v" || v=-
+    mu=$v
+    v=$id
+    trim_v
+    idx=-
+    case $v in
+    ""|*[!A-Za-z0-9-]*) ;;
+    *)
+      case $ids in
+      *" $v="*)
+        idx=${ids#* $v=}
+        idx=${idx%% *}
+        ;;
+      esac
+      ;;
+    esac
+    seen=$((seen + 1))
+    if [ "$seen" -gt 10 ]; then
+      continue
+    fi
+    v=$name
+    trim_v
+    v=${v##*/}
+    clip_v 48
+    [ -n "$v" ] || v=-
+    gproc_cache="${gproc_cache}gproc $idx $p $mu $v$nl"
+  done
+  IFS=$_ifs
+  gproc_total=$seen
+}
+
 read_gpu() {
   [ "$has_gpu" -eq 1 ] || return 0
   frame_n=$((frame_n + 1))
   if [ "$((frame_n % 3))" -eq 1 ]; then
-    gpu_cache=$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>/dev/null) || gpu_cache=
+    gpu_cache=$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,uuid --format=csv,noheader,nounits 2>/dev/null) || gpu_cache=
+    scan_gprocs
   fi
   [ -n "$gpu_cache" ] || return 0
   gpus=0
@@ -1199,6 +1537,76 @@ read_gpu() {
     add "gpu $u $mu $mt $tp"
   done
   IFS=$_ifs
+  [ -n "$gproc_total" ] || return 0
+  add "gprocs $gproc_total"
+  add_lines "$gproc_cache"
+}
+
+# scan_logins lists who is logged in, at most 8 of them: user, line,
+# where from ("-" for a local login) and since when, as who prints it.
+scan_logins() {
+  login_total=
+  login_cache=
+  [ "$has_who" -eq 1 ] || return 0
+  data=$(LC_ALL=C who 2>/dev/null) || return 0
+  seen=0
+  _ifs=$IFS
+  IFS=$nl
+  for line in $data; do
+    IFS=$_ifs
+    set -- $line
+    if [ "$#" -lt 2 ] || [ "$1" = USER ]; then
+      continue
+    fi
+    seen=$((seen + 1))
+    if [ "$seen" -gt 8 ]; then
+      continue
+    fi
+    user=$1
+    tty=$2
+    shift 2
+    when=
+    from=-
+    while [ "$#" -gt 0 ]; do
+      case $1 in
+      \(*)
+        v="$*"
+        v=${v#\(}
+        v=${v%\)}
+        set -- $v
+        from=${1:--}
+        break
+        ;;
+      esac
+      when="$when $1"
+      shift
+    done
+    v=$user
+    clip_v 32
+    user=$v
+    v=$tty
+    clip_v 32
+    tty=$v
+    v=$from
+    clip_v 64
+    from=$v
+    v=${when# }
+    clip_v 32
+    when=$v
+    login_cache="${login_cache}login $user $tty $from $when$nl"
+  done
+  IFS=$_ifs
+  login_total=$seen
+}
+
+read_logins() {
+  if [ "$((login_n % login_every))" -eq 0 ]; then
+    scan_logins
+  fi
+  login_n=$((login_n + 1))
+  [ -n "$login_total" ] || return 0
+  add "logins $login_total"
+  add_lines "$login_cache"
 }
 
 emit_disks() {
@@ -1211,6 +1619,12 @@ emit_disks() {
 emit() {
   body=
   add "os $kind"
+  if [ -n "$os_name" ]; then
+    add "osname $os_name"
+  fi
+  if [ -n "$os_kernel" ]; then
+    add "kernel $os_kernel"
+  fi
   case $kind in
   linux)
     read_stat
@@ -1232,11 +1646,13 @@ emit() {
     emit_disks
     ;;
   esac
+  read_logins
   printf "%s\n" "<<<SSHYARD" || exit
   printf "%s" "$body" || exit
   printf "%s\n" ">>>" || exit
 }
 
+probe_os
 while :; do
   start=$(date +%s 2>/dev/null || echo 0)
   num_ok "$start" || start=0
