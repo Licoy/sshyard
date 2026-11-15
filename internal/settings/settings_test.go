@@ -385,6 +385,46 @@ func TestToolPanes(t *testing.T) {
 	}
 }
 
+// TestRailHidden: the rail shows every item by default; the items hidden
+// are kept once each, trimmed, those this version does not know as well,
+// and showing one again takes it off the list without touching the list
+// it was copied from.
+func TestRailHidden(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	os.WriteFile(path, []byte(`{"theme":"dark"}`), 0o600)
+	s, err := Load(path)
+	if err != nil || s.RailHidden != nil || !s.RailShown("docker") {
+		t.Fatalf("old file %v %v", s.RailHidden, err)
+	}
+	os.WriteFile(path, []byte(`{"theme":"dark","railHidden":[" docker","tmux","","docker","later"]}`), 0o600)
+	s, err = Load(path)
+	if err != nil || !slices.Equal(s.RailHidden, []string{"docker", "tmux", "later"}) {
+		t.Fatalf("loaded %q %v", s.RailHidden, err)
+	}
+	if s.RailShown("docker") || !s.RailShown("monitor") {
+		t.Errorf("shown docker %v monitor %v", s.RailShown("docker"), s.RailShown("monitor"))
+	}
+	held := s
+	s.SetRailShown("docker", true)
+	s.SetRailShown("logs", false)
+	s.SetRailShown("logs", false)
+	if !slices.Equal(s.RailHidden, []string{"tmux", "later", "logs"}) || !slices.Equal(held.RailHidden, []string{"docker", "tmux", "later"}) {
+		t.Fatalf("set %q, held %q", s.RailHidden, held.RailHidden)
+	}
+	if err := Save(path, s); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := Load(path); !slices.Equal(got.RailHidden, s.RailHidden) {
+		t.Errorf("saved %q", got.RailHidden)
+	}
+	for _, id := range []string{"tmux", "later", "logs"} {
+		s.SetRailShown(id, true)
+	}
+	if s.RailHidden != nil {
+		t.Errorf("all shown %q", s.RailHidden)
+	}
+}
+
 func TestRenewalNotifyDefault(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "s.json")
 	// A file from before the setting keeps the notifications on.

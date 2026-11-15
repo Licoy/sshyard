@@ -33,6 +33,10 @@ type Settings struct {
 	// in the place of the one open in the tab, one at a time, or
 	// ToolPanesSplit beside the ones already open.
 	ToolPanes string `json:"toolPanes,omitempty"`
+	// RailHidden are the IDs of the right rail's items the user hid; the
+	// others show, so an item added later shows until it is hidden. An
+	// ID this version does not know is kept and ignored.
+	RailHidden []string `json:"railHidden,omitempty"`
 	// TrayIcon selects the monochrome or colorful application logo.
 	TrayIcon string `json:"trayIcon"`
 	// TrayClick selects the popup or the main window on a tray click.
@@ -647,6 +651,22 @@ const (
 // tab, rather than in the place of the one it shows.
 const ToolPanesSplit = "split"
 
+// RailShown reports whether the right rail shows its item id.
+func (s Settings) RailShown(id string) bool { return !slices.Contains(s.RailHidden, id) }
+
+// SetRailShown shows or hides the right rail's item id, in a new list:
+// the one held may be shared with the settings in force.
+func (s *Settings) SetRailShown(id string, on bool) {
+	hidden := slices.DeleteFunc(slices.Clone(s.RailHidden), func(h string) bool { return h == id })
+	if !on {
+		hidden = append(hidden, id)
+	}
+	if len(hidden) == 0 {
+		hidden = nil
+	}
+	s.RailHidden = hidden
+}
+
 // MCPPortDefault is the MCP endpoint's port unless the user picks one.
 const MCPPortDefault = 47320
 
@@ -830,6 +850,7 @@ func (s *Settings) Normalize() {
 	if s.ToolPanes != ToolPanesSplit {
 		s.ToolPanes = ""
 	}
+	s.RailHidden = cleanList(s.RailHidden)
 	if s.TabTitle != TabTitleProgram && s.TabTitle != TabTitleCwd {
 		s.TabTitle = ""
 	}
