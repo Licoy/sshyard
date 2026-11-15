@@ -18,15 +18,17 @@ func TestProviderDefaultURLSwitch(t *testing.T) {
 	tt.Frame()
 	tt.Advance(time.Second)
 	m := locales.In("en")
+	labels := []string{m.AiFormatChat(), m.AiFormatResponses(), m.AiFormatAnthropic(), m.AiFormatTypeSafe()}
+	// The select opens from its trigger, which shows the format chosen; a
+	// click on the field's caption only focuses it.
 	pick := func(label string) {
 		t.Helper()
-		mustClick(t, tt, m.AiFormat())
+		mustClick(t, tt, labels[a.prov.format])
 		tt.Frame()
 		mustClick(t, tt, label)
 		tt.Frame()
 	}
 	for _, i := range []int{2, 3, 1, 0} {
-		labels := []string{m.AiFormatChat(), m.AiFormatResponses(), m.AiFormatAnthropic(), m.AiFormatTypeSafe()}
 		pick(labels[i])
 		if a.prov.base != providerURLHint(i) || inputText(t, tt, m.AiProviderURL()) != providerURLHint(i) {
 			t.Fatalf("format %d bound %q texts %q", i, a.prov.base, tt.Texts())
