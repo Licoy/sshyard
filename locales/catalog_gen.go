@@ -16383,6 +16383,96 @@ func (msgs Messages) RevealHostInSidebar() string {
 	return Catalog.Format(msgs.locale, "revealHostInSidebar", nil)
 }
 
+// TabColor says "Tab Color"
+// in the language the app shows.
+func TabColor() string { return In(i18n.Locale()).TabColor() }
+
+// TabColor says "Tab Color"
+// in the language of msgs.
+func (msgs Messages) TabColor() string {
+	return Catalog.Format(msgs.locale, "tabColor", nil)
+}
+
+// TabColorNone says "None"
+// in the language the app shows.
+func TabColorNone() string { return In(i18n.Locale()).TabColorNone() }
+
+// TabColorNone says "None"
+// in the language of msgs.
+func (msgs Messages) TabColorNone() string {
+	return Catalog.Format(msgs.locale, "tabColorNone", nil)
+}
+
+// GoToTab says "Go to Tab {n}"
+// in the language the app shows.
+func GoToTab(n string) string { return In(i18n.Locale()).GoToTab(n) }
+
+// GoToTab says "Go to Tab {n}"
+// in the language of msgs.
+func (msgs Messages) GoToTab(n string) string {
+	return Catalog.Format(msgs.locale, "goToTab", map[string]any{"n": n})
+}
+
+// GoToLastTab says "Go to Last Tab"
+// in the language the app shows.
+func GoToLastTab() string { return In(i18n.Locale()).GoToLastTab() }
+
+// GoToLastTab says "Go to Last Tab"
+// in the language of msgs.
+func (msgs Messages) GoToLastTab() string {
+	return Catalog.Format(msgs.locale, "goToLastTab", nil)
+}
+
+// TabTitleSource says "Tab titles"
+// in the language the app shows.
+func TabTitleSource() string { return In(i18n.Locale()).TabTitleSource() }
+
+// TabTitleSource says "Tab titles"
+// in the language of msgs.
+func (msgs Messages) TabTitleSource() string {
+	return Catalog.Format(msgs.locale, "tabTitleSource", nil)
+}
+
+// TabTitleSourceNote says "What a tab not renamed shows; until its terminal reports a title or directory, the host's name"
+// in the language the app shows.
+func TabTitleSourceNote() string { return In(i18n.Locale()).TabTitleSourceNote() }
+
+// TabTitleSourceNote says "What a tab not renamed shows; until its terminal reports a title or directory, the host's name"
+// in the language of msgs.
+func (msgs Messages) TabTitleSourceNote() string {
+	return Catalog.Format(msgs.locale, "tabTitleSourceNote", nil)
+}
+
+// TabTitleHost says "Host name"
+// in the language the app shows.
+func TabTitleHost() string { return In(i18n.Locale()).TabTitleHost() }
+
+// TabTitleHost says "Host name"
+// in the language of msgs.
+func (msgs Messages) TabTitleHost() string {
+	return Catalog.Format(msgs.locale, "tabTitleHost", nil)
+}
+
+// TabTitleProgram says "Terminal title"
+// in the language the app shows.
+func TabTitleProgram() string { return In(i18n.Locale()).TabTitleProgram() }
+
+// TabTitleProgram says "Terminal title"
+// in the language of msgs.
+func (msgs Messages) TabTitleProgram() string {
+	return Catalog.Format(msgs.locale, "tabTitleProgram", nil)
+}
+
+// TabTitleCwd says "Current directory"
+// in the language the app shows.
+func TabTitleCwd() string { return In(i18n.Locale()).TabTitleCwd() }
+
+// TabTitleCwd says "Current directory"
+// in the language of msgs.
+func (msgs Messages) TabTitleCwd() string {
+	return Catalog.Format(msgs.locale, "tabTitleCwd", nil)
+}
+
 // RenameTab says "Rename Tab"
 // in the language the app shows.
 func RenameTab() string { return In(i18n.Locale()).RenameTab() }

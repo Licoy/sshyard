@@ -502,6 +502,14 @@ func (a *App) prefTerminal(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 				*changed = true
 			}
 		})
+		g.row(m.TabTitleSource(), m.TabTitleSourceNote(), func() {
+			codes := []string{"", settings.TabTitleProgram, settings.TabTitleCwd}
+			names := []string{m.TabTitleHost(), m.TabTitleProgram(), m.TabTitleCwd()}
+			cur := names[max(slices.Index(codes, s.TabTitle), 0)]
+			if formSelect(c.Key("tabtitle"), &cur, names).Label(m.TabTitleSource()).Width(180).Changed() {
+				s.TabTitle, *changed = codes[max(slices.Index(names, cur), 0)], true
+			}
+		})
 		g.row(m.TerminalFont(), "", func() {
 			if f, ok := a.fontPicker(c, "termfont", m.TerminalFont(), m.SystemDefault(), &a.fonts.termSel, s.TerminalFont, fonts.ForTerminal(a.fonts.list, s.MonospacedOnly)); ok {
 				s.TerminalFont, *changed = f, true

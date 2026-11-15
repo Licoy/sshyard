@@ -5,9 +5,11 @@ import (
 	"errors"
 	"log"
 	"os"
+	"slices"
 
 	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/layout"
+	"github.com/Licoy/sshyard/internal/theme"
 	"github.com/Licoy/sshyard/locales"
 	"github.com/egoist/mygo/ui"
 )
@@ -57,6 +59,9 @@ func (a *App) loadLayout() {
 		}
 		a.ws.AddTab(root, focus)
 		a.ws.ActiveTab().Title = t.Title
+		if slices.Contains(theme.TintNames, t.Color) {
+			a.ws.ActiveTab().Color = t.Color
+		}
 	}
 	if len(a.ws.Tabs) > 0 {
 		a.ws.Active = active

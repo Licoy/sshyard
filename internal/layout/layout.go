@@ -114,6 +114,9 @@ type Tab struct {
 	Focus int // the focused pane
 	// Title is the name the user gave the tab, "" for its host's.
 	Title string
+	// Color is the name of the tint the user gave the tab (the theme's
+	// tint names), "" for none.
+	Color string
 }
 
 // Panes lists the tab's panes in reading order.

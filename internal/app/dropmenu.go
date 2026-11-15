@@ -30,6 +30,9 @@ type menuEntry struct {
 	InlineNote string
 	// Tint colors its icon; zero is the muted text color.
 	Tint ui.Color
+	// Swatch, the name of a theme tint (theme.TintNames), shows a dot of
+	// it in place of the icon.
+	Swatch string
 	// Checked marks the entry with a check, Danger tints it red.
 	Disabled, Checked, Danger bool
 	// Sep makes the entry a separator.
@@ -89,8 +92,16 @@ type ctxMenu struct {
 // click), or below el on Shift+F10 while the focus is in it. entries runs
 // as it opens and while it shows.
 func (a *App) contextMenu(el ui.Element, entries func() []menuEntry) {
+	a.contextMenuOr(el, entries, nil)
+}
+
+// contextMenuOr is contextMenu on an element that takes other input too:
+// other, when set, sees each event first, and the menu those it leaves.
+func (a *App) contextMenuOr(el ui.Element, entries func() []menuEntry, other func(ui.InputEvent) bool) {
 	b := el.Bounds()
-	el.HandleInput(func(ev ui.InputEvent) bool { return a.contextPress(b, ev, entries) })
+	el.HandleInput(func(ev ui.InputEvent) bool {
+		return other != nil && other(ev) || a.contextPress(b, ev, entries)
+	})
 	if el.Shortcut(ui.Shift, ui.KeyF10) {
 		a.openContext(b.X, b.Y+b.H, entries)
 	}
@@ -240,7 +251,7 @@ func (a *App) menuPanel(c *ui.Context, tok theme.Tokens, panel ui.Element, entri
 	}
 	compact := layout.compact
 	for _, e := range entries {
-		if e.Icon != nil || e.Image != nil || e.Lead != nil || e.Note != "" {
+		if e.Icon != nil || e.Image != nil || e.Lead != nil || e.Swatch != "" || e.Note != "" {
 			compact = false // Illustrated or multi-line menus retain their icon column.
 		}
 	}
@@ -330,6 +341,10 @@ func (a *App) menuRow(c *ui.Context, tok theme.Tokens, e menuEntry, i, level int
 		switch {
 		case e.Lead != nil:
 			ic.Children(e.Lead)
+		case e.Swatch != "":
+			if tint, ok := tok.TintNamed(e.Swatch); ok {
+				ic.Children(func() { ui.Box(c).Size(12, 12).Margin(2).Radius(theme.Capsule).Background(tint) })
+			}
 		case e.Image != nil:
 			src := e.Image
 			if tok.Dark && e.DarkImage != nil {
