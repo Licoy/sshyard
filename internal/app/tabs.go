@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/icons"
 	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/theme"
@@ -521,6 +522,7 @@ func (a *App) tabEntries(m locales.Messages, i int) []menuEntry {
 		{Icon: icons.Rename, Label: m.RenameTabEllipsis(), Do: func() { a.openTabRename(t) }},
 		menuSep,
 		{Icon: icons.Duplicate, Label: m.DuplicateSession(), Disabled: host == "", Do: func() { a.duplicateTab(m, t) }},
+		{Icon: icons.Copy, Label: m.CopyHostIP(), Disabled: a.tabAddress(t) == "", Do: func() { a.copyTabAddress(t) }},
 		menuSep,
 		{Icon: icons.Close, Label: m.CloseTab(), Do: closing(func(j int, _ *layout.Tab) bool { return j == i })},
 		{Label: m.CloseOtherTabs(), Disabled: n < 2, Do: closing(func(j int, _ *layout.Tab) bool { return j != i })},
@@ -547,6 +549,28 @@ func (a *App) duplicateTab(m locales.Messages, t *layout.Tab) {
 	}
 	if _, err := a.open(cn.host.ID, kind, openAt{}, cn); err != nil {
 		a.toastError(m.ErrGeneric(err.Error()))
+	}
+}
+
+// tabAddress is the address of tab t's host, "" for a local terminal or a
+// serial device.
+func (a *App) tabAddress(t *layout.Tab) string {
+	cn := a.conns[t.Focused().ID]
+	if cn == nil || cn.host.ID == "" || isLocal(cn.host.ID) {
+		return ""
+	}
+	h := a.liveHost(cn.host)
+	if h.Protocol == assets.ProtoSerial {
+		return ""
+	}
+	return h.Address
+}
+
+// copyTabAddress copies the address of tab t's host.
+func (a *App) copyTabAddress(t *layout.Tab) {
+	if addr := a.tabAddress(t); addr != "" {
+		a.svc.WriteClipboard(addr)
+		a.toast(func(m locales.Messages) ui.Toast { return ui.Toast{Title: m.Copied(), Type: "success"} })
 	}
 }
 

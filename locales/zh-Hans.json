@@ -1808,6 +1808,7 @@
   "terminalFallbackFont": "非 ASCII 字体",
   "terminalFallbackFontNote": "用于绘制终端字体缺少的中日韩等字符",
   "renameTabEllipsis": "重命名标签页…",
+  "copyHostIP": "复制主机 IP",
   "renameTab": "重命名标签页",
   "tabName": "标签页名称",
   "tabNamePlaceholder": "留空则使用主机名称",

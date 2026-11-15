@@ -1808,6 +1808,7 @@
   "terminalFallbackFont": "非 ASCII 字型",
   "terminalFallbackFontNote": "用於繪製終端機字型缺少的中日韓等字元",
   "renameTabEllipsis": "重新命名分頁…",
+  "copyHostIP": "複製主機 IP",
   "renameTab": "重新命名分頁",
   "tabName": "分頁名稱",
   "tabNamePlaceholder": "留空則使用主機名稱",

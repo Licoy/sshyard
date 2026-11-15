@@ -1808,6 +1808,7 @@
   "terminalFallbackFont": "非 ASCII フォント",
   "terminalFallbackFontNote": "ターミナルのフォントにない CJK などの文字を描画します",
   "renameTabEllipsis": "タブ名を変更…",
+  "copyHostIP": "ホストの IP をコピー",
   "renameTab": "タブ名を変更",
   "tabName": "タブ名",
   "tabNamePlaceholder": "空欄にするとホスト名を使います",

@@ -361,3 +361,32 @@ func TestDuplicateTab(t *testing.T) {
 		t.Fatalf("files: %d tabs, active %d, %+v", len(a.ws.Tabs), a.ws.Active, cn)
 	}
 }
+
+// TestCopyTabHostIP: the tab's menu copies its host's address, and has
+// none to copy for a local terminal.
+func TestCopyTabHostIP(t *testing.T) {
+	a, tt := newTestApp(t)
+	h, err := a.Store().Add(assets.Host{Name: "web", Address: "10.0.0.5", Port: 2222, User: "root", Auth: assets.AuthAgent})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.open(localID, layout.Terminal, openAt{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.open(h.ID, layout.Terminal, openAt{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if got := a.tabAddress(a.ws.Tabs[0]); got != "" {
+		t.Errorf("local terminal has address %q", got)
+	}
+	a.openContext(10, 10, func() []menuEntry { return a.tabEntries(locales.In("en"), 1) })
+	tt.Frame()
+	if err := chooseMenu(a, tt, "Copy Host IP"); err != nil {
+		t.Fatalf("%v: %q", err, menuOf(a))
+	}
+	tt.Frame()
+	if tt.Clipboard() != "10.0.0.5" {
+		t.Errorf("clipboard %q", tt.Clipboard())
+	}
+}

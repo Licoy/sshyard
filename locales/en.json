@@ -2531,6 +2531,7 @@
   "terminalFallbackFont": "Non-ASCII font",
   "terminalFallbackFontNote": "Draws CJK and other characters the terminal font lacks",
   "renameTabEllipsis": "Rename Tab…",
+  "copyHostIP": "Copy Host IP",
   "renameTab": "Rename Tab",
   "tabName": "Tab name",
   "tabNamePlaceholder": "Empty uses the host's name",

@@ -16363,6 +16363,16 @@ func (msgs Messages) RenameTabEllipsis() string {
 	return Catalog.Format(msgs.locale, "renameTabEllipsis", nil)
 }
 
+// CopyHostIP says "Copy Host IP"
+// in the language the app shows.
+func CopyHostIP() string { return In(i18n.Locale()).CopyHostIP() }
+
+// CopyHostIP says "Copy Host IP"
+// in the language of msgs.
+func (msgs Messages) CopyHostIP() string {
+	return Catalog.Format(msgs.locale, "copyHostIP", nil)
+}
+
 // RenameTab says "Rename Tab"
 // in the language the app shows.
 func RenameTab() string { return In(i18n.Locale()).RenameTab() }
