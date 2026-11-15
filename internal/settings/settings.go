@@ -86,6 +86,10 @@ type Settings struct {
 	// both off by default.
 	TerminalLineNumbers bool `json:"terminalLineNumbers,omitempty"`
 	TerminalTimestamps  bool `json:"terminalTimestamps,omitempty"`
+	// TabTitle is what a tab not renamed is called: "", the default, its
+	// host's name, TabTitleProgram the title its terminal's program set,
+	// or TabTitleCwd the directory its shell reported.
+	TabTitle string `json:"tabTitle,omitempty"`
 	// TerminalFont is the terminal's font family, "" for the system's
 	// monospaced font.
 	TerminalFont string `json:"terminalFont,omitempty"`
@@ -689,6 +693,12 @@ const (
 	MinCharWidth, MaxCharWidth   = 80, 150
 )
 
+// What a tab not renamed is called, besides its host's name (TabTitle).
+const (
+	TabTitleProgram = "program"
+	TabTitleCwd     = "cwd"
+)
+
 // Terminal cursor shapes.
 const (
 	CursorBlock     = "block"
@@ -793,6 +803,9 @@ func (s *Settings) Normalize() {
 	}
 	if s.ToolPanes != ToolPanesSplit {
 		s.ToolPanes = ""
+	}
+	if s.TabTitle != TabTitleProgram && s.TabTitle != TabTitleCwd {
+		s.TabTitle = ""
 	}
 	if s.FilesEdge != FilesBelow {
 		s.FilesEdge = FilesRight

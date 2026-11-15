@@ -89,7 +89,8 @@ func stateColor(tok theme.Tokens, st session.State) ui.Color {
 	return tok.TextMuted
 }
 
-// tabLabel names a tab by its focused pane's host.
+// tabLabel names a tab by its focused pane: its host, or what its
+// terminal reported as the settings choose (tabName).
 func (a *App) tabLabel(t *layout.Tab) string {
 	if t.Title != "" {
 		return t.Title
@@ -98,10 +99,14 @@ func (a *App) tabLabel(t *layout.Tab) string {
 	if cn == nil {
 		return ""
 	}
-	if n := len(t.Panes()); n > 1 {
-		return a.connLabel(cn) + " +" + strconv.Itoa(n-1)
+	name := a.connLabel(cn)
+	if src := a.tabSource(cn); src != "" {
+		name = tabName("", a.settings.TabTitle, name, src, a.termHomes(cn)...)
 	}
-	return a.connLabel(cn)
+	if n := len(t.Panes()); n > 1 {
+		return name + " +" + strconv.Itoa(n-1)
+	}
+	return name
 }
 
 // kindIcon is the icon of a pane kind, the "-fill" one when on.

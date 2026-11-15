@@ -241,15 +241,28 @@ func (a *App) tab(c *ui.Context, m locales.Messages, tok theme.Tokens, fill ui.C
 	if on {
 		chip.Background(fill)
 	}
+	tint, tinted := tok.TintNamed(t.Color)
 	chip.Draw(func(p *ui.Painter, r ui.Rect) {
+		box := ui.Rect{X: r.X, Y: r.Y + 3, W: r.W, H: r.H - foot - 6}
 		switch {
 		case on:
 			tabEdge(p, r, fill, tok.Line)
+			tabTintBar(p, r, r.Y+2, tint, tinted)
 			return
 		case hovered[j]:
 			// Lit as a capsule round its contents, not joining the content.
-			p.Fill(ui.Rect{X: r.X, Y: r.Y + 3, W: r.W, H: r.H - foot - 6}, lit, tabRadius)
+			p.Fill(box, lit, tabRadius)
+			tabTintBar(p, r, box.Y, tint, tinted)
 			return
+		}
+		if tinted {
+			// A tab of the user's color, faintly washed in it.
+			wash := float32(0.08)
+			if tok.Dark {
+				wash = 0.14
+			}
+			p.Fill(box, tint.Alpha(wash), tabRadius)
+			tabTintBar(p, r, box.Y, tint, tinted)
 		}
 		if next := j + 1; next < len(hovered) && next != activeAt && !hovered[j] && !hovered[next] {
 			x, mid := r.X+r.W+tabGap/2, r.Y+(r.H-foot)/2
@@ -286,7 +299,7 @@ func (a *App) tab(c *ui.Context, m locales.Messages, tok theme.Tokens, fill ui.C
 			a.closeTab(t)
 		}
 	})
-	a.contextMenu(chip, func() []menuEntry { return a.tabEntries(m, i) })
+	a.contextMenuOr(chip, func() []menuEntry { return a.tabEntries(m, i) }, a.middleClose(t, chip.Bounds()))
 	if chip.Clicked() {
 		a.ws.Active = i
 		a.page = pageWorkspace
@@ -338,6 +351,35 @@ func tabEdge(p *ui.Painter, r ui.Rect, fill, line ui.Color) {
 	p.StrokePath(&edge, 1, line)
 }
 
+// tabTintBar draws the bar of a tab of the user's color (SetTabColor)
+// across the top of the tab in r, at y, clear of its rounded corners.
+func tabTintBar(p *ui.Painter, r ui.Rect, y float32, tint ui.Color, tinted bool) {
+	if tinted {
+		p.Fill(ui.Rect{X: r.X + 10, Y: y, W: max(r.W-20, 0), H: 3}, tint, 1.5)
+	}
+}
+
+// middleClose closes tab t, whose element is at b, as its close button
+// does, when the middle button is pressed and let go over it; it is the
+// element's HandleInput, taking only the middle button.
+func (a *App) middleClose(t *layout.Tab, b ui.Rect) func(ui.InputEvent) bool {
+	return func(ev ui.InputEvent) bool {
+		if ev.Button != 2 {
+			return false
+		}
+		switch ev.Kind {
+		case ui.InputPointerDown:
+			return true // and so the release
+		case ui.InputPointerUp:
+			if ev.X >= 0 && ev.Y >= 0 && ev.X < b.W && ev.Y < b.H && slices.Contains(a.ws.Tabs, t) {
+				a.closeTab(t)
+			}
+			return true
+		}
+		return false
+	}
+}
+
 // tabTip is a tab's tip, shown at once under it: the host of each of its
 // panes, where it logs in and how its connection is.
 func (a *App) tabTip(c *ui.Context, m locales.Messages, tok theme.Tokens, chip ui.Element, t *layout.Tab) {
@@ -361,6 +403,10 @@ func (a *App) tabTip(c *ui.Context, m locales.Messages, tok theme.Tokens, chip u
 							title = m.FilesPane(title)
 						}
 						ui.Text(c, title).FontSize(theme.Footnote).FontWeight(600).SingleLine()
+						// In full what the tab's title shows in short.
+						if src := a.tabSource(cn); src != "" {
+							ui.Text(c, src).FontSize(theme.Caption).TextColor(tok.TextMuted).SingleLine()
+						}
 						var parts []string
 						if target := h.Target(); target != "" {
 							parts = append(parts, a.pv(target))
@@ -429,6 +475,7 @@ func (a *App) moreTab(c *ui.Context, m locales.Messages, tok theme.Tokens, t *la
 	case hov:
 		row.Background(tok.Hover)
 	}
+	row.HandleInput(a.middleClose(t, row.Bounds()))
 	closed := false
 	row.Children(func() {
 		var sub []string
@@ -521,6 +568,7 @@ func (a *App) tabEntries(m locales.Messages, i int) []menuEntry {
 	_, saved := a.store.Get(host)
 	return []menuEntry{
 		{Icon: icons.Rename, Label: m.RenameTabEllipsis(), Do: func() { a.openTabRename(t) }},
+		{Icon: icons.Appearance, Label: m.TabColor(), Sub: a.tabColorEntries(m, t)},
 		menuSep,
 		{Icon: icons.Duplicate, Label: m.DuplicateSession(), Disabled: host == "", Do: func() { a.duplicateTab(m, t) }},
 		{Icon: icons.Copy, Label: m.CopyHostIP(), Disabled: a.tabAddress(t) == "", Do: func() { a.copyTabAddress(t) }},
@@ -535,6 +583,30 @@ func (a *App) tabEntries(m locales.Messages, i int) []menuEntry {
 		{Label: m.CloseOtherHostTabs(), Disabled: others == 0, Do: closing(func(_ int, t *layout.Tab) bool { return a.tabHost(t) != host })},
 		menuSep,
 		{Icon: icons.Clear, Label: m.CloseAllTabs(), Danger: true, Do: closing(func(int, *layout.Tab) bool { return true })},
+	}
+}
+
+// tabColorEntries are the entries of tab t's color submenu: none, then
+// each of the theme's tints, the one it has checked.
+func (a *App) tabColorEntries(m locales.Messages, t *layout.Tab) []menuEntry {
+	out := []menuEntry{{Label: m.TabColorNone(), Checked: t.Color == "", Do: func() { a.SetTabColor(t.ID, "") }}}
+	names := colorNames(m)
+	for i, key := range theme.TintNames {
+		out = append(out, menuEntry{Swatch: key, Label: names[i], Checked: t.Color == key, Do: func() { a.SetTabColor(t.ID, key) }})
+	}
+	return out
+}
+
+// SetTabColor gives the tab of id the tint of name (theme.TintNames), or
+// none for "" or a name it does not know.
+func (a *App) SetTabColor(id int, name string) {
+	if !slices.Contains(theme.TintNames, name) {
+		name = ""
+	}
+	for _, t := range a.ws.Tabs {
+		if t.ID == id {
+			t.Color = name
+		}
 	}
 }
 

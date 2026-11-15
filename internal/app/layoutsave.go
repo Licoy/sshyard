@@ -28,6 +28,7 @@ type layoutSnap struct {
 }
 type tabSnap struct {
 	Title string    `json:"title,omitempty"`
+	Color string    `json:"color,omitempty"`
 	Focus int       `json:"focus"`
 	Root  *nodeSnap `json:"root"`
 }
@@ -79,7 +80,7 @@ func (a *App) layoutSnapshot() layoutSnap {
 		if i == a.ws.Active {
 			snap.Active = len(snap.Tabs)
 		}
-		snap.Tabs = append(snap.Tabs, tabSnap{Title: t.Title, Focus: t.Focus, Root: root})
+		snap.Tabs = append(snap.Tabs, tabSnap{Title: t.Title, Color: t.Color, Focus: t.Focus, Root: root})
 	}
 	return snap
 }

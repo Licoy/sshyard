@@ -77,6 +77,7 @@ var settingEntries = []settingEntry{
 	{prefTerminal, locales.Messages.TerminalCursorBlink, locales.Messages.TerminalCursorBlinkNote},
 	{prefTerminal, locales.Messages.TerminalLineNumbers, locales.Messages.TerminalLineNumbersNote},
 	{prefTerminal, locales.Messages.TerminalTimestamps, locales.Messages.TerminalTimestampsNote},
+	{prefTerminal, locales.Messages.TabTitleSource, locales.Messages.TabTitleSourceNote},
 	{prefTerminal, locales.Messages.TerminalFont, nil},
 	{prefTerminal, locales.Messages.TerminalFallbackFont, locales.Messages.TerminalFallbackFontNote},
 	{prefTerminal, locales.Messages.MonospacedOnly, locales.Messages.MonospacedOnlyNote},

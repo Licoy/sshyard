@@ -4,6 +4,8 @@ import (
 	"maps"
 	"runtime"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/Licoy/sshyard/internal/icons"
 	"github.com/Licoy/sshyard/internal/keymap"
@@ -34,7 +36,65 @@ const (
 	actBroadcast      = "broadcast"
 	actSessionLogs    = "sessionLogs"
 	actHistory        = "commandHistory"
+	// actTab is the prefix of the actions that show the tab of their
+	// number, 1 to tabJumps; the last shows the last tab.
+	actTab = "selectTab"
 )
+
+// tabJumps is how many tabs have a shortcut of their own: the first
+// eight by their number, and the last, by the ninth.
+const tabJumps = 9
+
+// tabActions are the actions showing a tab by its number.
+func tabActions() []action {
+	out := make([]action, 0, tabJumps)
+	for n := 1; n <= tabJumps; n++ {
+		label := func(m locales.Messages) string { return m.GoToTab(strconv.Itoa(n)) }
+		if n == tabJumps {
+			label = locales.Messages.GoToLastTab
+		}
+		out = append(out, action{actTab + strconv.Itoa(n), label, icons.OpenInTab, keymap.Combo{Mods: appMods, Key: ui.Key0 + ui.Key(n)}, false})
+	}
+	return out
+}
+
+// tabOfNumber is the place among count tabs of the one the shortcut of
+// number n shows: the n-th, the last for tabJumps; -1 for none.
+func tabOfNumber(n, count int) int {
+	switch {
+	case n < 1 || n > tabJumps || count == 0:
+		return -1
+	case n == tabJumps:
+		return count - 1
+	case n > count:
+		return -1
+	}
+	return n - 1
+}
+
+// tabNumber is the number of the tab action id shows, 0 for another.
+func tabNumber(id string) int {
+	s, ok := strings.CutPrefix(id, actTab)
+	if !ok {
+		return 0
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 1 || n > tabJumps {
+		return 0
+	}
+	return n
+}
+
+// selectTabNumber shows the tab of number n (tabOfNumber), if there is one.
+func (a *App) selectTabNumber(n int) {
+	i := tabOfNumber(n, len(a.ws.Tabs))
+	if i < 0 {
+		return
+	}
+	a.ws.Active = i
+	a.page = pageWorkspace
+	a.focusReq = a.ws.Tabs[i].Focused().ID
+}
 
 // action is an action with a shortcut: what it is called, its icon in the
 // command palette, and the shortcut it has until one is recorded.
@@ -50,7 +110,7 @@ type action struct {
 
 // actions are the actions with a shortcut, in the order the settings
 // list them.
-var actions = []action{
+var actions = append([]action{
 	{actCommandPalette, locales.Messages.CommandPalette, icons.Command, keymap.Combo{Mods: aiMods, Key: ui.KeyP}, false},
 	{actQuickConnect, locales.Messages.QuickConnect, icons.Quick, keymap.Combo{Mods: appMods, Key: ui.KeyK}, false},
 	{actNewTab, locales.Messages.NewTab, icons.Add, keymap.Combo{Mods: appMods, Key: ui.KeyT}, false},
@@ -70,7 +130,7 @@ var actions = []action{
 	{actBroadcast, locales.Messages.Broadcast, icons.Broadcast, keymap.Combo{Mods: aiMods, Key: ui.KeyM}, false},
 	{actSessionLogs, locales.Messages.SessionLogs, icons.FileText, keymap.Combo{Mods: aiMods, Key: ui.KeyL}, false},
 	{actHistory, locales.Messages.CommandHistory, icons.History, keymap.Combo{Mods: aiMods, Key: ui.KeyH}, false},
-}
+}, tabActions()...)
 
 // actionOf is the action with id.
 func actionOf(id string) (action, bool) {
@@ -286,5 +346,9 @@ func (a *App) runAction(id string) {
 		a.ToggleTool(layout.Logs)
 	case actHistory:
 		a.ToggleTool(layout.History)
+	default:
+		if n := tabNumber(id); n > 0 {
+			a.selectTabNumber(n)
+		}
 	}
 }
