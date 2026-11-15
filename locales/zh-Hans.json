@@ -2087,5 +2087,15 @@
   "termXferDropBody": "SSHYard 会在提示符处输入接收命令，然后发送它们。",
   "termXferDropDirs": "文件夹只能用 trz（trzsz）发送。",
   "termXferDropRz": "用 rz 发送",
-  "termXferDropTrz": "用 trz 发送"
+  "termXferDropTrz": "用 trz 发送",
+  "completionSection": "补全",
+  "terminalCompletion": "命令补全",
+  "terminalCompletionNote": "在光标后以浅色显示以前运行过的命令的其余部分，按 → 或 End 输入。路径可通过快捷键或在输入时列出文件夹中的项目。",
+  "completionOff": "关闭",
+  "completionInline": "建议",
+  "completionAuto": "建议与路径",
+  "completePath": "补全路径",
+  "completionList": "路径补全",
+  "completionNoMatches": "没有匹配的项目",
+  "completionNoFolder": "无法在此读取该文件夹"
 }

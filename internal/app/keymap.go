@@ -38,7 +38,8 @@ const (
 	actHistory        = "commandHistory"
 	// actTab is the prefix of the actions that show the tab of their
 	// number, 1 to tabJumps; the last shows the last tab.
-	actTab = "selectTab"
+	actTab          = "selectTab"
+	actCompletePath = "completePath"
 )
 
 // tabJumps is how many tabs have a shortcut of their own: the first
@@ -130,6 +131,7 @@ var actions = append([]action{
 	{actBroadcast, locales.Messages.Broadcast, icons.Broadcast, keymap.Combo{Mods: aiMods, Key: ui.KeyM}, false},
 	{actSessionLogs, locales.Messages.SessionLogs, icons.FileText, keymap.Combo{Mods: aiMods, Key: ui.KeyL}, false},
 	{actHistory, locales.Messages.CommandHistory, icons.History, keymap.Combo{Mods: aiMods, Key: ui.KeyH}, false},
+	{actCompletePath, locales.Messages.CompletePath, icons.PathList, keymap.Combo{Mods: appMods, Key: ui.KeyJ}, false},
 }, tabActions()...)
 
 // actionOf is the action with id.
@@ -346,6 +348,8 @@ func (a *App) runAction(id string) {
 		a.ToggleTool(layout.Logs)
 	case actHistory:
 		a.ToggleTool(layout.History)
+	case actCompletePath:
+		a.askPathList()
 	default:
 		if n := tabNumber(id); n > 0 {
 			a.selectTabNumber(n)

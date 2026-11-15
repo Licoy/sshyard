@@ -23,7 +23,8 @@ import (
 // history files, the newest first under the day they ran, each once.
 // A command runs or is inserted in the focused terminal, is copied, or
 // becomes a snippet. The panel reads the files again every historyEvery
-// while it shows; nothing it reads is kept.
+// while it shows; nothing it reads is kept, but in memory for the
+// terminals to complete from (sawHistory).
 
 // historyEvery is how often the panel reads the files again; historyTimeout
 // bounds one read; historyPage is how many commands the list shows before
@@ -148,6 +149,7 @@ func (a *App) historyRead(gen int, h shellhist.History, err error) {
 		return
 	}
 	d.hist, d.read = h, true
+	a.sawHistory(d.host, h, d.at)
 	if d.shell != "" && !h.Has(d.shell) {
 		d.shell = ""
 	}

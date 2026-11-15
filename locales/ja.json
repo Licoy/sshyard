@@ -2087,5 +2087,15 @@
   "termXferDropBody": "SSHYard がプロンプトに受信コマンドを入力してから送信します。",
   "termXferDropDirs": "フォルダは trz（trzsz）でのみ送信できます。",
   "termXferDropRz": "rz で送信",
-  "termXferDropTrz": "trz で送信"
+  "termXferDropTrz": "trz で送信",
+  "completionSection": "補完",
+  "terminalCompletion": "コマンド補完",
+  "terminalCompletionNote": "以前に実行したコマンドの残りをカーソルの後ろに淡く表示し、→ または End で入力します。パスはショートカットで、または入力中にフォルダの項目を一覧表示します。",
+  "completionOff": "オフ",
+  "completionInline": "候補",
+  "completionAuto": "候補とパス",
+  "completePath": "パスを補完",
+  "completionList": "パスの補完候補",
+  "completionNoMatches": "一致する項目はありません",
+  "completionNoFolder": "ここではこのフォルダを読み取れません"
 }

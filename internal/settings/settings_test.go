@@ -420,6 +420,32 @@ func TestTerminalTransfersDefault(t *testing.T) {
 	}
 }
 
+// TestTerminalCompletion: a file from before the setting, or with a value
+// not known, shows inline suggestions; off and the automatic list stay.
+func TestTerminalCompletion(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "s.json")
+	for _, c := range []struct{ file, want string }{
+		{`{"theme":"dark"}`, CompletionInline},
+		{`{"terminalCompletion":"everything"}`, CompletionInline},
+		{`{"terminalCompletion":"off"}`, CompletionOff},
+		{`{"terminalCompletion":"auto"}`, CompletionAuto},
+	} {
+		os.WriteFile(p, []byte(c.file), 0o600)
+		s, err := Load(p)
+		if err != nil || s.TerminalCompletion != c.want {
+			t.Fatalf("%s: loaded %q %v, want %q", c.file, s.TerminalCompletion, err, c.want)
+		}
+	}
+	s := Default()
+	s.TerminalCompletion = CompletionOff
+	if err := Save(p, s); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := Load(p); err != nil || got.TerminalCompletion != CompletionOff {
+		t.Fatalf("reloaded %q %v", got.TerminalCompletion, err)
+	}
+}
+
 func TestSessionLogDir(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "s.json")
 	dir := filepath.Join(t.TempDir(), "logs")

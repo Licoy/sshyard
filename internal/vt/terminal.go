@@ -84,6 +84,7 @@ type Terminal struct {
 	title       string
 	cwd         string
 	cwdHost     string // the host the cwd report named
+	cwdReports  uint64 // how many directory reports came, the same one too
 	remoteHost  string // OSC 1337 RemoteHost's host
 	g0Graphics  bool
 	g1Graphics  bool
@@ -234,6 +235,15 @@ func (t *Terminal) Cwd() string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.cwd
+}
+
+// CwdReports counts the directory reports the shell made (OSC 7 or OSC
+// 1337 CurrentDir), each one, the same directory again too: a shell that
+// makes one at every prompt shows a new prompt as it grows.
+func (t *Terminal) CwdReports() uint64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.cwdReports
 }
 
 // CwdHost is the host the last directory report named: OSC 7's
