@@ -33,6 +33,7 @@
   "favorites": "お気に入り",
   "ungrouped": "グループなし",
   "newHost": "新しいホスト",
+  "cloneHost": "新しいホストとして複製…",
   "editHost": "ホストを編集",
   "deleteHost": "ホストを削除",
   "deleteForward": "ポート転送を削除",

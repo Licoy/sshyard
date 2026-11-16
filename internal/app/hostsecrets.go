@@ -42,6 +42,9 @@ func (a *App) hostSecretFields(c *ui.Context, m locales.Messages, tok theme.Toke
 }
 
 func hostFormNeedsSecrets(f *hostForm, h assets.Host) bool {
+	if f.from != "" && (h.Auth == assets.AuthPassword || h.Auth == assets.AuthKey) {
+		return true // copies the secrets it keeps
+	}
 	if h.Auth != f.orig.Auth {
 		return h.Auth == assets.AuthPassword || h.Auth == assets.AuthKey || f.orig.Auth == assets.AuthPassword || f.orig.Auth == assets.AuthKey
 	}
@@ -60,6 +63,12 @@ func (a *App) hostSecretChanges(m locales.Messages, f *hostForm, h assets.Host) 
 		return h, nil, nil
 	}
 	s := &f.secret
+	// src owns the saved secrets blank fields keep: the cloned host's
+	// for a clone, which gets copies of them.
+	src := h.ID
+	if f.from != "" {
+		src = f.from
+	}
 	values := map[keychain.Kind][]byte{}
 	keep := map[keychain.Kind]bool{}
 	fail := func(text string) (assets.Host, []keychain.Change, error) { return h, nil, errors.New(text) }
@@ -68,18 +77,23 @@ func (a *App) hostSecretChanges(m locales.Messages, f *hostForm, h assets.Host) 
 		if s.password != "" {
 			values[keychain.Password] = []byte(s.password)
 		} else {
-			exists, err := a.kc.Exists(keychain.Host(h.ID, keychain.Password))
+			exists, err := a.kc.Exists(keychain.Host(src, keychain.Password))
 			if err != nil {
 				return h, nil, err
 			}
 			if f.orig.Auth != h.Auth || !exists {
 				return fail(m.CredPasswordRequired())
 			}
-			keep[keychain.Password] = true
+			if src == h.ID {
+				keep[keychain.Password] = true
+			} else if values[keychain.Password], err = a.kc.Get(keychain.Host(src, keychain.Password)); err != nil {
+				return h, nil, err
+			}
 		}
 	case assets.AuthKey:
 		var k keys.Key
 		var err error
+		var saved []byte // the key kept from the saved one
 		pass := []byte(s.passphrase)
 		switch {
 		case s.genKey != nil:
@@ -95,12 +109,12 @@ func (a *App) hostSecretChanges(m locales.Messages, f *hostForm, h assets.Host) 
 			}
 		case f.orig.Auth == assets.AuthKey:
 			var data []byte
-			data, err = a.kc.Get(keychain.Host(h.ID, keychain.PrivateKey))
+			data, err = a.kc.Get(keychain.Host(src, keychain.PrivateKey))
 			if err != nil {
 				return h, nil, err
 			}
 			if len(pass) == 0 && !s.askPass {
-				pass, err = a.kc.Get(keychain.Host(h.ID, keychain.Passphrase))
+				pass, err = a.kc.Get(keychain.Host(src, keychain.Passphrase))
 				if errors.Is(err, keychain.ErrNotFound) {
 					err = nil
 				}
@@ -109,11 +123,11 @@ func (a *App) hostSecretChanges(m locales.Messages, f *hostForm, h assets.Host) 
 				}
 			}
 			k, err = keys.Import(data, pass)
-			keep[keychain.PrivateKey] = true
+			saved = data
 		default:
 			return fail(m.CredKeyRequired())
 		}
-		savedUnread := keep[keychain.PrivateKey] && len(pass) == 0
+		savedUnread := saved != nil && len(pass) == 0
 		if errors.Is(err, keys.ErrPassphraseNeeded) && s.askPass && (k.Public != nil || savedUnread) && !keys.IsPPK(s.keyData) {
 			err = nil
 		}
@@ -123,8 +137,13 @@ func (a *App) hostSecretChanges(m locales.Messages, f *hostForm, h assets.Host) 
 		if s.cert != "" && !s.certInfo.Matches(k.Fingerprint()) {
 			return fail(m.ErrCertMismatch())
 		}
-		if !keep[keychain.PrivateKey] {
+		switch {
+		case saved == nil:
 			values[keychain.PrivateKey] = k.PEM
+		case src == h.ID:
+			keep[keychain.PrivateKey] = true
+		default:
+			values[keychain.PrivateKey] = saved
 		}
 		h.AskPassphrase = k.Encrypted && s.askPass
 		if k.Encrypted && !h.AskPassphrase {

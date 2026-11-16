@@ -82,6 +82,9 @@ type hostForm struct {
 	// promote is the temporary host being saved, whose panes then show
 	// the new host
 	promote string
+	// from is the host a new one is cloned from, whose saved secrets it
+	// copies unless replaced
+	from string
 	streamForm
 	renewalForm
 }
@@ -187,6 +190,19 @@ func (a *App) openEditor(h *assets.Host) {
 		}
 	}
 	a.form, a.editing = f, true
+}
+
+// openClone opens the editor on a new host with h's settings and saved
+// secrets, as a start for a similar one.
+func (a *App) openClone(h assets.Host) {
+	if (h.Auth == assets.AuthPassword || h.Auth == assets.AuthKey) && !a.unlocked() {
+		a.withSecrets(func() { a.openClone(h) })
+		return
+	}
+	a.openEditor(&h)
+	f := a.form
+	f.isNew, f.from = true, h.ID
+	f.orig.ID, f.orig.Created, f.orig.Updated = "", time.Time{}, time.Time{}
 }
 
 func osc52Choices(m locales.Messages) (labels, codes []string) {

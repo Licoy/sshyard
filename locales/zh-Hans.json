@@ -33,6 +33,7 @@
   "favorites": "收藏",
   "ungrouped": "未分组",
   "newHost": "新建主机",
+  "cloneHost": "克隆为新主机…",
   "editHost": "编辑主机",
   "deleteHost": "删除主机",
   "deleteForward": "删除端口转发",

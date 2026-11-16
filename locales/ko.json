@@ -33,6 +33,7 @@
   "favorites": "즐겨찾기",
   "ungrouped": "그룹 없음",
   "newHost": "새 호스트",
+  "cloneHost": "새 호스트로 복제…",
   "editHost": "호스트 편집",
   "deleteHost": "호스트 삭제",
   "deleteForward": "포트 포워딩 삭제",

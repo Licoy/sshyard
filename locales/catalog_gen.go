@@ -367,6 +367,16 @@ func (msgs Messages) NewHost() string {
 	return Catalog.Format(msgs.locale, "newHost", nil)
 }
 
+// CloneHost says "Clone as New Host…"
+// in the language the app shows.
+func CloneHost() string { return In(i18n.Locale()).CloneHost() }
+
+// CloneHost says "Clone as New Host…"
+// in the language of msgs.
+func (msgs Messages) CloneHost() string {
+	return Catalog.Format(msgs.locale, "cloneHost", nil)
+}
+
 // EditHost says "Edit Host"
 // in the language the app shows.
 func EditHost() string { return In(i18n.Locale()).EditHost() }

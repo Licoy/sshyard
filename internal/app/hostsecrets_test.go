@@ -339,3 +339,69 @@ func TestHostOwnedLegacyPEMBlankEdit(t *testing.T) {
 		t.Fatal("new wrong passphrase accepted")
 	}
 }
+
+func TestHostCloneCopiesSecrets(t *testing.T) {
+	a, _ := newTestApp(t)
+	src := savePasswordHost(t, a, "10.0.0.1")
+	a.openClone(src)
+	a.form.address = "10.0.0.2"
+	if !a.SaveForm(en) {
+		t.Fatal(a.form.err)
+	}
+	var clone assets.Host
+	for _, h := range a.store.List() {
+		if h.ID != src.ID {
+			clone = h
+		}
+	}
+	if clone.ID == "" || clone.Address != "10.0.0.2" || clone.User != src.User || clone.Auth != assets.AuthPassword {
+		t.Fatalf("clone %+v", clone)
+	}
+	if got, _ := a.store.Get(src.ID); got.Address != "10.0.0.1" {
+		t.Fatalf("source changed: %+v", got)
+	}
+	if value, err := a.kc.Get(keychain.Host(clone.ID, keychain.Password)); err != nil || string(value) != "pw" {
+		t.Fatalf("clone password %q %v", value, err)
+	}
+	if err := a.DeleteHost(src.ID); err != nil {
+		t.Fatal(err)
+	}
+	if value, err := a.kc.Get(keychain.Host(clone.ID, keychain.Password)); err != nil || string(value) != "pw" {
+		t.Fatalf("clone lost password with its source: %q %v", value, err)
+	}
+
+	priv, _ := newKey(t)
+	a.openEditor(nil)
+	f := a.form
+	f.name, f.address, f.user = "keyed", "10.0.0.3", "demo"
+	f.auth = en.CredKindKey()
+	f.secret.setKey(openSSHKey(t, priv, "secret-pass"), "")
+	f.secret.passphrase = "secret-pass"
+	if !a.SaveForm(en) {
+		t.Fatal(f.err)
+	}
+	var keyed assets.Host
+	for _, h := range a.store.List() {
+		if h.Name == "keyed" {
+			keyed = h
+		}
+	}
+	a.openClone(keyed)
+	a.form.name = "keyed-2"
+	if !a.SaveForm(en) {
+		t.Fatal(a.form.err)
+	}
+	for _, h := range a.store.List() {
+		if h.Name != "keyed-2" {
+			continue
+		}
+		for _, kind := range []keychain.Kind{keychain.PrivateKey, keychain.Passphrase} {
+			want, _ := a.kc.Get(keychain.Host(keyed.ID, kind))
+			if got, err := a.kc.Get(keychain.Host(h.ID, kind)); err != nil || string(got) != string(want) {
+				t.Fatalf("clone %s %v", kind, err)
+			}
+		}
+		return
+	}
+	t.Fatal("key clone not saved")
+}

@@ -33,6 +33,7 @@
   "favorites": "Favorites",
   "ungrouped": "Ungrouped",
   "newHost": "New Host",
+  "cloneHost": "Clone as New Host…",
   "editHost": "Edit Host",
   "deleteHost": "Delete Host",
   "deleteForward": "Delete Port Forward",

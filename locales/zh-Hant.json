@@ -33,6 +33,7 @@
   "favorites": "收藏",
   "ungrouped": "未群組",
   "newHost": "新建主機",
+  "cloneHost": "複製為新主機…",
   "editHost": "編輯主機",
   "deleteHost": "刪除主機",
   "deleteForward": "刪除連接埠轉發",

@@ -385,6 +385,7 @@ func (a *App) hostEntries(m locales.Messages, h assets.Host) []menuEntry {
 			hh := h
 			a.openEditor(&hh)
 		}},
+		{Icon: icons.Copy, Label: m.CloneHost(), Do: func() { a.openClone(h) }},
 		{Icon: icons.InstallKey, Label: m.InstallPublicKey(), Disabled: noSSH, Do: func() { a.openInstall(h.ID) }},
 		{Icon: icons.HostKey, Label: m.ForgetHostKey(), Disabled: !a.knowsHostKey(h), Do: func() { a.forgetHostKey(h) }},
 		{Icon: icons.Forward, Label: m.NewForwardMenu(), Disabled: noSSH, Do: func() { a.openFwdForm(m, nil, h.ID) }},
