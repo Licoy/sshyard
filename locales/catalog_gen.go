@@ -7437,6 +7437,136 @@ func (msgs Messages) OpenDataFolder() string {
 	return Catalog.Format(msgs.locale, "openDataFolder", nil)
 }
 
+// StorageLocation says "Data location"
+// in the language the app shows.
+func StorageLocation() string { return In(i18n.Locale()).StorageLocation() }
+
+// StorageLocation says "Data location"
+// in the language of msgs.
+func (msgs Messages) StorageLocation() string {
+	return Catalog.Format(msgs.locale, "storageLocation", nil)
+}
+
+// StorageLocationNote says "Portable keeps all data in sshyard_data beside the app, so it travels with the app's folder."
+// in the language the app shows.
+func StorageLocationNote() string { return In(i18n.Locale()).StorageLocationNote() }
+
+// StorageLocationNote says "Portable keeps all data in sshyard_data beside the app, so it travels with the app's folder."
+// in the language of msgs.
+func (msgs Messages) StorageLocationNote() string {
+	return Catalog.Format(msgs.locale, "storageLocationNote", nil)
+}
+
+// StorageAppData says "App data"
+// in the language the app shows.
+func StorageAppData() string { return In(i18n.Locale()).StorageAppData() }
+
+// StorageAppData says "App data"
+// in the language of msgs.
+func (msgs Messages) StorageAppData() string {
+	return Catalog.Format(msgs.locale, "storageAppData", nil)
+}
+
+// StoragePortable says "Portable"
+// in the language the app shows.
+func StoragePortable() string { return In(i18n.Locale()).StoragePortable() }
+
+// StoragePortable says "Portable"
+// in the language of msgs.
+func (msgs Messages) StoragePortable() string {
+	return Catalog.Format(msgs.locale, "storagePortable", nil)
+}
+
+// StorageMoveTitle says "Move Data?"
+// in the language the app shows.
+func StorageMoveTitle() string { return In(i18n.Locale()).StorageMoveTitle() }
+
+// StorageMoveTitle says "Move Data?"
+// in the language of msgs.
+func (msgs Messages) StorageMoveTitle() string {
+	return Catalog.Format(msgs.locale, "storageMoveTitle", nil)
+}
+
+// StorageMoveToPortable says "SSHYard will restart, move all its data to {path} and then remove it from the app data folder. Moving or deleting the…"
+// in the language the app shows.
+func StorageMoveToPortable(path string) string { return In(i18n.Locale()).StorageMoveToPortable(path) }
+
+// StorageMoveToPortable says "SSHYard will restart, move all its data to {path} and then remove it from the app data folder. Moving or deleting the…"
+// in the language of msgs.
+func (msgs Messages) StorageMoveToPortable(path string) string {
+	return Catalog.Format(msgs.locale, "storageMoveToPortable", map[string]any{"path": path})
+}
+
+// StorageMoveToAppData says "SSHYard will restart, move all its data back to {path} and then remove the sshyard_data folder beside the app."
+// in the language the app shows.
+func StorageMoveToAppData(path string) string { return In(i18n.Locale()).StorageMoveToAppData(path) }
+
+// StorageMoveToAppData says "SSHYard will restart, move all its data back to {path} and then remove the sshyard_data folder beside the app."
+// in the language of msgs.
+func (msgs Messages) StorageMoveToAppData(path string) string {
+	return Catalog.Format(msgs.locale, "storageMoveToAppData", map[string]any{"path": path})
+}
+
+// StorageSecretsKeychain says "Saved passwords and keys stay protected by this computer's system keychain: on another computer they cannot be unlock…"
+// in the language the app shows.
+func StorageSecretsKeychain() string { return In(i18n.Locale()).StorageSecretsKeychain() }
+
+// StorageSecretsKeychain says "Saved passwords and keys stay protected by this computer's system keychain: on another computer they cannot be unlock…"
+// in the language of msgs.
+func (msgs Messages) StorageSecretsKeychain() string {
+	return Catalog.Format(msgs.locale, "storageSecretsKeychain", nil)
+}
+
+// StorageSecretsPassword says "Saved passwords and keys stay protected by your master password, which unlocks them on any computer."
+// in the language the app shows.
+func StorageSecretsPassword() string { return In(i18n.Locale()).StorageSecretsPassword() }
+
+// StorageSecretsPassword says "Saved passwords and keys stay protected by your master password, which unlocks them on any computer."
+// in the language of msgs.
+func (msgs Messages) StorageSecretsPassword() string {
+	return Catalog.Format(msgs.locale, "storageSecretsPassword", nil)
+}
+
+// StorageMoveRestart says "Move and Restart"
+// in the language the app shows.
+func StorageMoveRestart() string { return In(i18n.Locale()).StorageMoveRestart() }
+
+// StorageMoveRestart says "Move and Restart"
+// in the language of msgs.
+func (msgs Messages) StorageMoveRestart() string {
+	return Catalog.Format(msgs.locale, "storageMoveRestart", nil)
+}
+
+// StorageMoveFailed says "Couldn't move the data: {detail}. It was left where it was."
+// in the language the app shows.
+func StorageMoveFailed(detail string) string { return In(i18n.Locale()).StorageMoveFailed(detail) }
+
+// StorageMoveFailed says "Couldn't move the data: {detail}. It was left where it was."
+// in the language of msgs.
+func (msgs Messages) StorageMoveFailed(detail string) string {
+	return Catalog.Format(msgs.locale, "storageMoveFailed", map[string]any{"detail": detail})
+}
+
+// StorageMoveOccupied says "Couldn't move the data: {path} already holds data. It was left where it was."
+// in the language the app shows.
+func StorageMoveOccupied(path string) string { return In(i18n.Locale()).StorageMoveOccupied(path) }
+
+// StorageMoveOccupied says "Couldn't move the data: {path} already holds data. It was left where it was."
+// in the language of msgs.
+func (msgs Messages) StorageMoveOccupied(path string) string {
+	return Catalog.Format(msgs.locale, "storageMoveOccupied", map[string]any{"path": path})
+}
+
+// StorageMoveBusy says "Couldn't move the data: another SSHYard is still using it. It was left where it was."
+// in the language the app shows.
+func StorageMoveBusy() string { return In(i18n.Locale()).StorageMoveBusy() }
+
+// StorageMoveBusy says "Couldn't move the data: another SSHYard is still using it. It was left where it was."
+// in the language of msgs.
+func (msgs Messages) StorageMoveBusy() string {
+	return Catalog.Format(msgs.locale, "storageMoveBusy", nil)
+}
+
 // AboutSecrets says "Secret storage"
 // in the language the app shows.
 func AboutSecrets() string { return In(i18n.Locale()).AboutSecrets() }

@@ -939,6 +939,7 @@ func (a *App) aboutPage(c *ui.Context, m locales.Messages, tok theme.Tokens) {
 				}
 			}
 		})
+		a.storageRow(c, m, g)
 		if !a.kc.PasswordProtected() {
 			g.row(m.AboutSecrets(), "", value(m.SecretsKeychain()))
 			return

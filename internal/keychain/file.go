@@ -8,6 +8,10 @@ import (
 	"path/filepath"
 )
 
+// Lock takes the lifetime lock at path that OpenLocked takes, failing with
+// ErrBusy while another process holds it.
+func Lock(path string) (io.Closer, error) { return acquireLock(path) }
+
 func readEncrypted(path string) (data []byte, err error) {
 	f, err := os.Open(path)
 	if err != nil {

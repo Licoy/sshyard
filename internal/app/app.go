@@ -70,6 +70,9 @@ type Platform struct {
 	// CacheDir is where files opened in another app are copied, the
 	// user's cache folder when "".
 	CacheDir string
+	// Storage is where the data may move, nil where it cannot (macOS,
+	// installed copies, a data folder set from outside).
+	Storage *Storage
 	// DataDir holds application metadata and encrypted credentials; it is required
 	// unless ResolveStorage supplies the persistent storage paths.
 	DataDir string
@@ -476,6 +479,7 @@ type App struct {
 	updProxy  string
 	themeIdx  int
 	autoRecon bool
+	storage   storageState
 	// lkChoice and lkMCPChoice are the switches of settings.LocalKeys and
 	// LocalKeysMCP.
 	lkChoice, lkMCPChoice bool
@@ -868,6 +872,7 @@ func (a *App) ApplySettings(s settings.Settings) error {
 
 // Start applies the saved theme and language to the window.
 func (a *App) Start() {
+	a.reportStorageMove()
 	a.loadFonts()
 	a.probeDesktop()
 	if a.p.SetTheme != nil {

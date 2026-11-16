@@ -15,6 +15,7 @@ import (
 	"github.com/Licoy/sshyard/internal/keychain"
 	"github.com/Licoy/sshyard/internal/macfix"
 	"github.com/Licoy/sshyard/internal/netwatch"
+	"github.com/Licoy/sshyard/internal/portable"
 	"github.com/Licoy/sshyard/internal/settings"
 	"github.com/Licoy/sshyard/internal/theme"
 	"github.com/Licoy/sshyard/internal/updater"
@@ -39,6 +40,8 @@ func platform() app.Platform {
 		Post:           postUI,
 		ResolveStorage: storagePaths,
 		Version:        mygo.App.Version(),
+		Storage:        storage,
+		CacheDir:       cacheDir,
 		Secrets:        keychain.System{},
 		Updates:        updater.MygoBackend{},
 		SetTheme:       func(m theme.Mode) { mygo.Theme.SetSource(themeSource(m)) },
@@ -72,6 +75,56 @@ func platform() app.Platform {
 		WatchNetwork: netwatch.Watch,
 		Awake:        awake.System(),
 	}
+}
+
+// storage is where the data of this copy may move, nil where it cannot;
+// cacheDir is where a portable copy copies the files it opens in other
+// apps. setupStorage sets them before the app runs.
+var (
+	storage  *app.Storage
+	cacheDir string
+)
+
+// setupStorage keeps the data of a portable copy beside its executable,
+// in place of the user's application data, after making the move the
+// last launch asked for (portable.Apply).
+func setupStorage() {
+	if runtime.GOOS != "windows" && runtime.GOOS != "linux" || os.Getenv("SSHYARD_DATA_DIR") != "" {
+		return
+	}
+	exe, err := os.Executable()
+	if err == nil {
+		exe, err = filepath.EvalSymlinks(exe)
+	}
+	config, cerr := os.UserConfigDir()
+	if err != nil || cerr != nil {
+		return
+	}
+	dir, appData := filepath.Dir(exe), filepath.Join(config, mygo.App.Name())
+	// The copy that asked quits as this one starts: wait for its lock.
+	moveErr := portable.Apply(dir, appData, 15*time.Second)
+	if moveErr != nil {
+		log.Printf("sshyard: data move failed: %v", moveErr)
+	}
+	here := portable.Active(runtime.GOOS, dir)
+	if here {
+		d := portable.Path(dir)
+		mygo.App.SetPath(mygo.PathUserData, d)
+		mygo.App.SetPath(mygo.PathCache, filepath.Join(d, "cache"))
+		mygo.App.SetPath(mygo.PathLogs, filepath.Join(d, "logs"))
+		cacheDir = filepath.Join(d, "cache", "open")
+	}
+	if !portable.Supported(runtime.GOOS, dir) {
+		return
+	}
+	storage = &app.Storage{Portable: here, PortableDir: portable.Path(dir), AppDataDir: appData, MoveErr: moveErr,
+		Move: func() error {
+			if err := portable.Request(dir, !here); err != nil {
+				return err
+			}
+			mygo.App.Relaunch()
+			return nil
+		}}
 }
 
 func storagePaths() (app.StoragePaths, error) {
@@ -128,6 +181,7 @@ func appMenu() *mygo.Menu {
 }
 
 func main() {
+	setupStorage()
 	mygo.Use(updatePlugin())
 	if runtime.GOOS == "darwin" {
 		mygo.App.SetMenu(appMenu())
