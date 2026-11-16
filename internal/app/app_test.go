@@ -857,3 +857,43 @@ func TestDragPaneToEdge(t *testing.T) {
 		t.Errorf("%d panes after the host drop, want %d", n, before+1)
 	}
 }
+
+// Closing a files pane gives the keyboard back to the tab's terminal
+// opened first, not to whichever pane the layout falls back on.
+func TestClosingFilesFocusesFirstTerminal(t *testing.T) {
+	a, _ := newTestApp(t)
+	pane := func(k layout.Kind) *conn {
+		a.nextConn++
+		c := &conn{id: a.nextConn, kind: k}
+		a.conns[c.id] = c
+		return c
+	}
+	first, second, files := pane(layout.Terminal), pane(layout.Terminal), pane(layout.Files)
+	tab := a.ws.Open(first.item())
+	a.ws.Place(second.item(), tab.Focus, layout.Right)
+	a.ws.Place(files.item(), tab.Focus, layout.Bottom)
+	other := pane(layout.Terminal)
+	a.ws.Open(other.item())
+	a.ws.Activate(files.id)
+	if tab.Focused().ID != files.id {
+		t.Fatalf("focused %v, want the files pane", tab.Focused())
+	}
+	a.focusReq = 0
+	a.CloseSession(files.id)
+	if tab.Focused().ID != first.id || a.focusReq != first.id {
+		t.Fatalf("focused %v, focusReq %d, want the first terminal %d", tab.Focused(), a.focusReq, first.id)
+	}
+
+	// A files pane closed in a tab not shown leaves the keyboard alone.
+	files = pane(layout.Files)
+	_, node := a.ws.Locate(second.id)
+	a.ws.Place(files.item(), node.ID, layout.Bottom)
+	_, node = a.ws.Locate(second.id)
+	tab.Focus = node.ID
+	a.ws.Activate(other.id)
+	a.focusReq = 0
+	a.CloseSession(files.id)
+	if a.focusReq != 0 || tab.Focused().ID != second.id {
+		t.Fatalf("focusReq %d, focused %v after closing a hidden tab's files pane", a.focusReq, tab.Focused())
+	}
+}

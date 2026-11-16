@@ -1482,8 +1482,13 @@ func (a *App) finishCloseSession(c *conn) {
 	}
 	a.dropXferAsk(id)
 	a.keepRailWidth(c)
+	t, _ := a.ws.Locate(id)
+	active := t != nil && t == a.ws.ActiveTab()
 	a.ws.Close(id)
 	delete(a.conns, id)
+	if c.kind == layout.Files && active && a.ws.ActiveTab() == t {
+		a.focusFirstTerminal(t)
+	}
 	if c.kind == layout.Broadcast {
 		// Typing goes to several terminals only while the pane shows.
 		a.bc.live = false
@@ -1503,6 +1508,23 @@ func (a *App) finishCloseSession(c *conn) {
 	if !a.closing {
 		a.saveLayout()
 	}
+}
+
+// focusFirstTerminal gives tab t's focus, and the keyboard, to its
+// terminal opened first, so typing reaches the shell again once the
+// files pane closes. A tab without a terminal keeps its focus.
+func (a *App) focusFirstTerminal(t *layout.Tab) {
+	var first *layout.Node
+	for _, p := range t.Panes() {
+		if p.Item.Kind == layout.Terminal && a.conns[p.Item.ID] != nil && (first == nil || p.Item.ID < first.Item.ID) {
+			first = p
+		}
+	}
+	if first == nil {
+		return
+	}
+	t.Focus = first.ID
+	a.focusReq = first.Item.ID
 }
 
 // releaseTermNo forgets a host's pane numbers once its last terminal
