@@ -82,8 +82,11 @@ func TestChallengeSheetAnswersOneTimePassword(t *testing.T) {
 	a.mu.Unlock()
 	noSecrets(t, a.p.DataDir, otp)
 
-	// Canceled: the pane fails as canceled, asking no password.
+	// Canceled: the pane fails as canceled, asking no password. The
+	// closed pane lets go of its connection in the background; until it
+	// has, a new pane would share it and be asked nothing.
 	a.CloseSession(id)
+	waitFor(t, tt, "connection released", func() bool { return a.pool.Shared(a.poolKey(h)) == 0 })
 	id, err = a.Connect(h.ID, openAt{})
 	if err != nil {
 		t.Fatal(err)
