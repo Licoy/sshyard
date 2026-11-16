@@ -2107,5 +2107,22 @@
   "completePath": "补全路径",
   "completionList": "路径补全",
   "completionNoMatches": "没有匹配的项目",
-  "completionNoFolder": "无法在此读取该文件夹"
+  "completionNoFolder": "无法在此读取该文件夹",
+  "searchRemoteFiles": "搜索远程文件",
+  "searchLocalFiles": "搜索本地文件",
+  "fileSearchLabel": "要搜索的文件名",
+  "fileSearchPlaceholder": "名称，或 *.log 这样的通配符",
+  "fileSearchScope": "搜索范围",
+  "fileSearchHere": "当前目录",
+  "fileSearchWholeDisk": "全盘",
+  "fileSearchStop": "停止搜索",
+  "fileSearchClose": "关闭搜索",
+  "fileSearchSearching": "{count, plural, other {正在搜索…已找到 # 项}}",
+  "fileSearchFound": "{count, plural, other {找到 # 项}}",
+  "fileSearchStopped": "{count, plural, other {已停止，找到 # 项}}",
+  "fileSearchNone": "没有匹配项",
+  "fileSearchCapped": "{count, plural, other {仅显示前 # 项，缩小搜索范围以查看其余结果。}}",
+  "fileSearchHint": "输入要搜索的名称。* 匹配任意多个字符，? 匹配一个字符。",
+  "fileSearchShowInFolder": "在文件夹中显示",
+  "fileSearchResults": "搜索结果"
 }

@@ -60,6 +60,10 @@ type sideList struct {
 	typings   int
 	typeFocus bool
 	typeHold  focusHold
+	// search, while set, shows in place of the rows; searches counts the
+	// times it opened, which keys its field.
+	search   *fileSearch
+	searches int
 }
 
 // dirSize is the size of a folder, calculated on request.
@@ -364,6 +368,8 @@ func (fs *filesState) close() {
 	fs.closePreview()
 	fs.remote.dropSizes()
 	fs.local.dropSizes()
+	fs.remote.closeSearch()
+	fs.local.closeSearch()
 	fs.copies.close()
 	fs.pub.Lock()
 	fs.pub.client = nil
@@ -1270,15 +1276,21 @@ func (a *App) filesBody(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, 
 							Do: func() { a.listLocal(l, filepath.Dir(l.dir)) }},
 						{Key: "lrefresh", Button: IconButton{Icon: icons.Refresh, Label: m.LocalRefresh(), Size: Tiny},
 							Do: func() { a.listLocal(l, l.dir) }},
+						{Key: "lsearch", Button: IconButton{Icon: icons.Search, Label: m.SearchLocalFiles(), Active: l.search != nil, Toggle: true, Size: Tiny},
+							Do: l.toggleSearch},
 						{Key: "lmkdir", Button: IconButton{Icon: icons.NewFolder, Label: m.LocalNewFolder(), Size: Tiny},
 							Do: func() { fs.ask, fs.askOpen = &nameAsk{kind: askMkdir}, true }},
 						{Key: "upload", Button: IconButton{Icon: icons.Upload, Label: m.UploadSelected(), Disabled: s.client == nil || len(picked) == 0, Size: Tiny},
 							Do: func() { a.Upload(cn, l.paths(false, picked), s.dir) }},
 					}, m)
 					a.crumbsBar(c, cn, false, tok, m)
-					tb, opened := a.fileTable(c, cn, false, m, tok)
-					if e, ok := selected(l.sel, l.entries); (tb.Submitted() || opened) && ok {
-						a.openEntry(cn, false, e)
+					if l.search != nil {
+						a.searchView(c, cn, false, tok, m)
+					} else {
+						tb, opened := a.fileTable(c, cn, false, m, tok)
+						if e, ok := selected(l.sel, l.entries); (tb.Submitted() || opened) && ok {
+							a.openEntry(cn, false, e)
+						}
 					}
 					if l.err != "" {
 						ui.Text(c, securityText(m, l.err)).TextColor(tok.Danger).FontSize(theme.Footnote)
@@ -1313,6 +1325,8 @@ func (a *App) filesBody(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, 
 				}},
 				barAction{Key: "rrefresh", Button: IconButton{Icon: icons.Refresh, Label: m.RemoteRefresh(), Disabled: off, Size: Tiny},
 					Do: func() { a.listRemote(s, s.dir) }},
+				barAction{Key: "rsearch", Button: IconButton{Icon: icons.Search, Label: m.SearchRemoteFiles(), Active: s.search != nil, Toggle: true, Disabled: off, Size: Tiny},
+					Do: s.toggleSearch},
 				barAction{Key: "rmkdir", Button: IconButton{Icon: icons.NewFolder, Label: m.RemoteNewFolder(), Disabled: off, Size: Tiny},
 					Do: func() { fs.ask, fs.askOpen = &nameAsk{kind: askMkdir, remote: true}, true }})
 			if !dual {
@@ -1364,21 +1378,28 @@ func (a *App) filesBody(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, 
 								a.sudoHeldActions(c, cn, m)
 							}
 						})
+						if s.search != nil && s.search.running {
+							s.search.stop() // it goes on once connected again
+						}
 						return
 					}
 					if dual {
 						a.crumbsBar(c, cn, true, tok, m)
 					}
-					tb, opened := a.fileTable(c, cn, true, m, tok)
-					if a.focusReq == cn.id && a.page == pageWorkspace {
-						tb.Focus()
-						a.focusReq = 0
-					}
-					if e, ok := selected(s.sel, s.entries); (tb.Submitted() || opened) && ok {
-						a.openEntry(cn, true, e)
-					}
-					if len(s.entries) == 0 {
-						ui.Text(c, m.Empty()).TextColor(tok.TextMuted).FontSize(theme.Footnote)
+					if s.search != nil {
+						a.searchView(c, cn, true, tok, m)
+					} else {
+						tb, opened := a.fileTable(c, cn, true, m, tok)
+						if a.focusReq == cn.id && a.page == pageWorkspace {
+							tb.Focus()
+							a.focusReq = 0
+						}
+						if e, ok := selected(s.sel, s.entries); (tb.Submitted() || opened) && ok {
+							a.openEntry(cn, true, e)
+						}
+						if len(s.entries) == 0 {
+							ui.Text(c, m.Empty()).TextColor(tok.TextMuted).FontSize(theme.Footnote)
+						}
 					}
 					if s.err != "" {
 						ui.Text(c, m.ErrGeneric(securityText(m, s.err))).TextColor(tok.Danger).FontSize(theme.Footnote)

@@ -2830,5 +2830,22 @@
   "completePath": "Complete Path",
   "completionList": "Path completions",
   "completionNoMatches": "Nothing here matches",
-  "completionNoFolder": "This folder can't be read here"
+  "completionNoFolder": "This folder can't be read here",
+  "searchRemoteFiles": "Search Remote Files",
+  "searchLocalFiles": "Search Local Files",
+  "fileSearchLabel": "File name to search",
+  "fileSearchPlaceholder": "Name, or a pattern such as *.log",
+  "fileSearchScope": "Search in",
+  "fileSearchHere": "This Folder",
+  "fileSearchWholeDisk": "Whole Disk",
+  "fileSearchStop": "Stop Searching",
+  "fileSearchClose": "Close Search",
+  "fileSearchSearching": "{count, plural, one {Searching… # match} other {Searching… # matches}}",
+  "fileSearchFound": "{count, plural, one {# match} other {# matches}}",
+  "fileSearchStopped": "{count, plural, one {Stopped with # match} other {Stopped with # matches}}",
+  "fileSearchNone": "Nothing matches",
+  "fileSearchCapped": "{count, plural, one {Showing the first # match. Narrow the search to see the rest.} other {Showing the first # matches. Narrow the search to see the rest.}}",
+  "fileSearchHint": "Type a name to search for. * matches any characters and ? any one.",
+  "fileSearchShowInFolder": "Show in Folder",
+  "fileSearchResults": "Search results"
 }

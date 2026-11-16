@@ -2107,5 +2107,22 @@
   "completePath": "パスを補完",
   "completionList": "パスの補完候補",
   "completionNoMatches": "一致する項目はありません",
-  "completionNoFolder": "ここではこのフォルダを読み取れません"
+  "completionNoFolder": "ここではこのフォルダを読み取れません",
+  "searchRemoteFiles": "リモートファイルを検索",
+  "searchLocalFiles": "ローカルファイルを検索",
+  "fileSearchLabel": "検索するファイル名",
+  "fileSearchPlaceholder": "名前、または *.log のようなパターン",
+  "fileSearchScope": "検索範囲",
+  "fileSearchHere": "現在のフォルダ",
+  "fileSearchWholeDisk": "ディスク全体",
+  "fileSearchStop": "検索を停止",
+  "fileSearchClose": "検索を閉じる",
+  "fileSearchSearching": "{count, plural, other {検索中…#件見つかりました}}",
+  "fileSearchFound": "{count, plural, other {#件見つかりました}}",
+  "fileSearchStopped": "{count, plural, other {停止しました（#件）}}",
+  "fileSearchNone": "一致する項目はありません",
+  "fileSearchCapped": "{count, plural, other {最初の#件のみ表示しています。残りを見るには検索範囲を絞り込んでください。}}",
+  "fileSearchHint": "検索する名前を入力してください。* は任意の文字列、? は任意の1文字に一致します。",
+  "fileSearchShowInFolder": "フォルダで表示",
+  "fileSearchResults": "検索結果"
 }

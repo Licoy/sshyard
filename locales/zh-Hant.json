@@ -2107,5 +2107,22 @@
   "completePath": "補全路徑",
   "completionList": "路徑補全",
   "completionNoMatches": "沒有相符的項目",
-  "completionNoFolder": "無法在此讀取此資料夾"
+  "completionNoFolder": "無法在此讀取此資料夾",
+  "searchRemoteFiles": "搜尋遠端檔案",
+  "searchLocalFiles": "搜尋本地檔案",
+  "fileSearchLabel": "要搜尋的檔案名稱",
+  "fileSearchPlaceholder": "名稱，或 *.log 這類萬用字元",
+  "fileSearchScope": "搜尋範圍",
+  "fileSearchHere": "目前目錄",
+  "fileSearchWholeDisk": "全磁碟",
+  "fileSearchStop": "停止搜尋",
+  "fileSearchClose": "關閉搜尋",
+  "fileSearchSearching": "{count, plural, other {正在搜尋…已找到 # 項}}",
+  "fileSearchFound": "{count, plural, other {找到 # 項}}",
+  "fileSearchStopped": "{count, plural, other {已停止，找到 # 項}}",
+  "fileSearchNone": "沒有相符項目",
+  "fileSearchCapped": "{count, plural, other {僅顯示前 # 項，縮小搜尋範圍以查看其餘結果。}}",
+  "fileSearchHint": "輸入要搜尋的名稱。* 比對任意多個字元，? 比對一個字元。",
+  "fileSearchShowInFolder": "在資料夾中顯示",
+  "fileSearchResults": "搜尋結果"
 }

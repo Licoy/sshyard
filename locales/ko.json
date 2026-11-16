@@ -2830,5 +2830,22 @@
   "completePath": "경로 완성",
   "completionList": "경로 완성 목록",
   "completionNoMatches": "일치하는 항목 없음",
-  "completionNoFolder": "여기서 이 폴더를 읽을 수 없음"
+  "completionNoFolder": "여기서 이 폴더를 읽을 수 없음",
+  "searchRemoteFiles": "원격 파일 검색",
+  "searchLocalFiles": "로컬 파일 검색",
+  "fileSearchLabel": "검색할 파일 이름",
+  "fileSearchPlaceholder": "이름 또는 *.log 같은 패턴",
+  "fileSearchScope": "검색 범위",
+  "fileSearchHere": "현재 폴더",
+  "fileSearchWholeDisk": "전체 디스크",
+  "fileSearchStop": "검색 중지",
+  "fileSearchClose": "검색 닫기",
+  "fileSearchSearching": "{count, plural, other {검색 중… #개 찾음}}",
+  "fileSearchFound": "{count, plural, other {#개 찾음}}",
+  "fileSearchStopped": "{count, plural, other {중지됨, #개 찾음}}",
+  "fileSearchNone": "일치하는 항목 없음",
+  "fileSearchCapped": "{count, plural, other {처음 #개만 표시합니다. 나머지를 보려면 검색 범위를 좁히세요.}}",
+  "fileSearchHint": "검색할 이름을 입력하세요. *는 임의의 문자열, ?는 한 문자와 일치합니다.",
+  "fileSearchShowInFolder": "폴더에서 보기",
+  "fileSearchResults": "검색 결과"
 }
