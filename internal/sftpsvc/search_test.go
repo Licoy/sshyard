@@ -358,8 +358,9 @@ func TestSearchLocal(t *testing.T) {
 	}
 	slices.Sort(got)
 	want := []string{"a/Report.txt", "a/b/report.md"}
-	if os.Getuid() == 0 {
-		want = append(want, "locked/report.key") // root reads it anyway
+	if os.Getuid() == 0 || runtime.GOOS == "windows" {
+		// root reads it anyway; Windows has no mode to lock it with
+		want = append(want, "locked/report.key")
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("found %v, want %v", got, want)
