@@ -171,3 +171,29 @@ func TestTitle(t *testing.T) {
 		}
 	}
 }
+
+// TestACPSessionKept checks that the external agent's session is kept
+// with the conversation, and that a file saved before it was still opens.
+func TestACPSessionKept(t *testing.T) {
+	st, _ := store(t)
+	now := time.Now().Round(0)
+	c := conv("h1", "deploy", now)
+	c.Agent, c.Messages = "acp:x", nil
+	c.ACP = &ACPSession{ID: "sess-1", Agent: "acp:x", Cwd: "/tmp/sshyard-acp-1"}
+	if err := st.Save(c); err != nil {
+		t.Fatal(err)
+	}
+	got, err := st.Load("h1", c.ID)
+	if err != nil || got.ACP == nil || *got.ACP != *c.ACP {
+		t.Fatalf("load = %+v, %v", got.ACP, err)
+	}
+	old := map[string]any{"id": NewID(), "host": "h1", "title": "old", "agent": "acp:x", "created": now, "updated": now,
+		"items": []map[string]any{{"kind": "user", "text": "hi"}, {"kind": "text", "text": "hello"}}}
+	if err := st.write("h1", old["id"].(string), old); err != nil {
+		t.Fatal(err)
+	}
+	got, err = st.Load("h1", old["id"].(string))
+	if err != nil || got.ACP != nil || len(got.Items) != 2 || got.Title != "old" {
+		t.Fatalf("old file = %+v, %v", got, err)
+	}
+}

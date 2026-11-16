@@ -1506,7 +1506,6 @@
   "aiDeleteChat": "Delete Chat",
   "aiUntitled": "Untitled chat",
   "aiRecentChats": "Recent chats",
-  "aiAgentForgot": "The agent does not remember the chat above. Your next question starts a new session.",
   "aiHistorySaveFailed": "Could not save this chat to the host's history",
   "aiHistoryLoadFailed": "Could not open this chat",
   "aiHistoryBusy": "Stop the running reply first",

@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -32,9 +34,19 @@ type Config struct {
 	CwdFollow  func() string
 	// OnUpdate is called from a background goroutine and must not block.
 	OnUpdate func(Update)
+	// Resume is an earlier session of this agent to load instead of
+	// opening a new one, when the agent can; empty opens a new one.
+	Resume Resume
 
 	// probe opens the session only to read its options: no remote tools.
 	probe bool
+}
+
+// Resume names an earlier session: its ID and the sandbox it ran in,
+// which the new process runs in again so that the agent finds it.
+type Resume struct {
+	ID  string
+	Cwd string
 }
 
 // Resource is an embedded prompt block.
@@ -75,6 +87,8 @@ type Session struct {
 	bridge      *mcp.Server
 	bridgeToken string
 	mcpHTTP     bool
+	// canLoad is whether the agent offered session/load.
+	canLoad bool
 
 	mu          sync.Mutex
 	sid         sdk.SessionId
@@ -89,6 +103,10 @@ type Session struct {
 	introduced  bool
 	perms       []context.CancelFunc
 	terms       map[string]*termProc
+	// loading drops the history an agent replays while it loads a
+	// session; resumed is set once it has loaded one.
+	loading bool
+	resumed bool
 
 	updates   chan sdk.SessionNotification
 	closed    chan struct{}
@@ -107,7 +125,7 @@ func Start(ctx context.Context, cfg Config) (*Session, error) {
 	if cfg.Gate == nil {
 		return nil, errors.New("gate is required")
 	}
-	sandbox, err := os.MkdirTemp("", "sshyard-acp-")
+	sandbox, err := makeSandbox(cfg.Resume.Cwd)
 	if err != nil {
 		return nil, err
 	}
@@ -298,10 +316,40 @@ func (s *Session) initialize(ctx context.Context) error {
 		return fmt.Errorf("%w: agent speaks %d", ErrProtocolVersion, resp.ProtocolVersion)
 	}
 	s.mcpHTTP = resp.AgentCapabilities.McpCapabilities.Http
+	s.canLoad = resp.AgentCapabilities.LoadSession
 	return nil
 }
 
+// sandboxPrefix names the sandboxes, in the system's temporary folder.
+const sandboxPrefix = "sshyard-acp-"
+
+// makeSandbox creates the empty folder the agent runs in: want again, to
+// resume a session that ran there, when it is a sandbox's name and is
+// free; else a new one. An existing folder is never taken over.
+func makeSandbox(want string) (string, error) {
+	if want != "" && filepath.Dir(want) == filepath.Clean(os.TempDir()) && strings.HasPrefix(filepath.Base(want), sandboxPrefix) {
+		if os.Mkdir(want, 0o700) == nil {
+			return want, nil
+		}
+	}
+	return os.MkdirTemp("", sandboxPrefix)
+}
+
+// openSession loads the session Config.Resume names when the agent can
+// and runs in its sandbox again; failing that, or else, it opens a new
+// one.
 func (s *Session) openSession(ctx context.Context) error {
+	if r := s.cfg.Resume; s.canLoad && !s.cfg.probe && r.ID != "" && r.Cwd == s.sandbox {
+		if resp, err := s.loadSession(ctx, sdk.SessionId(r.ID)); err == nil {
+			s.mu.Lock()
+			s.sid = sdk.SessionId(r.ID)
+			s.options = options(resp.ConfigOptions)
+			// The session it loaded was already told where it works.
+			s.resumed, s.introduced = true, true
+			s.mu.Unlock()
+			return s.applyMode(ctx, resp.Modes)
+		}
+	}
 	resp, err := s.conn.NewSession(ctx, newSessionRequest(s.sandbox, s.cfg.Type, s.bridgeServer()))
 	if err != nil {
 		var re *sdk.RequestError
@@ -314,7 +362,39 @@ func (s *Session) openSession(ctx context.Context) error {
 	s.sid = resp.SessionId
 	s.options = options(resp.ConfigOptions)
 	s.mu.Unlock()
-	return s.applyMode(ctx, resp)
+	return s.applyMode(ctx, resp.Modes)
+}
+
+// loadSession asks the agent for session id, as session/new would open
+// one. The agent replays its history as updates before it answers; the
+// pane already shows that conversation, so SessionUpdate drops them. The
+// SDK hands over every update sent before an answer before returning it.
+func (s *Session) loadSession(ctx context.Context, id sdk.SessionId) (sdk.LoadSessionResponse, error) {
+	n := newSessionRequest(s.sandbox, s.cfg.Type, s.bridgeServer())
+	s.mu.Lock()
+	s.loading = true
+	s.mu.Unlock()
+	defer func() {
+		s.mu.Lock()
+		s.loading = false
+		s.mu.Unlock()
+	}()
+	return s.conn.LoadSession(ctx, sdk.LoadSessionRequest{Meta: n.Meta, Cwd: n.Cwd, McpServers: n.McpServers, SessionId: id})
+}
+
+// ID is the session's ID, empty until one is open.
+func (s *Session) ID() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return string(s.sid)
+}
+
+// Resumed reports whether the session is the one Config.Resume named,
+// which the agent loaded with its history.
+func (s *Session) Resumed() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.resumed
 }
 
 func (s *Session) authRequired(data any) error {
@@ -358,12 +438,12 @@ func authChoices(data any) ([]AuthChoice, error) {
 	return out, nil
 }
 
-func (s *Session) applyMode(ctx context.Context, resp sdk.NewSessionResponse) error {
+func (s *Session) applyMode(ctx context.Context, modes *sdk.SessionModeState) error {
 	var ids []string
 	current := ""
-	if resp.Modes != nil {
-		current = string(resp.Modes.CurrentModeId)
-		for _, m := range resp.Modes.AvailableModes {
+	if modes != nil {
+		current = string(modes.CurrentModeId)
+		for _, m := range modes.AvailableModes {
 			ids = append(ids, string(m.Id))
 		}
 	}

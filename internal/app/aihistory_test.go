@@ -86,8 +86,8 @@ func TestChatHistory(t *testing.T) {
 
 	// Opening the first carries it on where it was.
 	a.OpenChat(id, first)
-	if c.ai.conv != first || len(c.ai.items) != 4 || c.ai.forgot != 0 {
-		t.Fatalf("opened %q with %d items, forgot %d", c.ai.conv, len(c.ai.items), c.ai.forgot)
+	if c.ai.conv != first || len(c.ai.items) != 4 {
+		t.Fatalf("opened %q with %d items", c.ai.conv, len(c.ai.items))
 	}
 	ask("third")
 	sent := model.last()
@@ -155,22 +155,63 @@ func TestChatHistory(t *testing.T) {
 }
 
 func TestChatOfExternalAgent(t *testing.T) {
+	a, _ := newTestApp(t)
+	h := savedHost(t, a, "web", "10.0.0.8")
+	session := &history.ACPSession{ID: "sess-1", Agent: "acp", Cwd: "/tmp/sshyard-acp-1"}
+	conv := history.Conversation{ID: history.NewID(), Host: h.ID, Title: "deploy", Agent: "acp", ACP: session,
+		Items: []history.Item{{Kind: "user", Text: "deploy"}, {Kind: "text", Text: "done"}}}
+	old := history.Conversation{ID: history.NewID(), Host: h.ID, Title: "older", Agent: "acp",
+		Items: []history.Item{{Kind: "user", Text: "older"}}}
+	for _, cv := range []history.Conversation{old, conv} {
+		if err := a.chatHistory().Save(cv); err != nil {
+			t.Fatal(err)
+		}
+	}
+	id, _ := a.OpenAI(h.ID, openAt{}, 0)
+	a.OpenChat(id, conv.ID)
+	c := a.conns[id]
+	if c.ai.agent != "acp" || len(c.ai.items) != 2 || c.ai.acpSID != "sess-1" || c.ai.acpAgent != "acp" || c.ai.acpCwd != session.Cwd {
+		t.Fatalf("agent %q, %d items, session %q of %q in %q", c.ai.agent, len(c.ai.items), c.ai.acpSID, c.ai.acpAgent, c.ai.acpCwd)
+	}
+	// Saving keeps the session; opening one saved without it has none.
+	a.OpenChat(id, old.ID)
+	if c.ai.conv != old.ID || c.ai.acpSID != "" || c.ai.acpCwd != "" {
+		t.Fatalf("opened %q with session %q", c.ai.conv, c.ai.acpSID)
+	}
+	saved, err := a.chatHistory().Load(h.ID, conv.ID)
+	if err != nil || saved.ACP == nil || *saved.ACP != *session {
+		t.Fatalf("saved session %+v, %v", saved.ACP, err)
+	}
+}
+
+// TestChatSavedWithoutMessages checks that the built-in agent opening a
+// conversation saved without its messages is told it again.
+func TestChatSavedWithoutMessages(t *testing.T) {
 	a, tt := newTestApp(t)
 	h := savedHost(t, a, "web", "10.0.0.8")
-	conv := history.Conversation{ID: history.NewID(), Host: h.ID, Title: "deploy", Agent: "acp",
-		Items: []history.Item{{Kind: "user", Text: "deploy"}, {Kind: "text", Text: "done"}}}
+	consentHost(t, a, h.ID)
+	model := &recModel{}
+	a.newModel = func(*conn) agent.Streamer { return model }
+	conv := history.Conversation{ID: history.NewID(), Host: h.ID, Title: "disk", Agent: "builtin",
+		Items: []history.Item{{Kind: "user", Text: "why is the disk full"}, {Kind: "think", Text: "hm"}, {Kind: "text", Text: "logs fill it"},
+			{Kind: "tool", Tool: &agent.ToolCard{Name: "run_command", Command: "du -sh /var/log", Phase: "done"}}, {Kind: "err", Text: "timeout"}}}
 	if err := a.chatHistory().Save(conv); err != nil {
 		t.Fatal(err)
 	}
 	id, _ := a.OpenAI(h.ID, openAt{}, 0)
 	a.OpenChat(id, conv.ID)
 	c := a.conns[id]
-	if c.ai.agent != "acp" || c.ai.forgot != 2 || len(c.ai.items) != 2 {
-		t.Fatalf("agent %q, forgot %d, %d items", c.ai.agent, c.ai.forgot, len(c.ai.items))
+	a.SendAI(id, "and now?")
+	waitFor(t, tt, "reply", func() bool { return !c.ai.running && trailingText(c.ai.items) == "echo:and now?" })
+	var got []string
+	for _, m := range model.last() {
+		if m.Role == "user" || m.Role == "assistant" {
+			got = append(got, m.Role+": "+m.Content)
+		}
 	}
-	tt.Frame()
-	if !tt.HasText("does not remember the chat above") {
-		t.Fatalf("no notice: %q", tt.Texts())
+	want := []string{"user: why is the disk full", "assistant: logs fill it\n[Tool: run_command du -sh /var/log]"}
+	if len(got) < 3 || got[0] != want[0] || got[1] != want[1] || !strings.HasPrefix(got[2], "user: ") || !strings.Contains(got[2], "and now?") {
+		t.Fatalf("sent %q", got)
 	}
 }
 

@@ -107,6 +107,9 @@ func (a *App) saveChat(c *conn) (err error) {
 	}
 	conv := history.Conversation{ID: c.ai.conv, Host: c.host.ID, Title: c.ai.title, Agent: c.ai.agent, Provider: c.ai.provider,
 		Model: c.ai.model, Effort: c.ai.effort, Created: c.ai.created, Updated: time.Now(), Messages: c.ai.msgs}
+	if c.ai.acpSID != "" {
+		conv.ACP = &history.ACPSession{ID: c.ai.acpSID, Agent: c.ai.acpAgent, Cwd: c.ai.acpCwd}
+	}
 	if c.ai.agent == "builtin" && c.ai.provider != "" {
 		if p := a.paneProvider(c); p != nil && conv.Model == "" {
 			conv.Model = p.Model
@@ -162,7 +165,8 @@ func (a *App) resetChat(c *conn) {
 	c.ai.running, c.ai.cancel, c.ai.paused = false, nil, false
 	c.ai.sess, c.ai.box, c.ai.tools, c.ai.msgs = nil, nil, nil, nil
 	c.ai.items, c.ai.input, c.ai.attach, c.ai.task = nil, "", nil, ""
-	c.ai.conv, c.ai.title, c.ai.created, c.ai.forgot = "", "", time.Time{}, 0
+	c.ai.conv, c.ai.title, c.ai.created = "", "", time.Time{}
+	c.ai.acpSID, c.ai.acpAgent, c.ai.acpCwd = "", "", ""
 	c.ai.gen++
 	c.ai.scroll = ui.ScrollState{}
 	a.focusReq = c.id
@@ -241,8 +245,9 @@ func (a *App) DeleteChat(host, id string) {
 
 // OpenChat shows the pane's host's conversation id in the pane, to carry
 // on, after saving the one it showed. The built-in agent takes it up
-// where it was; an external agent keeps its own memory, so it starts
-// afresh after it (forgot).
+// where it was, from its messages or, saved without them, from what the
+// pane showed; an external agent loads the session it had, or is told
+// the conversation again (sendACP).
 func (a *App) OpenChat(paneID int, id string) {
 	c := a.conns[paneID]
 	if c == nil || c.ai == nil || id == c.ai.conv {
@@ -291,8 +296,8 @@ func (a *App) OpenChat(paneID int, id string) {
 		c.ai.items = append(c.ai.items, item)
 	}
 	c.ai.conv, c.ai.title, c.ai.created, c.ai.msgs = conv.ID, conv.Title, conv.Created, conv.Messages
-	if c.ai.agent != "builtin" || len(c.ai.msgs) == 0 {
-		c.ai.forgot = len(c.ai.items)
+	if s := conv.ACP; s != nil {
+		c.ai.acpSID, c.ai.acpAgent, c.ai.acpCwd = s.ID, s.Agent, s.Cwd
 	}
 	c.ai.scroll.Y = 1e9
 	a.saveLayout()

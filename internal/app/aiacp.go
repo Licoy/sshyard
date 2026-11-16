@@ -37,6 +37,9 @@ type acpRuntime struct {
 	release func()
 	done    func()
 	report  func(error)
+	// gone is closed once close has stopped the agent and removed its
+	// sandbox; nil when nothing waits for it.
+	gone chan struct{}
 }
 
 type acpFailure struct {
@@ -57,6 +60,9 @@ func (r *acpRuntime) close() {
 	r.once.Do(func() {
 		go func() {
 			defer r.done()
+			if r.gone != nil {
+				defer close(r.gone)
+			}
 			<-r.ready
 			release := func() {
 				if r.release != nil {
@@ -184,9 +190,22 @@ func (a *App) sendACP(c *conn, text string, files []*aiAttach) {
 	ctx, cancel := context.WithCancel(context.Background())
 	r := c.ai.acp
 	fresh := r == nil
+	// A new process loads the session that carried the conversation on,
+	// once the last one has let go of its sandbox; if it cannot, it is
+	// told the conversation again, once.
+	var resume acp.Resume
+	var prev *acpRuntime
+	earlier := ""
+	backend := c.ai.agent
 	if fresh {
+		if c.ai.acpSID != "" && c.ai.acpAgent == backend {
+			resume = acp.Resume{ID: c.ai.acpSID, Cwd: c.ai.acpCwd}
+		}
+		prev = c.ai.acpLast
+		earlier = acpTranscript(c.ai.items, replayMax)
 		a.acpWG.Add(1)
-		r = &acpRuntime{ready: make(chan struct{}), done: a.acpWG.Done}
+		r = &acpRuntime{ready: make(chan struct{}), done: a.acpWG.Done, gone: make(chan struct{})}
+		c.ai.acpLast = r
 		r.report = func(err error) {
 			a.post(func() {
 				if current := a.conns[c.id]; !a.closing && current != nil && current.ai != nil {
@@ -206,7 +225,7 @@ func (a *App) sendACP(c *conn, text string, files []*aiAttach) {
 		gate = a.aiGate(c)
 	}
 	agentID := acpCfg.Agent
-	options := acp.Config{Command: acpCfg.Command, Args: append([]string(nil), acpCfg.Args...), Type: detect.Type(agentID), Gate: gate, Redact: a.settings.AIRedact}
+	options := acp.Config{Command: acpCfg.Command, Args: append([]string(nil), acpCfg.Args...), Type: detect.Type(agentID), Gate: gate, Redact: a.settings.AIRedact, Resume: resume}
 	prefer := maps.Clone(acpCfg.Options)
 	id := c.id
 	c.ai.turn++
@@ -247,7 +266,17 @@ func (a *App) sendACP(c *conn, text string, files []*aiAttach) {
 		defer cancel()
 		var err error
 		if fresh {
+			if resume.ID != "" && prev != nil && prev.gone != nil {
+				select {
+				case <-prev.gone:
+				case <-ctx.Done():
+				case <-time.After(acpCloseGrace + 2*time.Second):
+				}
+			}
 			err = r.start(ctx, a, cfg, key, agentID, options)
+			if err == nil && earlier != "" && !r.session.Resumed() {
+				resources = append([]acp.Resource{{URI: "sshyard://conversation", Text: earlier}}, resources...)
+			}
 			if err == nil {
 				// A choice that fails to apply leaves the agent's own value.
 				_ = r.session.Prefer(ctx, prefer)
@@ -280,6 +309,10 @@ func (a *App) sendACP(c *conn, text string, files []*aiAttach) {
 				err = &acpFailure{"close", err}
 			}
 		}
+		sid, sandbox := "", ""
+		if r.session != nil {
+			sid, sandbox = r.session.ID(), r.session.Sandbox()
+		}
 		if err != nil {
 			r.close()
 		}
@@ -291,6 +324,11 @@ func (a *App) sendACP(c *conn, text string, files []*aiAttach) {
 			if err != nil && current.ai.acp == r {
 				current.ai.acp = nil
 			}
+			if sid != "" {
+				current.ai.acpSID, current.ai.acpAgent, current.ai.acpCwd = sid, backend, sandbox
+			}
+			// The built-in agent's messages no longer hold all of it.
+			current.ai.msgs = nil
 			a.onAIDone(id, err)
 		})
 	}()

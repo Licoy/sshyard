@@ -1506,7 +1506,6 @@
   "aiDeleteChat": "채팅 삭제",
   "aiUntitled": "제목 없는 채팅",
   "aiRecentChats": "최근 채팅",
-  "aiAgentForgot": "에이전트는 위의 채팅을 기억하지 않습니다. 다음 질문은 새 세션을 시작합니다.",
   "aiHistorySaveFailed": "이 호스트의 기록에 채팅을 저장할 수 없습니다",
   "aiHistoryLoadFailed": "이 채팅을 열 수 없습니다",
   "aiHistoryBusy": "먼저 진행 중인 응답을 중지하세요",

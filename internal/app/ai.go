@@ -60,20 +60,26 @@ type aiState struct {
 	// acpOpts are the ACP agent's model and thinking selectors as its
 	// session last reported them; nil until it reports.
 	acpOpts []acp.Option
+	// acpSID is the ACP session that last carried the conversation on,
+	// of the backend acpAgent and run in the sandbox acpCwd: a new
+	// process of that agent loads it when it can, else is told the
+	// conversation again (aireplay.go). acpLast is the pane's latest
+	// runtime, which has to let go of the sandbox first.
+	acpSID, acpAgent, acpCwd string
+	acpLast                  *acpRuntime
 	// pauseCalls is the tool calls the paused turn ran, for its notice.
 	pauseCalls int
 
 	// conv is the conversation's ID in the host's history, from its first
 	// question, with its title and when it began; msgs are the built-in
 	// agent's messages as its last turn ended, which the history keeps
-	// and a new session carries on. The agent does not remember the items
-	// before forgot. hquery filters the history; drop is the conversation
-	// asked to be deleted.
+	// and a new session carries on, nil once another agent took a turn.
+	// hquery filters the history; drop is the conversation asked to be
+	// deleted.
 	conv    string
 	title   string
 	created time.Time
 	msgs    []llm.Message
-	forgot  int
 	hquery  string
 	drop    string
 
@@ -398,7 +404,13 @@ func (a *App) ensureAI(c *conn) error {
 		tools = newTermTools(a, c)
 	}
 	c.ai.tools, c.ai.target = tools, target
-	c.ai.sess = agent.Restore(agent.Config{Model: streamer, Gate: a.aiGate(c), Tools: tools, Redact: a.settings.AIRedact, Target: target, MaxToolCalls: a.settings.AIMaxToolCalls}, c.ai.msgs)
+	msgs := c.ai.msgs
+	if len(msgs) == 0 {
+		// A conversation saved without its messages, or carried on by
+		// another agent, is told again.
+		msgs = itemMessages(c.ai.items, replayMax)
+	}
+	c.ai.sess = agent.Restore(agent.Config{Model: streamer, Gate: a.aiGate(c), Tools: tools, Redact: a.settings.AIRedact, Target: target, MaxToolCalls: a.settings.AIMaxToolCalls}, msgs)
 	c.ai.dirty = false
 	return nil
 }
@@ -640,6 +652,8 @@ func (a *App) onAIDone(id int, err error) {
 	c.ai.cancel = nil
 	if c.ai.agent == "builtin" && c.ai.sess != nil {
 		c.ai.msgs = c.ai.sess.History()
+		// An external agent's session no longer carries all of it.
+		c.ai.acpSID, c.ai.acpAgent, c.ai.acpCwd = "", "", ""
 	}
 	defer a.saveChat(c)
 	if err == nil {
@@ -720,9 +734,6 @@ func (a *App) dropAIItem(c *conn, i int) {
 		return
 	}
 	c.ai.items = append(c.ai.items[:i:i], c.ai.items[i+1:]...)
-	if i < c.ai.forgot {
-		c.ai.forgot--
-	}
 	if !c.ai.running && a.unlocked() {
 		a.saveChat(c)
 	}

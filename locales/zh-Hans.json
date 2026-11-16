@@ -1506,7 +1506,6 @@
   "aiDeleteChat": "删除对话",
   "aiUntitled": "未命名对话",
   "aiRecentChats": "最近对话",
-  "aiAgentForgot": "代理不记得上方的对话，下一个问题会开启新的会话。",
   "aiHistorySaveFailed": "无法将此对话保存到主机的历史对话",
   "aiHistoryLoadFailed": "无法打开此对话",
   "aiHistoryBusy": "请先停止正在进行的回复",

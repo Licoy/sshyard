@@ -44,7 +44,12 @@ type script struct {
 	mcpHTTP      bool
 	authFailN    int
 	authFailID   string
-	steps        []string
+	// load offers session/load; it replays these messages, or fails
+	// when loadFail is set.
+	load     bool
+	loadFail bool
+	replay   []string
+	steps    []string
 }
 
 func parseScript(s string) script {
@@ -80,6 +85,13 @@ func parseScript(s string) script {
 			case "authfail":
 				sc.authFailN, _ = strconv.Atoi(f[1])
 				sc.authFailID = f[2]
+			case "load":
+				sc.load = true
+				if len(f) > 1 && f[1] == "fail" {
+					sc.loadFail = true
+				}
+			case "replay":
+				sc.replay = append(sc.replay, strings.Join(f[1:], " "))
 			default:
 				fmt.Fprintf(os.Stderr, "bad script %q\n", line)
 			}
@@ -107,7 +119,37 @@ func (a *agent) Initialize(_ context.Context, params sdk.InitializeRequest) (sdk
 	fmt.Fprintf(os.Stderr, "init %s\n", b)
 	resp := sdk.InitializeResponse{ProtocolVersion: sdk.ProtocolVersion(a.sc.version)}
 	resp.AgentCapabilities.McpCapabilities.Http = a.sc.mcpHTTP
+	resp.AgentCapabilities.LoadSession = a.sc.load
 	return resp, nil
+}
+
+// LoadSession replays the scripted history as agent messages, then
+// answers as session/new does.
+func (a *agent) LoadSession(ctx context.Context, params sdk.LoadSessionRequest) (sdk.LoadSessionResponse, error) {
+	mcp, _ := json.Marshal(params.McpServers)
+	fmt.Fprintf(os.Stderr, "load %s cwd %s mcp %s\n", params.SessionId, params.Cwd, mcp)
+	if a.sc.loadFail {
+		return sdk.LoadSessionResponse{}, sdk.NewInvalidParams(map[string]any{"sessionId": params.SessionId})
+	}
+	a.cwd, a.sid, a.servers = params.Cwd, string(params.SessionId), params.McpServers
+	for _, text := range a.sc.replay {
+		if err := a.conn.SessionUpdate(ctx, sdk.SessionNotification{SessionId: params.SessionId, Update: sdk.UpdateAgentMessageText(text)}); err != nil {
+			return sdk.LoadSessionResponse{}, err
+		}
+	}
+	return sdk.LoadSessionResponse{Modes: a.modeState(), ConfigOptions: a.configOptions()}, nil
+}
+
+// modeState is the scripted modes, nil when there are none.
+func (a *agent) modeState() *sdk.SessionModeState {
+	if len(a.sc.modes) == 0 && a.sc.modeCurrent == "" {
+		return nil
+	}
+	var modes []sdk.SessionMode
+	for _, id := range a.sc.modes {
+		modes = append(modes, sdk.SessionMode{Id: sdk.SessionModeId(id), Name: id})
+	}
+	return &sdk.SessionModeState{AvailableModes: modes, CurrentModeId: sdk.SessionModeId(a.sc.modeCurrent)}
 }
 
 func (a *agent) Authenticate(_ context.Context, params sdk.AuthenticateRequest) (sdk.AuthenticateResponse, error) {
@@ -139,14 +181,7 @@ func (a *agent) NewSession(_ context.Context, params sdk.NewSessionRequest) (sdk
 	mcp, _ := json.Marshal(params.McpServers)
 	fmt.Fprintf(os.Stderr, "meta %s\n", meta)
 	fmt.Fprintf(os.Stderr, "mcp %s\n", mcp)
-	resp := sdk.NewSessionResponse{SessionId: sdk.SessionId(a.sid)}
-	if len(a.sc.modes) > 0 || a.sc.modeCurrent != "" {
-		var modes []sdk.SessionMode
-		for _, id := range a.sc.modes {
-			modes = append(modes, sdk.SessionMode{Id: sdk.SessionModeId(id), Name: id})
-		}
-		resp.Modes = &sdk.SessionModeState{AvailableModes: modes, CurrentModeId: sdk.SessionModeId(a.sc.modeCurrent)}
-	}
+	resp := sdk.NewSessionResponse{SessionId: sdk.SessionId(a.sid), Modes: a.modeState()}
 	a.servers = params.McpServers
 	resp.ConfigOptions = a.configOptions()
 	return resp, nil

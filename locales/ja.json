@@ -1506,7 +1506,6 @@
   "aiDeleteChat": "チャットを削除",
   "aiUntitled": "無題のチャット",
   "aiRecentChats": "最近のチャット",
-  "aiAgentForgot": "エージェントは上のチャットを記憶していません。次の質問で新しいセッションを開始します。",
   "aiHistorySaveFailed": "このチャットをホストの履歴に保存できません",
   "aiHistoryLoadFailed": "このチャットを開けません",
   "aiHistoryBusy": "先に生成中の応答を停止してください",

@@ -15219,16 +15219,6 @@ func (msgs Messages) AiRecentChats() string {
 	return Catalog.Format(msgs.locale, "aiRecentChats", nil)
 }
 
-// AiAgentForgot says "The agent does not remember the chat above. Your next question starts a new session."
-// in the language the app shows.
-func AiAgentForgot() string { return In(i18n.Locale()).AiAgentForgot() }
-
-// AiAgentForgot says "The agent does not remember the chat above. Your next question starts a new session."
-// in the language of msgs.
-func (msgs Messages) AiAgentForgot() string {
-	return Catalog.Format(msgs.locale, "aiAgentForgot", nil)
-}
-
 // AiHistorySaveFailed says "Could not save this chat to the host's history"
 // in the language the app shows.
 func AiHistorySaveFailed() string { return In(i18n.Locale()).AiHistorySaveFailed() }

@@ -481,17 +481,9 @@ func (a *App) aiTimeline(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Me
 	st := &cn.ai.scroll
 	ui.Scroll(c.Key("aitime")).TrackScroll(st).Grow(1).FillWidth().Children(func() {
 		ui.Column(c).Padding(theme.Space(3), theme.Space(3), theme.Space(4), theme.Space(3)).Gap(theme.Space(3)).FillWidth().Children(func() {
-			// The agent does not remember what comes before forgot.
-			forgot := func(i int) {
-				if cn.ai.forgot > 0 && i == cn.ai.forgot {
-					aiBanner(c.Key("aiforgot"), tok.Accent, icons.Info, m.AiAgentForgot(), nil)
-				}
-			}
 			for i := range cn.ai.items {
-				forgot(i)
 				a.aiCard(c, cn, i, tok, m)
 			}
-			forgot(len(cn.ai.items))
 			working, wait := aiWorking(cn.ai, c.Now())
 			if wait > 0 {
 				c.After(wait)

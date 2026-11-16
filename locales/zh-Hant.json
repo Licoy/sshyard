@@ -1506,7 +1506,6 @@
   "aiDeleteChat": "刪除對話",
   "aiUntitled": "未命名對話",
   "aiRecentChats": "最近對話",
-  "aiAgentForgot": "代理不記得上方的對話，下一個問題會開啟新的工作階段。",
   "aiHistorySaveFailed": "無法將此對話儲存到主機的歷史對話",
   "aiHistoryLoadFailed": "無法開啟此對話",
   "aiHistoryBusy": "請先停止正在進行的回覆",

@@ -208,8 +208,15 @@ func cancelledPerm() sdk.RequestPermissionResponse {
 }
 
 // SessionUpdate only queues. A slow UI must not block the SDK read loop.
-// The queue drops the oldest update when it is full.
+// The queue drops the oldest update when it is full. The history an
+// agent replays while it loads a session is dropped.
 func (s *Session) SessionUpdate(ctx context.Context, n sdk.SessionNotification) error {
+	s.mu.Lock()
+	loading := s.loading
+	s.mu.Unlock()
+	if loading {
+		return nil
+	}
 	select {
 	case s.updates <- n:
 		return nil

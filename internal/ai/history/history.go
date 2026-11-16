@@ -57,6 +57,18 @@ type Conversation struct {
 	// Messages are the built-in agent's, without its system prompt; nil
 	// for an external agent, which keeps its own.
 	Messages []llm.Message `json:"messages,omitempty"`
+	// ACP is the external agent's session that last carried the
+	// conversation on, to load again; nil when none did, as in files
+	// saved before it was kept.
+	ACP *ACPSession `json:"acp,omitempty"`
+}
+
+// ACPSession is an external agent's session: its ID, the agent (the
+// pane's backend) it belongs to and the sandbox it ran in.
+type ACPSession struct {
+	ID    string `json:"id"`
+	Agent string `json:"agent"`
+	Cwd   string `json:"cwd,omitempty"`
 }
 
 // Item is one entry of the timeline: a question (user), an answer
