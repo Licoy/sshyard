@@ -277,3 +277,47 @@ func TestLocalKeysBeforeQuestions(t *testing.T) {
 		t.Fatalf("asked %+v", rec.asked)
 	}
 }
+
+// TestUnlistedKbd: after refused keys, the keyboard-interactive login is
+// tried once though the server does not list it (a JumpServer before
+// v3.7), never ahead of a password left to try or of x/crypto's own pick.
+func TestUnlistedKbd(t *testing.T) {
+	kbd := ssh.KeyboardInteractive(nil)
+	for _, c := range []struct {
+		name                    string
+		password                bool
+		tried, allowed, partial []string
+		want                    bool
+	}{
+		{name: "before the keys", tried: []string{"none"}, allowed: []string{"publickey", "password"}},
+		{name: "keys refused", tried: []string{"none", "publickey"}, allowed: []string{"publickey", "password"}, want: true},
+		{name: "password to try", password: true, tried: []string{"none", "publickey"}, allowed: []string{"publickey", "password"}},
+		{name: "password refused", password: true, tried: []string{"none", "publickey", "password"}, allowed: []string{"publickey", "password"}, want: true},
+		{name: "password not allowed", password: true, tried: []string{"none", "publickey"}, allowed: []string{"publickey"}, want: true},
+		{name: "listed", tried: []string{"none", "publickey"}, allowed: []string{"publickey", "keyboard-interactive"}},
+		{name: "tried", tried: []string{"none", "publickey", "keyboard-interactive"}, allowed: []string{"publickey"}},
+		{name: "after partial success", tried: []string{"none"}, partial: []string{"publickey"}, allowed: []string{"keyboard-interactive"}},
+	} {
+		var picked bool
+		got, err := unlistedKbd(kbd, c.password, &picked)(&ssh.ClientAuthContext{TriedMethods: c.tried, AllowedMethods: c.allowed, PartialSuccessMethods: c.partial})
+		if err != nil || (got != nil) != c.want || picked != c.want {
+			t.Errorf("%s: picked %v %v (%v), want %v", c.name, got != nil, picked, err, c.want)
+		}
+	}
+}
+
+// TestRefusedKeyWithoutQuestions: a server refusing the key that has no
+// keyboard-interactive login still fails as a refused login, asking
+// nothing.
+func TestRefusedKeyWithoutQuestions(t *testing.T) {
+	srv := server(t)
+	key, _ := keyPEM(t, "")
+	_, srv.AuthorizedKey = keyPEM(t, "")
+	asked := 0
+	_, err := Dial(context.Background(), Config{Addr: srv.Addr, User: "demo", HostKey: trusted(t, srv).Callback(),
+		Credentials: func(context.Context) (Credentials, error) { return Credentials{PrivateKey: key}, nil },
+		Ask:         func(context.Context, Challenge) ([]string, error) { asked++; return nil, nil }})
+	if Classify(err) != KindAuth || asked != 0 {
+		t.Fatalf("refused key: %v (%v), asked %d", err, Classify(err), asked)
+	}
+}

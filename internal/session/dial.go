@@ -305,6 +305,9 @@ func dialHop(ctx context.Context, hop Hop, dial func(ctx context.Context, networ
 	if offer != nil {
 		kbd.stop = offer.stopped
 	}
+	// authMethods puts keyboard-interactive last.
+	var unlisted bool
+	next := unlistedKbd(methods[len(methods)-1], cr.Password != "", &unlisted)
 	parent := ctx
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -332,6 +335,7 @@ func dialHop(ctx context.Context, hop Hop, dial func(ctx context.Context, networ
 	c, chans, reqs, err := ssh.NewClientConn(heard, hop.Addr, &ssh.ClientConfig{
 		User:            user,
 		Auth:            methods,
+		AuthCallback:    next,
 		HostKeyCallback: hop.HostKey,
 		Timeout:         timeout,
 		ClientVersion:   "SSH-2.0-SSHYard",
@@ -354,6 +358,15 @@ func dialHop(ctx context.Context, hop Hop, dial func(ctx context.Context, networ
 			// needs its passphrase.
 			return nil, kbd.err
 		}
+		if unlisted && strings.Contains(err.Error(), "unexpected message type 51") {
+			// The server refused the keyboard-interactive login it did not
+			// list at once, asking nothing: the login stopped where the keys
+			// did, for a key file's passphrase, or was refused.
+			if offer != nil && offer.stopped() != nil {
+				return nil, offer.stopped()
+			}
+			err = fmt.Errorf("session: unable to authenticate: %w", err)
+		}
 		if offer != nil && cr.Password == "" && (keysRefused(err) || errors.Is(err, errPasswordWanted)) {
 			err = &KeysRefusedError{Offered: len(offer.signers), Err: err}
 		}
@@ -372,6 +385,28 @@ func dialHop(ctx context.Context, hop Hop, dial func(ctx context.Context, networ
 		heardBy.Delete(client)
 	}()
 	return client, nil
+}
+
+// unlistedKbd picks kbd, the keyboard-interactive login, once the server
+// refused the keys and, password aside, lists nothing left to try, though
+// it does not list keyboard-interactive: a JumpServer before v3.7 answers
+// the query whether it would take a key with partial success, which
+// x/crypto reads as a refusal, and lists keyboard-interactive, where it
+// asks for the one-time password, only after that. password is whether
+// the login has a password to try first; picked is set once kbd was
+// picked so. Otherwise x/crypto picks.
+func unlistedKbd(kbd ssh.AuthMethod, password bool, picked *bool) ssh.ClientAuthCallback {
+	const ki = "keyboard-interactive"
+	return func(ctx *ssh.ClientAuthContext) (ssh.AuthMethod, error) {
+		switch {
+		case !slices.Contains(ctx.TriedMethods, "publickey"),
+			slices.Contains(ctx.TriedMethods, ki), slices.Contains(ctx.AllowedMethods, ki), slices.Contains(ctx.PartialSuccessMethods, ki),
+			password && slices.Contains(ctx.AllowedMethods, "password") && !slices.Contains(ctx.TriedMethods, "password"):
+			return nil, nil
+		}
+		*picked = true
+		return kbd, nil
+	}
 }
 
 // keysRefused reports a login the server refused every key of, or hung up
