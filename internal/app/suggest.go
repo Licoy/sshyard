@@ -315,7 +315,7 @@ func (s connSuggest) entries(word string) ([]cmdline.Entry, string, listState) {
 				return nil, "", listReading
 			}
 		case cwd == "" && !strings.HasPrefix(word, "/") && !strings.HasPrefix(word, "~"):
-			if cn.s.Term.Cwd() == "" && a.probeCwd(cn, time.Now()) {
+			if cn.s.Term.Cwd() == "" && a.probeCwd(cn, time.Now()) > 0 {
 				return nil, "", listReading
 			}
 		}

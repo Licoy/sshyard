@@ -510,6 +510,7 @@
   "editorNoFile": "在目錄中按兩下檔案即可開啟。",
   "followTerminal": "跟隨終端機",
   "followNoReport": "此 shell 未報告目前目錄，檔案面板無法跟隨。",
+  "followSlow": "目前連線較慢，檔案面板跟隨有延遲。讓 shell 報告目前目錄可以跟隨得更快。",
   "copySnippet": "複製",
   "hostCwdFollowHint": "shell 報告目錄時，同一分頁中的檔案面板會跳轉到終端機所在目錄。",
   "filesSection": "檔案",

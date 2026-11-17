@@ -5187,6 +5187,16 @@ func (msgs Messages) FollowNoReport() string {
 	return Catalog.Format(msgs.locale, "followNoReport", nil)
 }
 
+// FollowSlow says "Following is slow over this connection. It’s faster if the shell reports its folder."
+// in the language the app shows.
+func FollowSlow() string { return In(i18n.Locale()).FollowSlow() }
+
+// FollowSlow says "Following is slow over this connection. It’s faster if the shell reports its folder."
+// in the language of msgs.
+func (msgs Messages) FollowSlow() string {
+	return Catalog.Format(msgs.locale, "followSlow", nil)
+}
+
 // CopySnippet says "Copy"
 // in the language the app shows.
 func CopySnippet() string { return In(i18n.Locale()).CopySnippet() }

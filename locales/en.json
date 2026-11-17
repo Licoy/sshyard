@@ -510,6 +510,7 @@
   "editorNoFile": "Double-click a file in the folders to open it.",
   "followTerminal": "Follow terminal",
   "followNoReport": "This shell doesn’t report its folder, so Files can’t follow it.",
+  "followSlow": "Following is slow over this connection. It’s faster if the shell reports its folder.",
   "copySnippet": "Copy",
   "hostCwdFollowHint": "Files panes in the terminal’s tab go to its folder whenever the shell reports one.",
   "filesSection": "Files",

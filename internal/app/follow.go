@@ -32,6 +32,15 @@ const noReportAfter = 3 * time.Second
 // it is read from the server, while a Files pane follows it.
 const probeEvery = 2 * time.Second
 
+// probeAfterEnter is how soon after an Enter typed into a shell that does
+// not report its directory it is read again: the time a cd takes, not
+// the wait for the next probeEvery.
+const probeAfterEnter = 150 * time.Millisecond
+
+// probeSlow is how long a read of the directory takes on a link slow
+// enough that a following Files pane suggests the shell report it.
+const probeSlow = 400 * time.Millisecond
+
 // probeTries is how many reads in a row may find nothing before the
 // server is taken not to tell: a shell just started may not run yet.
 const probeTries = 3
@@ -98,8 +107,8 @@ func (a *App) followCwd(c *ui.Context) {
 			if lead == nil {
 				continue
 			}
-			if a.probeCwd(lead, now) {
-				c.After(probeEvery)
+			if wait := a.probeCwd(lead, now); wait > 0 {
+				c.After(wait)
 			}
 			if lead.cwd == "" {
 				continue
@@ -123,36 +132,45 @@ func (a *App) followCwd(c *ui.Context) {
 // probeCwd reads the directory of tc's shell from its server, for a shell
 // that does not report it (OSC 7): the server finds the shell by the tag
 // of its environment, or as the connection's one terminal when it took
-// no tag (session.ShellCwd). It runs at most every probeEvery, and not
+// no tag (session.ProbeCwd). It runs every probeEvery, and probeAfterEnter
+// after an Enter typed into the shell, which may have changed it; not
 // again on a connection where probeTries reads in a row failed. It
-// reports whether it is still reading.
-func (a *App) probeCwd(tc *conn, now time.Time) bool {
+// returns how soon it wants a frame again, 0 for never.
+func (a *App) probeCwd(tc *conn, now time.Time) time.Duration {
 	if tc.up.IsZero() || tc.s.Term.Cwd() != "" {
-		return false
+		return 0
 	}
 	connects := tc.s.Status().Connects
 	if tc.probeConn != connects {
 		tc.probeConn, tc.probe, tc.probeAt, tc.probeMiss = connects, probeIdle, time.Time{}, 0
+		tc.probeRTT, tc.probeOK = 0, 0
 	}
 	if tc.probe == probeFailed {
-		return false
+		return 0
 	}
-	if tc.probe != probeIdle || now.Sub(tc.probeAt) < probeEvery {
-		return true
+	if n := tc.s.Enters(); n != tc.enterSeen {
+		tc.enterSeen, tc.enterAt = n, now
 	}
-	tag, ok := tc.s.Tag()
-	if !ok {
-		tag = ""
+	if tc.probe != probeIdle {
+		return probeEvery
 	}
-	client := tc.s.Client()
-	if client == nil {
+	wait := probeEvery - now.Sub(tc.probeAt)
+	if tc.enterSeen != tc.probeEnters {
+		wait = min(wait, probeAfterEnter-now.Sub(tc.enterAt))
+	}
+	if wait > 0 {
+		return wait
+	}
+	if tc.s.Client() == nil {
 		tc.probe = probeFailed
-		return false
+		return 0
 	}
-	tc.probe = probeRunning
+	tc.probe, tc.probeEnters = probeRunning, tc.enterSeen
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), hostnameTimeout)
-		d, err := session.ShellCwd(ctx, client, tag)
+		start := time.Now()
+		d, err := tc.s.ProbeCwd(ctx)
+		took := time.Since(start)
 		cancel()
 		a.post(func() {
 			if tc.probeConn != connects || tc.probe != probeRunning {
@@ -166,6 +184,9 @@ func (a *App) probeCwd(tc *conn, now time.Time) bool {
 				return
 			}
 			tc.probeMiss = 0
+			if tc.probeOK++; tc.probeOK > 1 && (tc.probeRTT == 0 || took < tc.probeRTT) {
+				tc.probeRTT = took
+			}
 			if tc.s.Term.Cwd() == "" && d != tc.cwd {
 				a.cwdSeq++
 				tc.cwd, tc.cwdSeq = d, a.cwdSeq
@@ -173,7 +194,7 @@ func (a *App) probeCwd(tc *conn, now time.Time) bool {
 			}
 		})
 	}()
-	return true
+	return probeEvery
 }
 
 // leadTerminal is the terminal of items on fc's host that reported its
@@ -212,20 +233,27 @@ func (a *App) followAction(t *layout.Tab, n *layout.Node, cn *conn, m locales.Me
 
 // noReportView says, in a line, when the pane follows a terminal that
 // has been up a while without saying where it is, and the server could
-// not tell either. The snippet that makes the shell say is a click away.
+// not tell either; or that the server tells, but slowly (probeSlow). The
+// snippet that makes the shell say is a click away.
 func (a *App) noReportView(c *ui.Context, t *layout.Tab, cn *conn, tok theme.Tokens, m locales.Messages) {
-	if !a.following(cn) || cn.fs.noReportHidden {
+	if !a.following(cn) {
 		return
 	}
 	lead := a.leadTerminal(t.Items(), cn)
 	if lead == nil || lead.up.IsZero() || lead.s.Term.Cwd() != "" {
 		return
 	}
+	text, hidden := m.FollowNoReport(), &cn.fs.noReportHidden
 	if lead.probe != probeFailed {
 		// The server tells (followCwd reads it again in a while).
+		if !slowProbe(lead) {
+			return
+		}
+		text, hidden = m.FollowSlow(), &cn.fs.slowHidden
+	} else if lead.cwd != "" {
 		return
 	}
-	if lead.cwd != "" {
+	if *hidden {
 		return
 	}
 	if wait := noReportAfter - c.Now().Sub(lead.up); wait > 0 {
@@ -234,14 +262,20 @@ func (a *App) noReportView(c *ui.Context, t *layout.Tab, cn *conn, tok theme.Tok
 	}
 	ui.Row(c.Key("noreport")).FillWidth().AlignItems(ui.Center).Gap(6).Padding(2, 4, 2, 8).Radius(theme.RadiusCard - 2).Background(tok.Fill).Children(func() {
 		ui.Icon(c, icons.Follow.SVG).Size(14, 14).Shrink(0).TextColor(tok.TextMuted)
-		ui.Text(c, m.FollowNoReport()).FontSize(theme.Footnote).TextColor(tok.TextMuted).SingleLine().Grow(1).Shrink(1)
+		ui.Text(c, text).FontSize(theme.Footnote).TextColor(tok.TextMuted).SingleLine().Grow(1).Shrink(1)
 		if (IconButton{Icon: icons.Info, Label: m.FollowHowTo(), Size: Small}).Clicked(c, "howto") {
 			cn.fs.snippetOpen = true
 		}
 		if (IconButton{Icon: icons.Close, Label: m.HideNotice(), Size: Small}).Clicked(c, "hidenoreport") {
-			cn.fs.noReportHidden = true
+			*hidden = true
 		}
 	})
+}
+
+// slowProbe says reading tc's directory from the server works, but takes
+// long enough (probeSlow) that its shell is better off reporting it.
+func slowProbe(tc *conn) bool {
+	return tc.probe != probeFailed && tc.probeOK > 1 && tc.probeRTT >= probeSlow
 }
 
 // snippetView is the sheet with the snippet that makes a shell report

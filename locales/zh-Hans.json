@@ -510,6 +510,7 @@
   "editorNoFile": "在目录中双击文件即可打开。",
   "followTerminal": "跟随终端",
   "followNoReport": "此 shell 未报告当前目录，文件面板无法跟随。",
+  "followSlow": "当前连接较慢，文件面板跟随有延迟。让 shell 报告当前目录可以跟随得更快。",
   "copySnippet": "复制",
   "hostCwdFollowHint": "shell 报告目录时，同一标签页中的文件面板会跳转到终端所在目录。",
   "filesSection": "文件",

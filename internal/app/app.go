@@ -195,6 +195,16 @@ type conn struct {
 	probeConn int
 	probeAt   time.Time
 	probeMiss int
+	// enterSeen is the shell's Enters as last seen, at enterAt, and
+	// probeEnters as the last read started: an Enter since is read again
+	// soon (probeAfterEnter). probeRTT is the quickest read of the
+	// connect but its first (which starts the probe shell), probeOK how
+	// many reads found the directory.
+	enterSeen   uint64
+	enterAt     time.Time
+	probeEnters uint64
+	probeRTT    time.Duration
+	probeOK     int
 	// start is what an SSH terminal's shell is given each time it starts
 	// (see shellStart); tmuxConn is the connect it was last seen at,
 	// tmuxUp when, and tmuxAt when the tmux session the terminal is in

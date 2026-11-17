@@ -1,9 +1,11 @@
 package app
 
 import (
+	"bufio"
 	"github.com/Licoy/sshyard/internal/session"
 	"io"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -306,5 +308,103 @@ func TestFollowDir(t *testing.T) {
 		if got := followDir(in); got != want {
 			t.Errorf("followDir(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+// TestSlowProbe: the hint to report the folder is for a server that
+// tells, slowly, once a read other than the first (which starts the
+// probe shell) was timed.
+func TestSlowProbe(t *testing.T) {
+	for _, c := range []struct {
+		probe probeState
+		ok    int
+		rtt   time.Duration
+		slow  bool
+	}{
+		{probeIdle, 2, probeSlow, true},
+		{probeRunning, 3, time.Second, true},
+		{probeIdle, 1, 0, false},
+		{probeIdle, 2, probeSlow - time.Millisecond, false},
+		{probeFailed, 2, time.Second, false},
+	} {
+		tc := &conn{probe: c.probe, probeOK: c.ok, probeRTT: c.rtt}
+		if got := slowProbe(tc); got != c.slow {
+			t.Errorf("slowProbe(%v, %d, %v) = %v", c.probe, c.ok, c.rtt, got)
+		}
+	}
+}
+
+// probeShellMark is the mark of a read typed into a probe shell.
+var probeShellMark = regexp.MustCompile(`' ([0-9a-f]{16}) "\$\?" "\$d" ([0-9a-f]{16})\n$`)
+
+// TestFilesFollowProbeAfterEnter follows a shell that does not report its
+// folder through one probe shell kept open, read again soon after an
+// Enter, not only every probeEvery.
+func TestFilesFollowProbeAfterEnter(t *testing.T) {
+	var dir atomic.Value
+	dir.Store("")
+	var shells, reads, oneShots atomic.Int32
+	a, tt, fc, root := filesPaneOn(t, func(srv *sshtest.Server) {
+		srv.Exec = func(ch ssh.Channel, cmd string) int {
+			switch {
+			case cmd == "exec sh":
+				shells.Add(1)
+				r := bufio.NewReader(ch)
+				for {
+					line, err := r.ReadString('\n')
+					if err != nil {
+						return 0
+					}
+					m := probeShellMark.FindStringSubmatch(line)
+					if m == nil || !strings.Contains(line, session.TagEnv) {
+						return 2
+					}
+					reads.Add(1)
+					io.WriteString(ch, m[1]+" 0 "+dir.Load().(string)+" "+m[1]+"\n")
+				}
+			case strings.HasPrefix(cmd, "sh -c "):
+				oneShots.Add(1)
+			}
+			return 127
+		}
+	})
+	write(t, filepath.Join(root, "srv", "app.log"), "x")
+	write(t, filepath.Join(root, "srv", "sub", "deep.txt"), "x")
+	srvDir := sftpsvc.RemoteJoin(fc.fs.remote.dir, "srv")
+	subDir := sftpsvc.RemoteJoin(srvDir, "sub")
+	dir.Store(srvDir)
+	h, _ := a.store.Get(fc.host.ID)
+	h.CwdFollow = true
+	if _, err := a.store.Update(h); err != nil {
+		t.Fatal(err)
+	}
+	tc := terminalBeside(t, a, tt, fc)
+	waitFor(t, tt, "terminal up", func() bool { return !tc.up.IsZero() })
+	waitFor(t, tt, "followed", func() bool { return fc.fs.remote.dir == srvDir && tc.probe == probeIdle })
+
+	// cd sub, Enter: read again in a moment, well before probeEvery.
+	dir.Store(subDir)
+	before := reads.Load()
+	if err := tc.s.Send([]byte("cd sub\r")); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, tt, "the Enter seen", func() bool { return tc.enterSeen == tc.s.Enters() && tc.enterSeen != tc.probeEnters })
+	tt.Advance(probeAfterEnter)
+	waitFor(t, tt, "followed after the Enter", func() bool { return fc.fs.remote.dir == subDir && tt.HasText("deep.txt") })
+	if n := reads.Load() - before; n != 1 {
+		t.Errorf("%d reads after one Enter", n)
+	}
+	if n, m := shells.Load(), oneShots.Load(); n != 1 || m != 0 {
+		t.Errorf("%d probe shells and %d one-shot reads; want 1 and 0", n, m)
+	}
+	// Nothing typed: no read before probeEvery.
+	before = reads.Load()
+	tt.Advance(probeAfterEnter)
+	for range 5 {
+		time.Sleep(20 * time.Millisecond)
+		tt.Frame()
+	}
+	if reads.Load() != before {
+		t.Error("read again with no Enter")
 	}
 }

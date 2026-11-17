@@ -1,9 +1,11 @@
 package session
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"sync"
+	"sync/atomic"
 )
 
 // ErrInputBusy means another whole input write is still in progress. Input is
@@ -34,7 +36,21 @@ type serializedInput struct {
 	qmu      sync.Mutex
 	queued   []byte
 	draining bool
+	// enters, when set, counts the input that holds an Enter (Enters).
+	enters *atomic.Uint64
 }
+
+// entered counts p when it holds an Enter: a command run, maybe a cd.
+func (w *serializedInput) entered(p []byte) {
+	if w.enters != nil && bytes.IndexByte(p, '\r') >= 0 {
+		w.enters.Add(1)
+	}
+}
+
+// Enters is how many times input holding an Enter went to the shell, on
+// any connect: a following Files pane reads the directory again soon
+// after it changes.
+func (s *Session) Enters() uint64 { return s.enters.Load() }
 
 // send queues p behind the input still being written, in order, and
 // returns at once, so a stalled connection never holds up the UI thread.
@@ -49,6 +65,7 @@ func (w *serializedInput) send(p []byte) error {
 		w.draining = true
 		go w.drain()
 	}
+	w.entered(p)
 	w.queued = append(w.queued, p...)
 	return nil
 }
@@ -81,6 +98,7 @@ func (w *serializedInput) Write(p []byte) (int, error) {
 		return 0, ErrInputBusy
 	}
 	defer w.mu.Unlock()
+	w.entered(p)
 	return w.WriteCloser.Write(p)
 }
 

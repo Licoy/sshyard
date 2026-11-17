@@ -349,7 +349,10 @@ type filesState struct {
 	followed string
 	// noReportHidden hides the line saying the terminal followed does not
 	// report its directory, snippetOpen is its sheet with the snippet.
+	// slowHidden hides the line saying it would follow faster if the
+	// terminal reported its directory.
 	noReportHidden bool
+	slowHidden     bool
 	snippetOpen    bool
 	// queueOpen is the transfers sheet, queue its list.
 	queueOpen bool

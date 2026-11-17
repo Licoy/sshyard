@@ -140,6 +140,14 @@ type Session struct {
 	// processes.
 	tag    string
 	tagged bool
+	// enters counts the input holding an Enter (Enters).
+	enters atomic.Uint64
+	// cwdMu runs one ProbeCwd at a time, on cwdSh, the probe shell kept
+	// open on the connection; noCwdSh is a connection one could not
+	// start on. Both are under mu.
+	cwdMu   sync.Mutex
+	cwdSh   *cwdShell
+	noCwdSh *ssh.Client
 	// tap, when set, is given what the shell writes to the terminal, as
 	// it comes, after the terminal took it (SetOutputTap).
 	tap atomic.Pointer[func([]byte)]
@@ -543,7 +551,7 @@ func (s *Session) connect(ctx context.Context) error {
 		s.mu.Unlock()
 		return fail(context.Canceled)
 	}
-	s.client, s.release, s.shell, s.stdin, s.tagged = client, release, shell, &serializedInput{WriteCloser: stdin}, tagged
+	s.client, s.release, s.shell, s.stdin, s.tagged = client, release, shell, &serializedInput{WriteCloser: stdin, enters: &s.enters}, tagged
 	s.status.State, s.status.Err, s.status.Attempt = Connected, nil, 0
 	s.status.Connects++
 	s.mu.Unlock()
@@ -673,9 +681,13 @@ func (s *Session) serve(ctx context.Context) error {
 		shell.Close()
 	}
 	s.mu.Lock()
-	release := s.release
+	release, sh := s.release, s.cwdSh
 	s.client, s.release, s.shell, s.stdin = nil, nil, nil, nil
+	s.cwdSh, s.noCwdSh = nil, nil
 	s.mu.Unlock()
+	if sh != nil {
+		sh.close()
+	}
 	if release != nil {
 		release()
 	}
