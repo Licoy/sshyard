@@ -241,6 +241,57 @@ type remoteSide struct {
 	// sudoHeld stops SFTP opening again on this connection after sudo
 	// failed (Host.SFTPSudo), until the user answers or retries.
 	sudoHeld bool
+	// listSeq counts the listings asked for: only the last one shows.
+	listSeq int
+	// cache is the last listing of the folders gone to on client, the
+	// latest last, at most dirCacheMax: one gone to again shows at once,
+	// while it is listed anew.
+	cache []dirListing
+}
+
+// dirCacheMax is how many folders a files pane remembers the listing of.
+const dirCacheMax = 32
+
+// dirListing is a folder as it last listed.
+type dirListing struct {
+	dir        string
+	entries    []sftpsvc.Entry
+	unfinished []sftpsvc.Unfinished
+}
+
+// cached is the listing of dir remembered.
+func (s *remoteSide) cached(dir string) (dirListing, bool) {
+	i := slices.IndexFunc(s.cache, func(l dirListing) bool { return l.dir == dir })
+	if i < 0 {
+		return dirListing{}, false
+	}
+	return s.cache[i], true
+}
+
+// remember keeps l as the latest listing of its folder, forgetting the
+// one used longest ago past dirCacheMax.
+func (s *remoteSide) remember(l dirListing) {
+	s.cache = slices.DeleteFunc(s.cache, func(c dirListing) bool { return c.dir == l.dir })
+	if len(s.cache) >= dirCacheMax {
+		s.cache = slices.Delete(s.cache, 0, len(s.cache)-dirCacheMax+1)
+	}
+	s.cache = append(s.cache, l)
+}
+
+// forget drops the listings of dir, and of the folders under it when
+// under is set.
+func (s *remoteSide) forget(dir string, under bool) {
+	s.cache = slices.DeleteFunc(s.cache, func(l dirListing) bool {
+		return l.dir == dir || under && remoteUnder(l.dir, dir)
+	})
+}
+
+// remoteUnder says the server path p is inside the folder dir.
+func remoteUnder(p, dir string) bool {
+	if dir == "/" {
+		return p != "/" && strings.HasPrefix(p, "/")
+	}
+	return strings.HasPrefix(p, strings.TrimSuffix(dir, "/")+"/")
 }
 
 // localSide is the local half of a files pane.
@@ -437,6 +488,8 @@ func (a *App) ensureSFTP(cn *conn) {
 		s.client.Close()
 		s.client = nil
 	}
+	// What was listed on another connection may have changed since.
+	s.cache = nil
 	client := cn.s.Client()
 	if client == nil {
 		return
@@ -492,6 +545,8 @@ func (a *App) ensureSFTP(cn *conn) {
 			}
 			s.sudoHeld = false
 			s.client, s.connects, s.unfinished, s.home = c, connects, un, home
+			s.listSeq++
+			s.cache = []dirListing{{dir: dir, entries: es, unfinished: un}}
 			s.show(dir, es)
 			cn.fs.publish(c, connects)
 			if cn.kind == layout.Files {
@@ -517,21 +572,55 @@ func (a *App) readNames(cn *conn, c *sftpsvc.Client) {
 	}()
 }
 
+// listUnfinished lists a server folder and the saves left undone in it;
+// tests stand in for it.
+var listUnfinished = (*sftpsvc.Client).ListUnfinished
+
+// listRemote lists the server folder dir. A folder gone to again shows as
+// it last listed at once, then as it lists now; only the listing asked
+// for last shows. Listing the folder shown again, as after a change in
+// it, forgets what was remembered of the folders under it.
 func (a *App) listRemote(s *remoteSide, dir string) {
 	c := s.client
 	if c == nil {
 		return
 	}
+	s.listSeq++
+	seq := s.listSeq
+	var back *dirListing
+	if dir == s.dir {
+		s.forget(dir, true)
+	} else if l, ok := s.cached(dir); ok {
+		back = &dirListing{dir: s.dir, entries: s.listed, unfinished: s.unfinished}
+		name := s.reveal
+		s.unfinished = l.unfinished
+		s.show(dir, l.entries)
+		if name != "" && s.sel < 0 {
+			// Not there yet: maybe in the listing to come.
+			s.reveal = name
+		}
+	}
 	go func() {
-		es, un, err := c.ListUnfinished(dir)
+		es, un, err := listUnfinished(c, dir)
 		a.post(func() {
+			if s.listSeq != seq || s.client != c {
+				return
+			}
 			if err != nil {
+				s.forget(dir, true)
+				if back != nil && s.dir == dir {
+					// Gone since: back where it was, as when nothing
+					// was remembered.
+					s.unfinished = back.unfinished
+					s.show(back.dir, back.entries)
+				}
 				s.err, s.listErr = err.Error(), true
 				return
 			}
 			if s.listErr {
 				s.err, s.listErr = "", false
 			}
+			s.remember(dirListing{dir: dir, entries: es, unfinished: un})
 			s.unfinished = un
 			s.show(dir, es)
 		})
