@@ -67,7 +67,7 @@ func (c *Client) InstallKey(pub ssh.PublicKey, line string) (added bool, err err
 		case err != nil:
 			return false, fmt.Errorf("read %s: %w", file, err)
 		default:
-			old, err = io.ReadAll(io.LimitReader(f, 16<<20))
+			old, err = readSmall(f, 16<<20)
 			f.Close()
 			if err != nil {
 				return false, fmt.Errorf("read %s: %w", file, err)

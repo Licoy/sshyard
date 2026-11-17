@@ -326,13 +326,19 @@ func (ts *Transfers) run(t *Transfer) {
 // attempts copies t, trying again after a failure up to MaxRetries times.
 // Waiting for the connection is no attempt.
 func (ts *Transfers) attempts(ctx context.Context, t *Transfer) error {
+	fresh := false
 	for {
-		err := ts.copy(ctx, t)
+		err := ts.copy(ctx, t, fresh)
 		if err == nil {
 			return nil // done, even if stopped as it finished
 		}
 		if ctx.Err() != nil {
 			return ctx.Err()
+		}
+		if stale := (staleError{}); errors.As(err, &stale) && !fresh {
+			// A channel that died while it rested is no failed attempt.
+			fresh = true
+			continue
 		}
 		ts.mu.Lock()
 		if t.Attempt >= MaxRetries || permanent(err) {
@@ -388,52 +394,76 @@ func (ts *Transfers) client(ctx context.Context) (*Client, error) {
 // that a request a stalled server never answers returns at once, while
 // the shared client, the terminals and the other transfers go on. When
 // the server opens no more channels, the attempt uses the shared client.
-func (ts *Transfers) channel(ctx context.Context, t *Transfer) (*Client, func(), error) {
-	return ts.channelOn(ctx, ts.client, t)
+//
+// The channel may be one at rest in the pool, unless fresh. done ends
+// the attempt with its error: the channel goes back to the pool only
+// when the attempt succeeded, and the error of one whose rested channel
+// turned out dead is a staleError.
+func (ts *Transfers) channel(ctx context.Context, t *Transfer, fresh bool) (*Client, func(error) error, error) {
+	return ts.channelOn(ctx, ts.client, t, fresh)
 }
 
 // source is channel on the server a Relay copies from.
-func (ts *Transfers) source(ctx context.Context, t *Transfer) (*Client, func(), error) {
+func (ts *Transfers) source(ctx context.Context, t *Transfer, fresh bool) (*Client, func(error) error, error) {
 	if t.from == nil {
 		return nil, nil, errors.New("sftp: no connection")
 	}
-	return ts.channelOn(ctx, t.from, t)
+	return ts.channelOn(ctx, t.from, t, fresh)
 }
 
+// staleError is an attempt's failure on a channel that died while it
+// rested in the pool: the attempt is made again at once, on a new one.
+type staleError struct{ error }
+
+func (e staleError) Unwrap() error { return e.error }
+
 // channelOn is channel on the connection of the client get returns.
-func (ts *Transfers) channelOn(ctx context.Context, get func(context.Context) (*Client, error), t *Transfer) (*Client, func(), error) {
+func (ts *Transfers) channelOn(ctx context.Context, get func(context.Context) (*Client, error), t *Transfer, fresh bool) (*Client, func(error) error, error) {
 	shared, err := get(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	c, err := shared.operationClient(ctx)
+	open := shared.operationClient
+	if fresh {
+		open = shared.newOperation
+	}
+	c, err := open(ctx)
 	var refused *ssh.OpenChannelError
 	if err != nil && ctx.Err() == nil && (errors.As(err, &refused) || errors.Is(err, ErrOperationsBusy)) {
 		ts.logf("sftp: %s: no channel of its own (%v); using the shared one", t.Name, err)
-		return shared, func() {}, nil
+		return shared, func(err error) error { return err }, nil
 	}
 	if err != nil {
 		return nil, nil, err
 	}
 	stop := context.AfterFunc(ctx, func() { c.Close() })
-	stopShared := func() bool { return false }
+	stopShared := func() bool { return true }
 	if shared.closed != nil {
 		stopShared = context.AfterFunc(shared.closed, func() { c.Close() })
 	}
-	return c, func() {
-		stop()
-		stopShared()
+	return c, func(err error) error {
+		stopped := stop()
+		stoppedShared := stopShared()
+		switch {
+		case err == nil && stopped && stoppedShared:
+			c.release(ctx, nil)
+			return nil
+		case err != nil && c.reused && channelLost(err) && ctx.Err() == nil:
+			err = staleError{err}
+		}
 		c.Close()
+		return err
 	}, nil
 }
 
-// copy makes one attempt at t, resuming from its part file.
-func (ts *Transfers) copy(ctx context.Context, t *Transfer) error {
-	c, done, err := ts.channel(ctx, t)
+// copy makes one attempt at t, resuming from its part file, on new
+// channels when fresh.
+func (ts *Transfers) copy(ctx context.Context, t *Transfer, fresh bool) (err error) {
+	c, done, err := ts.channel(ctx, t, fresh)
 	if err != nil {
 		return err
 	}
-	defer done()
+	defer func() { err = done(err) }()
 	remote := remoteFS{c, ctx}
 	var src, dst fileSide
 	switch t.Dir {
@@ -455,11 +485,11 @@ func (ts *Transfers) copy(ctx context.Context, t *Transfer) error {
 		// the destination's. What it reads is written to the other as it
 		// comes (io.Copy below): the bytes held at once are bounded by the
 		// SFTP reads in flight, never the file's size.
-		from, fromDone, err := ts.source(ctx, t)
+		from, fromDone, err := ts.source(ctx, t, fresh)
 		if err != nil {
 			return err
 		}
-		defer fromDone()
+		defer func() { err = fromDone(err) }()
 		src, dst = remoteFS{from, ctx}, remote
 	default:
 		local, err := destinationRoot(t.Dst)

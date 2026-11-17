@@ -72,6 +72,9 @@ type Client struct {
 	// the transfers it opened (Transfers).
 	closed     context.Context
 	markClosed context.CancelFunc
+	// reused is set on a channel taken from the pool (operationPool),
+	// watched once the pool watches it for its end.
+	reused, watched bool
 }
 
 // opened readies a Client whose channel was just opened.
@@ -93,7 +96,7 @@ func New(conn *ssh.Client) (*Client, error) {
 // quota with every SFTP client on the same pooled SSH connection.
 func NewContext(ctx context.Context, conn *ssh.Client) (*Client, error) {
 	c := &Client{conn: conn, operations: operationSlots(conn)}
-	sub, err := c.operationClient(ctx)
+	sub, err := c.newOperation(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("sftp: %w", err)
 	}
@@ -122,18 +125,15 @@ func (c *Client) List(dir string) ([]Entry, error) {
 
 // ListContext interrupts a stalled listing on its own SFTP channel.
 func (c *Client) ListContext(ctx context.Context, dir string) ([]Entry, error) {
-	sub, err := c.operationClient(ctx)
+	var es []Entry
+	err := c.withOperation(ctx, true, func(sub *Client) (err error) {
+		es, err = sub.List(dir)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer sub.Close()
-	stop := context.AfterFunc(ctx, func() { sub.Close() })
-	defer stop()
-	es, err := sub.List(dir)
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
-	}
-	return es, err
+	return es, nil
 }
 
 // peekLinks is how many links a Peek follows at most, peekWorkers how
@@ -164,6 +164,18 @@ func (c *Client) Peek(ctx context.Context, dir string) ([]Entry, error) {
 		}
 		out = append(out, entry(fi))
 	}
+	c.followLinks(ctx, dir, out, links)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	sortEntries(out)
+	return out, nil
+}
+
+// followLinks marks the entries of dir at links whose targets are
+// directories, so that linked directories open: peekWorkers Stats at
+// once, each a round trip. Ending ctx stops handing out links.
+func (c *Client) followLinks(ctx context.Context, dir string, out []Entry, links []int) {
 	var wg sync.WaitGroup
 	next := make(chan int)
 	for range min(peekWorkers, len(links)) {
@@ -183,11 +195,6 @@ func (c *Client) Peek(ctx context.Context, dir string) ([]Entry, error) {
 	}
 	close(next)
 	wg.Wait()
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	sortEntries(out)
-	return out, nil
 }
 
 // ListUnfinished lists a remote directory, directories first, and the
@@ -206,19 +213,18 @@ func (c *Client) ListUnfinished(dir string) ([]Entry, []Unfinished, error) {
 		}
 	}
 	out := make([]Entry, 0, len(fis))
+	var links []int
 	for _, fi := range fis {
 		if n := fi.Name(); n == "" || n == "." || n == ".." || strings.ContainsAny(n, "/\x00") {
 			continue // no file has such a name: a server's trick (or bug)
 		}
-		e := entry(fi)
 		if fi.Mode()&fs.ModeSymlink != 0 {
-			// Follow links so that linked directories open.
-			if t, err := c.c.Stat(path.Join(dir, fi.Name())); err == nil {
-				e.IsDir = t.IsDir()
-			}
+			links = append(links, len(out))
 		}
-		out = append(out, e)
+		out = append(out, entry(fi))
 	}
+	// Every link is followed, not only Peek's first peekLinks.
+	c.followLinks(context.Background(), dir, out, links)
 	sortEntries(out)
 	return out, unfinished, nil
 }

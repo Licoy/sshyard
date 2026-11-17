@@ -76,18 +76,15 @@ func (c *Client) ResolvePath(ctx context.Context, p string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
-	sub, err := c.operationClient(ctx)
+	var resolved string
+	err := c.withOperation(ctx, true, func(sub *Client) (err error) {
+		resolved, err = sub.resolvePath(ctx, p)
+		return err
+	})
 	if err != nil {
 		return "", err
 	}
-	defer sub.Close()
-	stop := context.AfterFunc(ctx, func() { sub.Close() })
-	defer stop()
-	p, err = sub.resolvePath(ctx, p)
-	if ctx.Err() != nil {
-		return "", ctx.Err()
-	}
-	return p, err
+	return resolved, nil
 }
 
 func (c *Client) resolvePath(ctx context.Context, p string) (string, error) {

@@ -417,7 +417,9 @@ func (c *Client) Search(ctx context.Context, root, pattern string, limit int, fo
 			}
 		}
 	}
-	sub, err := c.operationClient(ctx)
+	// A new channel, closed after: a walk that stops at limit leaves
+	// requests running on it.
+	sub, err := c.newOperation(ctx)
 	if err != nil {
 		return false, err
 	}

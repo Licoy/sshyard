@@ -46,7 +46,7 @@ var sudoCommand = "sudo -S -p '" + sudoPrompt + "' sh -c '" +
 // must not ask). Every SFTP channel the Client opens goes through sudo.
 func NewSudo(ctx context.Context, conn *ssh.Client, password string) (*Client, error) {
 	c := &Client{conn: conn, operations: operationSlots(conn), sudo: &sudoAuth{password: password}}
-	sub, err := c.operationClient(ctx)
+	sub, err := c.newOperation(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("sftp: %w", err)
 	}

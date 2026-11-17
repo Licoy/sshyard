@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -519,27 +520,24 @@ func (c *Client) readFileContext(ctx context.Context, p string, limit int64, noL
 	if limit <= 0 || limit > 1<<30 {
 		return nil, Version{}, ErrReadLimit
 	}
-	sub, err := c.operationClient(ctx)
+	var data []byte
+	var ver Version
+	err := c.withOperation(ctx, true, func(sub *Client) error {
+		p := p
+		if noLinks {
+			var err error
+			if p, err = sub.resolvePath(ctx, p); err != nil {
+				return err
+			}
+		}
+		var err error
+		data, ver, err = sub.readBounded(p, limit)
+		return err
+	})
 	if err != nil {
 		return nil, Version{}, err
 	}
-	defer sub.Close()
-	stop := context.AfterFunc(ctx, func() { sub.Close() })
-	defer stop()
-	if noLinks {
-		p, err = sub.resolvePath(ctx, p)
-		if err != nil {
-			if ctx.Err() != nil {
-				err = ctx.Err()
-			}
-			return nil, Version{}, err
-		}
-	}
-	data, ver, err := sub.readBounded(p, limit)
-	if ctx.Err() != nil {
-		return nil, Version{}, ctx.Err()
-	}
-	return data, ver, err
+	return data, ver, nil
 }
 
 func (c *Client) readBounded(p string, limit int64) ([]byte, Version, error) {
@@ -553,12 +551,12 @@ func (c *Client) readBounded(p string, limit int64) ([]byte, Version, error) {
 		return nil, Version{}, err
 	}
 	if !fi.Mode().IsRegular() {
-		return nil, Version{}, errors.New("sftp: not a regular file")
+		return nil, Version{}, errNotRegular
 	}
 	if fi.Size() < 0 || fi.Size() > limit {
 		return nil, Version{}, ErrReadLimit
 	}
-	data, err := io.ReadAll(io.LimitReader(f, limit+1))
+	data, err := readUpTo(f, fi.Size()+1, limit+1)
 	if err != nil {
 		return nil, Version{}, err
 	}
@@ -573,6 +571,40 @@ func (c *Client) readBounded(p string, limit int64) ([]byte, Version, error) {
 		return nil, Version{}, ErrChanged
 	}
 	return data, Version{Size: fi.Size(), ModTime: fi.ModTime()}.withSum(data), nil
+}
+
+// errNotRegular is a file read that is not a regular file.
+var errNotRegular = errors.New("sftp: not a regular file")
+
+// readUpTo reads r to its end, but n bytes at most, into a buffer made
+// for size bytes (capped at n) first: pkg/sftp sends one large Read as
+// concurrent requests, where io.ReadAll's small first reads take a round
+// trip each. More bytes than size grow the buffer, never past n.
+func readUpTo(r io.Reader, size, n int64) ([]byte, error) {
+	buf := make([]byte, 0, min(max(size, 0), n))
+	for int64(len(buf)) < n {
+		if len(buf) == cap(buf) {
+			buf = slices.Grow(buf, int(min(max(int64(cap(buf)), 512), n-int64(len(buf)))))
+		}
+		got, err := r.Read(buf[len(buf):min(int64(cap(buf)), n)])
+		buf = buf[:len(buf)+got]
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return buf, err
+		}
+	}
+	return buf, nil
+}
+
+// readSmall is readUpTo of the remote file f, sized by its fstat.
+func readSmall(f *sftp.File, n int64) ([]byte, error) {
+	var size int64
+	if fi, err := f.Stat(); err == nil {
+		size = fi.Size() + 1 // + 1 to read the end at once
+	}
+	return readUpTo(f, size, n)
 }
 
 // Version is the remote file's version now.
@@ -613,18 +645,15 @@ func (c *Client) WriteFileNoLinks(p string, data []byte, was Version) (Version, 
 // WriteFileNoLinksContext keeps validation and atomic replacement on a dedicated
 // cancellable session. Cancellation cannot undo a rename already completed.
 func (c *Client) WriteFileNoLinksContext(ctx context.Context, p string, data []byte, was Version) (Version, error) {
-	sub, err := c.operationClient(ctx)
+	var ver Version
+	err := c.withOperation(ctx, false, func(sub *Client) (err error) {
+		ver, err = sub.writeFileContext(ctx, p, data, was, true)
+		return err
+	})
 	if err != nil {
 		return Version{}, err
 	}
-	defer sub.Close()
-	stop := context.AfterFunc(ctx, func() { sub.Close() })
-	defer stop()
-	ver, err := sub.writeFileContext(ctx, p, data, was, true)
-	if ctx.Err() != nil {
-		return Version{}, ctx.Err()
-	}
-	return ver, err
+	return ver, nil
 }
 
 func (c *Client) writeFile(p string, data []byte, was Version, noLinks bool) (Version, error) {

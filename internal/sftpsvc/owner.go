@@ -2,7 +2,6 @@ package sftpsvc
 
 import (
 	"bytes"
-	"io"
 	"os/user"
 	"strconv"
 	"sync"
@@ -22,7 +21,7 @@ func (c *Client) Names() (users, groups map[uint32]string) {
 			return nil
 		}
 		defer f.Close()
-		data, _ := io.ReadAll(io.LimitReader(f, namesLimit))
+		data, _ := readSmall(f, namesLimit)
 		return parseIDs(data)
 	}
 	return read("/etc/passwd"), read("/etc/group")
