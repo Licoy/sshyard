@@ -24,6 +24,9 @@ import (
 func (a *App) aiPane(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, tok theme.Tokens, m locales.Messages) {
 	a.refreshMode(cn)
 	a.syncLink(t, cn)
+	if wait := a.watchTermUser(cn, c.Now()); wait > 0 {
+		c.After(wait)
+	}
 	if t.Focus == n.ID {
 		a.aiRecent[cn.host.ID] = cn.id
 	}
@@ -470,7 +473,7 @@ func (a *App) aiTimeline(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Me
 			softTile(c, icons.Robot, tok.Accent, 44).Margin(0, 0, theme.Space(1), 0)
 			ui.Text(c, m.AiEmptyTitle(a.pv(cn.host.Label()))).FontSize(theme.Title3).FontWeight(600).TextAlign(ui.Center).MaxWidth(320)
 			empty := m.AiEmpty()
-			if aiTarget(cn.host) != agent.TargetSSH {
+			if aiTargetOf(cn) != agent.TargetSSH {
 				empty = m.AiEmptyTerminal()
 			}
 			ui.Text(c, empty).FontSize(theme.Footnote).TextColor(tok.TextMuted).TextAlign(ui.Center).MaxWidth(300)
@@ -551,6 +554,7 @@ func (a *App) aiComposer(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Me
 		case !cn.ai.fullSeen:
 			aiBanner(c.Key("fullbar"), tok.Danger, icons.Warning, m.AiFullBar(), func() { cn.ai.fullSeen = true })
 		}
+		a.termUserBanner(c, cn, tok, m)
 		a.aiApproval(c, cn, tok, m)
 		box := ui.Column(c.Key("aicompose")).FillWidth().Padding(theme.Space(1)).Gap(theme.Space(1)).
 			Radius(theme.RadiusCard).Background(tok.Fill)
@@ -606,6 +610,13 @@ func (a *App) aiComposer(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Me
 				if (IconButton{Icon: icons.Attach, Label: m.AiAttach(), Size: Small, Disabled: a.p.PickFiles == nil}).Clicked(c, "aiattachbtn") {
 					a.pickAttach(cn, m)
 				}
+				if cn.ai.agent == "builtin" && hasSSH(cn.host) {
+					inTerm := IconButton{Icon: icons.Terminal, On: icons.TerminalOn, Label: m.AiRunInTerminal(), Size: Small,
+						Toggle: true, Active: cn.ai.inTerm, Disabled: cn.ai.running}
+					if inTerm.Clicked(c, "aiinterm") {
+						a.SetAITerminal(cn.id, !cn.ai.inTerm)
+					}
+				}
 				ui.Spacer(c).Shrink(1)
 				if cn.ai.agent == "builtin" {
 					a.modelChip(c, cn, tok, m, fit)
@@ -642,14 +653,23 @@ func (a *App) sendAI(cn *conn) {
 // aiBanner is a rounded notice tinted with col, as the panes' banners are.
 // With dismiss, a close button at its end calls it.
 func aiBanner(c *ui.Context, col ui.Color, ic *icons.Icon, text string, dismiss func()) ui.Element {
+	return aiBannerWith(c, col, ic, text, nil, dismiss)
+}
+
+// aiBannerWith is aiBanner with acts, its own buttons, drawn before the
+// close button.
+func aiBannerWith(c *ui.Context, col ui.Color, ic *icons.Icon, text string, acts func(), dismiss func()) ui.Element {
 	pad := float32(10)
-	if dismiss != nil {
+	if dismiss != nil || acts != nil {
 		pad = 4
 	}
 	return ui.Row(c).FillWidth().Padding(6, pad, 6, 10).Gap(theme.Space(2)).AlignItems(ui.Center).
 		Radius(theme.RadiusControl).Background(col.Alpha(0.12)).Border(1, col.Alpha(0.22)).Children(func() {
 		ui.Icon(c, ic.SVG).Size(14, 14).Shrink(0).TextColor(col)
 		ui.Text(c, text).FontSize(theme.Footnote).Grow(1).Shrink(1)
+		if acts != nil {
+			acts()
+		}
 		if dismiss != nil {
 			m := locales.In(c.Locale())
 			if (IconButton{Icon: icons.Close, Label: m.AiDismiss(), Size: Tiny}).Clicked(c, "dismiss") {

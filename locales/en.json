@@ -1496,6 +1496,8 @@
   "aiToolTerminalSend": "Type in terminal",
   "aiToolTerminalKey": "Press key in terminal",
   "aiEmptyTerminal": "Answers draw on this tab’s terminal. The assistant works by typing into it, with no file access; what it types follows the permission below.",
+  "aiRunInTerminal": "Run Commands in Terminal",
+  "aiTermUserBar": "The terminal is now {user}, but the assistant’s commands still run as {login}. Run them in the terminal to follow it.",
   "aiACPNeedsSSH": "External agents need an SSH host. Switch to the built-in assistant to work in this terminal.",
   "aiToolAction": "Tool action",
   "aiToolRunning": "Running",

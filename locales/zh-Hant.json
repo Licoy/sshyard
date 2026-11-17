@@ -1496,6 +1496,8 @@
   "aiToolTerminalSend": "在終端機輸入",
   "aiToolTerminalKey": "在終端機按鍵",
   "aiEmptyTerminal": "回答會參考本分頁的終端機。助理透過在終端機中輸入來操作，無法存取檔案，輸入的內容遵循下方的權限。",
+  "aiRunInTerminal": "在終端機中執行命令",
+  "aiTermUserBar": "終端機已切換為 {user}，但助理的命令仍以 {login} 身分執行。改為在終端機中執行即可跟隨。",
   "aiACPNeedsSSH": "外部智慧體需要 SSH 主機。請切換到內建助理來操作此終端機。",
   "aiToolAction": "工具操作",
   "aiToolRunning": "執行中",

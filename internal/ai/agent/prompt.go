@@ -48,6 +48,15 @@ const ShellPrompt = "You are SSHYard's built-in assistant for exactly one termin
 	terminalRules +
 	"Prefer commands that finish by themselves and print plain text: avoid pagers and full-screen programs (use --no-pager or | cat). " + rules
 
+// SSHTerminalPrompt is the instruction for an SSH host worked on through
+// the user's terminal on it rather than channels of the assistant's own.
+const SSHTerminalPrompt = "You are SSHYard's built-in assistant for exactly one SSH host. " +
+	"You help the user operate that host and no other. You work in the user's own terminal on it, " +
+	"so what you type runs as whoever that terminal is now, after su or sudo -i too." +
+	terminalRules +
+	"Prefer commands that finish by themselves and print plain text: avoid pagers and full-screen programs (use --no-pager or | cat). " +
+	"Leave the terminal's user and directory as they were unless the task needs them changed. " + rules
+
 // WrapUntrusted marks body as data from source. A closing marker inside the
 // body is escaped so the boundary stays intact.
 func WrapUntrusted(source, body string) string {
@@ -73,6 +82,9 @@ type HostMeta struct {
 	Provider string
 	Renewal  string
 	Note     string
+	// TermUser is who an SSH host's linked terminal switched to with su
+	// or sudo -i: a name, else "uid N"; empty while it runs as the login.
+	TermUser string
 }
 
 func hostMessage(h HostMeta) string {
@@ -86,9 +98,34 @@ func hostMessage(h HostMeta) string {
 		"Do not guess unknown OS or distro; query them only when needed for the user's task."
 }
 
+// termUserNote tells the model of target t who the linked terminal runs
+// as, h.TermUser, and so whom its commands run as; "" for a terminal
+// running as the login user from the start.
+func termUserNote(t Target, h HostMeta, changed bool) string {
+	login := h.User
+	if login == "" {
+		login = "the SSH login user"
+	}
+	switch {
+	case h.TermUser == "" && !changed:
+		return ""
+	case h.TermUser == "":
+		return "The linked terminal runs as " + login + ", the SSH login user, again."
+	case t == TargetSSHTerminal:
+		return "The linked terminal now runs as " + h.TermUser + ", switched from " + login + " with su or sudo: the lines you type there run as " + h.TermUser + "."
+	}
+	return "The linked terminal now runs as " + h.TermUser + ", switched from " + login + " with su or sudo. " +
+		"run_command and the file tools do not follow it: they still run as " + login + ". " +
+		"Do not assume their output is what " + h.TermUser + " would see. " +
+		"For work that needs " + h.TermUser + ", tell the user that turning on \"run in the terminal\" in this pane makes your commands run in that terminal."
+}
+
 // hostMessageFor is the host context for target t.
 func hostMessageFor(t Target, h HostMeta) string {
-	if t == TargetSSH {
+	if t == TargetSSH || t == TargetSSHTerminal {
+		if note := termUserNote(t, h, false); note != "" {
+			return hostMessage(h) + "\n" + note
+		}
 		return hostMessage(h)
 	}
 	msg := "Host name: " + h.Name + "\n"
@@ -149,6 +186,9 @@ const (
 	TargetDevice
 	// TargetShell is a terminal on this computer: the user's shell.
 	TargetShell
+	// TargetSSHTerminal is an SSH host worked on by typing into its
+	// linked terminal, as whoever that terminal is now.
+	TargetSSHTerminal
 )
 
 // ToolDefsFor is the function set of target t. The terminal targets type
@@ -172,6 +212,8 @@ func systemPrompt(t Target) string {
 		return DevicePrompt
 	case TargetShell:
 		return ShellPrompt
+	case TargetSSHTerminal:
+		return SSHTerminalPrompt
 	}
 	return SystemPrompt
 }

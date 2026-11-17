@@ -70,3 +70,60 @@ func TestHostPromptSubscriptionAndNote(t *testing.T) {
 		}
 	}
 }
+
+// TestTermUserTold: the model is told who the linked terminal runs as
+// when it switched, again only when that changes, and that its own
+// channels do not follow it unless it types into the terminal.
+func TestTermUserTold(t *testing.T) {
+	replies := make([]llm.Message, 4)
+	for i := range replies {
+		replies[i] = llm.Message{Role: "assistant", Content: "ok"}
+	}
+	model := &scriptModel{replies: replies}
+	s := New(Config{Model: model, Gate: &recordGate{allow: true}, Tools: &fakeTools{}})
+	meta := HostMeta{Name: "web", User: "ops"}
+	turn := func(user string) []llm.Message {
+		t.Helper()
+		meta.TermUser = user
+		if err := s.Turn(t.Context(), "go on", meta, "", nil); err != nil {
+			t.Fatal(err)
+		}
+		return model.reqs[len(model.reqs)-1].Messages
+	}
+	if msgs := turn(""); countSub(msgs, "linked terminal") != 0 {
+		t.Fatalf("told of a terminal never switched: %v", msgs)
+	}
+	msgs := turn("root")
+	if countSub(msgs, "now runs as root") != 1 || countSub(msgs, "they still run as ops") != 1 {
+		t.Fatalf("switch not told: %v", msgs)
+	}
+	if msgs := turn("root"); countSub(msgs, "now runs as root") != 1 {
+		t.Fatal("told again without a change")
+	}
+	if msgs := turn(""); countSub(msgs, "runs as ops, the SSH login user, again") != 1 {
+		t.Fatal("the way back not told")
+	}
+
+	term := hostMessageFor(TargetSSHTerminal, HostMeta{Name: "web", User: "ops", TermUser: "root"})
+	if !strings.Contains(term, "Host name: web") || !strings.Contains(term, "the lines you type there run as root") || strings.Contains(term, "still run as") {
+		t.Fatal(term)
+	}
+}
+
+// TestSSHTerminalTarget: an SSH host worked on through its terminal has
+// the terminal tools and the instruction for it, and no SSH channels.
+func TestSSHTerminalTarget(t *testing.T) {
+	model := &scriptModel{replies: []llm.Message{{Role: "assistant", Content: "ok"}}}
+	s := New(Config{Model: model, Gate: &recordGate{allow: true}, Tools: &fakeTools{}, Target: TargetSSHTerminal})
+	if err := s.Turn(t.Context(), "who am i", HostMeta{Name: "web", User: "ops"}, "", nil); err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, d := range model.reqs[0].Tools {
+		names = append(names, d.Name)
+	}
+	msgs := model.reqs[0].Messages
+	if strings.Join(names, ",") != "pane_output,terminal_send,terminal_key" || msgs[0].Content != SSHTerminalPrompt || !strings.Contains(msgs[1].Content, "User: ops") {
+		t.Fatalf("tools %v system %q host %q", names, msgs[0].Content, msgs[1].Content)
+	}
+}

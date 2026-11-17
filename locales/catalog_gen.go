@@ -15119,6 +15119,28 @@ func (msgs Messages) AiEmptyTerminal() string {
 	return Catalog.Format(msgs.locale, "aiEmptyTerminal", nil)
 }
 
+// AiRunInTerminal says "Run Commands in Terminal"
+// in the language the app shows.
+func AiRunInTerminal() string { return In(i18n.Locale()).AiRunInTerminal() }
+
+// AiRunInTerminal says "Run Commands in Terminal"
+// in the language of msgs.
+func (msgs Messages) AiRunInTerminal() string {
+	return Catalog.Format(msgs.locale, "aiRunInTerminal", nil)
+}
+
+// AiTermUserBar says "The terminal is now {user}, but the assistant’s commands still run as {login}. Run them in the terminal to follow it."
+// in the language the app shows.
+func AiTermUserBar(user string, login string) string {
+	return In(i18n.Locale()).AiTermUserBar(user, login)
+}
+
+// AiTermUserBar says "The terminal is now {user}, but the assistant’s commands still run as {login}. Run them in the terminal to follow it."
+// in the language of msgs.
+func (msgs Messages) AiTermUserBar(user string, login string) string {
+	return Catalog.Format(msgs.locale, "aiTermUserBar", map[string]any{"user": user, "login": login})
+}
+
 // AiACPNeedsSSH says "External agents need an SSH host. Switch to the built-in assistant to work in this terminal."
 // in the language the app shows.
 func AiACPNeedsSSH() string { return In(i18n.Locale()).AiACPNeedsSSH() }

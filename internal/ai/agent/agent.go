@@ -106,6 +106,8 @@ type Session struct {
 	target   Target
 	msgs     []llm.Message
 	hostSent bool
+	// termUser is the HostMeta.TermUser the model was last told of.
+	termUser string
 	// used counts the tool calls of the turn so far; limit is how many it
 	// may run in all, raised by maxCalls on each Continue; maxCalls is the
 	// calls one stretch grants, 0 for no limit at all.
@@ -181,7 +183,10 @@ func (s *Session) TurnWith(ctx context.Context, user string, parts []llm.Part, m
 	}
 	if !s.hostSent {
 		s.msgs = append(s.msgs, llm.Message{Role: "system", Content: s.mask(hostMessageFor(s.target, meta))})
-		s.hostSent = true
+		s.hostSent, s.termUser = true, meta.TermUser
+	} else if meta.TermUser != s.termUser {
+		s.msgs = append(s.msgs, llm.Message{Role: "system", Content: s.mask(termUserNote(s.target, meta, true))})
+		s.termUser = meta.TermUser
 	}
 	text := user
 	if terminal != "" {

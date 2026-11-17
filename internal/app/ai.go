@@ -94,6 +94,12 @@ type aiState struct {
 	// fullSeen is set once the full access banner is dismissed, until
 	// the pane leaves full access.
 	fullSeen bool
+	// inTerm has an SSH host's assistant type into the linked terminal
+	// (agent.TargetSSHTerminal), not run on channels of its own.
+	inTerm bool
+	// user is who runs the linked terminal, as last read from its server
+	// (aiuser.go).
+	user termUser
 	// textN and textLen are the reply's trailing text as the timeline last
 	// saw it, and textAt when it last grew: a reply quiet for a while is
 	// still being worked on, as a tool call being written or reviewed.
@@ -355,9 +361,10 @@ func (a *App) ensureAI(c *conn) error {
 		c.ai.provider = a.defaultProvider()
 	}
 	a.refreshMode(c)
-	if c.ai.sess != nil && c.ai.target != aiTarget(c.host) {
-		// The host was changed to another protocol: the conversation goes
-		// on with the tools that now reach it.
+	if c.ai.sess != nil && c.ai.target != aiTargetOf(c) {
+		// The host was changed to another protocol, or the pane to type
+		// into its terminal: the conversation goes on with the tools that
+		// now reach it.
 		c.ai.sess, c.ai.tools = nil, nil
 	}
 	if c.ai.sess != nil {
@@ -393,7 +400,7 @@ func (a *App) ensureAI(c *conn) error {
 		c.ai.box = box
 		streamer = box
 	}
-	target := aiTarget(c.host)
+	target := aiTargetOf(c)
 	var tools agent.Tools
 	if a.newTools != nil {
 		tools = a.newTools(c)
@@ -514,10 +521,19 @@ func (a *App) SendAI(id int, text string) {
 	c.ai.task = text
 	c.ai.gen++
 	meta := a.aiMeta(c)
+	meta.TermUser = switchedTo(c)
+	if meta.User == "" {
+		meta.User = loginName(c)
+	}
 	term := a.aiTerminal(c)
 	session := c.ai.sess
+	state, fresh := c.ai, a.freshTermUser(c)
 	user, parts := attachTurn(text, files)
 	a.launch(c, func(ctx context.Context, emit func(agent.Event)) error {
+		if fresh != nil {
+			// An Enter not read yet may have been su's.
+			meta.TermUser = a.readTermUser(ctx, state, fresh, meta.TermUser)
+		}
 		return session.TurnWith(ctx, user, parts, meta, term, emit)
 	})
 }

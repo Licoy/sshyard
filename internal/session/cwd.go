@@ -43,12 +43,16 @@ func (s *Session) Tag() (string, bool) {
 // other. That sshd is found going up from $$, the sh the body runs in
 // (cwdScript's, or the probe shell's), which is on no terminal itself.
 // It exits 1 when it finds none, and holds no single quote or newline.
-func cwdBody(tag string) string {
+func cwdBody(tag string) string { return shellBody(tag, `readlink "$d/cwd"; exit 0`) }
+
+// shellBody finds the shell as cwdBody does and runs then with d its
+// directory in /proc (p); it exits 1 when it finds none.
+func shellBody(tag, then string) string {
 	head := `p=/proc; m=$$; pp() { sed "s/.*) //" "$1/stat" 2>/dev/null | cut -d" " -f2; }; `
 	if tag != "" {
 		return head + `t="` + TagEnv + `=` + tag + `"; ` +
 			`for f in $(grep -lzx "$t" $p/[0-9]*/environ 2>/dev/null); do ` +
-			`d=${f%/environ}; grep -qzx "$t" "$p/$(pp $d)/environ" 2>/dev/null || { readlink "$d/cwd"; exit 0; }; ` +
+			`d=${f%/environ}; grep -qzx "$t" "$p/$(pp $d)/environ" 2>/dev/null || { ` + then + `; }; ` +
 			`done; exit 1`
 	}
 	return head + `s=$m; ` +
@@ -56,8 +60,8 @@ func cwdBody(tag string) string {
 		`s=$(pp $p/$s); [ "${s:-0}" -gt 1 ] 2>/dev/null || exit 1; done; ` +
 		`n=0; w=; for f in $(grep -l ") [A-Za-z] $s " $p/[0-9]*/stat 2>/dev/null); do ` +
 		`d=${f%/stat}; [ "$(pp $d)" = "$s" ] || continue; ` +
-		`case $(readlink "$d/fd/0" 2>/dev/null) in /dev/pts/*) n=$((n+1)); w=$(readlink "$d/cwd");; esac; ` +
-		`done; [ "$n" = 1 ] && [ -n "$w" ] && { echo "$w"; exit 0; }; exit 1`
+		`case $(readlink "$d/fd/0" 2>/dev/null) in /dev/pts/*) n=$((n+1)); w=$d;; esac; ` +
+		`done; [ "$n" = 1 ] && [ -n "$w" ] && { d=$w; ` + then + `; }; exit 1`
 }
 
 // cwdScript is cwdBody as a command of its own, run under sh whatever
@@ -71,15 +75,28 @@ func cwdScript(tag string) string { return "sh -c '" + cwdBody(tag) + "'" }
 // shell, or more than one untagged (ErrNoCwd). It opens a channel of its
 // own each time; Session.ProbeCwd keeps one open.
 func ShellCwd(ctx context.Context, client *ssh.Client, tag string) (string, error) {
-	var out bytes.Buffer
-	if err := Exec(ctx, client, cwdScript(tag), &out, nil); err != nil {
-		var exit *ssh.ExitError
-		if errors.As(err, &exit) {
-			return "", ErrNoCwd
-		}
+	out, found, err := execBody(ctx, client, cwdBody(tag))
+	if err != nil {
 		return "", err
 	}
-	return cwdPath(strings.TrimSpace(out.String()))
+	if !found {
+		return "", ErrNoCwd
+	}
+	return cwdPath(out)
+}
+
+// execBody runs body under sh on a channel of its own and returns what it
+// printed, trimmed; found is false when it exited with an error.
+func execBody(ctx context.Context, client *ssh.Client, body string) (out string, found bool, err error) {
+	var b bytes.Buffer
+	if err := Exec(ctx, client, "sh -c '"+body+"'", &b, nil); err != nil {
+		var exit *ssh.ExitError
+		if errors.As(err, &exit) {
+			return "", false, nil
+		}
+		return "", false, err
+	}
+	return strings.TrimSpace(b.String()), true, nil
 }
 
 // cwdPath is the directory d the server printed, cleaned, or ErrNoCwd

@@ -1496,6 +1496,8 @@
   "aiToolTerminalSend": "在终端输入",
   "aiToolTerminalKey": "在终端按键",
   "aiEmptyTerminal": "回答会参考本标签页的终端。助理通过在终端中输入来操作，无法访问文件，输入的内容遵循下方的权限。",
+  "aiRunInTerminal": "在终端中执行命令",
+  "aiTermUserBar": "终端已切换为 {user}，但助理的命令仍以 {login} 身份运行。改为在终端中执行即可跟随。",
   "aiACPNeedsSSH": "外部智能体需要 SSH 主机。请切换到内置助理来操作此终端。",
   "aiToolAction": "工具操作",
   "aiToolRunning": "执行中",

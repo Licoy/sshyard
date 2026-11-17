@@ -95,37 +95,42 @@ func (sh *cwdShell) close() {
 	})
 }
 
-// cwd reads the directory of the shell tagged tag ("" untagged), as
-// ShellCwd. Its answer is one line between two marks new for each read,
-// so what the login printed, or what an earlier read left, is skipped.
-func (sh *cwdShell) cwd(ctx context.Context, tag string) (string, error) {
+// ask types body into the probe shell, as probeRequest does, and returns
+// what it printed; found is false when it exited with an error. Its
+// answer is one line between two marks new for each read, so what the
+// login printed, or what an earlier read left, is skipped.
+func (sh *cwdShell) ask(ctx context.Context, body string) (out string, found bool, err error) {
 	mark := newTag()
-	if _, err := io.WriteString(sh.in, cwdRequest(tag, mark)); err != nil {
-		return "", err
+	if _, err := io.WriteString(sh.in, probeRequest(body, mark)); err != nil {
+		return "", false, err
 	}
 	for {
 		select {
 		case <-ctx.Done():
-			return "", ctx.Err()
+			return "", false, ctx.Err()
 		case <-sh.done:
-			return "", errCwdShellGone
+			return "", false, errCwdShellGone
 		case line, ok := <-sh.lines:
 			if !ok {
-				return "", errCwdShellGone
+				return "", false, errCwdShellGone
 			}
-			if d, ok, err := cwdAnswer(line, mark); ok {
+			if out, found, ok := probeAnswer(line, mark); ok {
 				sh.used = true
-				return d, err
+				return out, found, nil
 			}
 		}
 	}
 }
 
 // cwdRequest is the line typed into a probe shell to read the directory
-// of the shell tagged tag: cwdBody in a subshell, its input not the probe
-// shell's, then its status and what it printed between two marks.
-func cwdRequest(tag, mark string) string {
-	return `d=$( { ` + cwdBody(tag) + `; } </dev/null 2>/dev/null); ` +
+// of the shell tagged tag.
+func cwdRequest(tag, mark string) string { return probeRequest(cwdBody(tag), mark) }
+
+// probeRequest is the line typed into a probe shell to run body: in a
+// subshell, its input not the probe shell's, then its status and what it
+// printed between two marks.
+func probeRequest(body, mark string) string {
+	return `d=$( { ` + body + `; } </dev/null 2>/dev/null); ` +
 		`printf '%s %s %s %s\n' ` + mark + ` "$?" "$d" ` + mark + "\n"
 }
 
@@ -133,25 +138,53 @@ func cwdRequest(tag, mark string) string {
 // false for a line that is not, err ErrNoCwd for no directory, or one
 // over several lines.
 func cwdAnswer(line, mark string) (d string, ok bool, err error) {
-	rest, ok := strings.CutPrefix(line, mark+" ")
+	out, found, ok := probeAnswer(line, mark)
 	if !ok {
 		return "", false, nil
 	}
-	rest, whole := strings.CutSuffix(strings.TrimSuffix(rest, "\n"), " "+mark)
-	code, d, _ := strings.Cut(rest, " ")
-	if !whole || code != "0" {
+	if !found {
 		return "", true, ErrNoCwd
 	}
-	d, err = cwdPath(d)
+	d, err = cwdPath(out)
 	return d, true, err
 }
 
+// probeAnswer reads line as the answer to the request marked mark: ok is
+// false for a line that is not, found false for a body that failed, or
+// printed over several lines.
+func probeAnswer(line, mark string) (out string, found, ok bool) {
+	rest, ok := strings.CutPrefix(line, mark+" ")
+	if !ok {
+		return "", false, false
+	}
+	rest, whole := strings.CutSuffix(strings.TrimSuffix(rest, "\n"), " "+mark)
+	code, out, _ := strings.Cut(rest, " ")
+	if !whole || code != "0" {
+		return "", false, true
+	}
+	return out, true, true
+}
+
 // ProbeCwd is ShellCwd for the session's shell on its connection, through
-// a probe shell kept open there between reads. Should that not start, or
-// break, it falls back to ShellCwd, and the next read starts another;
-// one that never answered is not started again on the connection. One
-// read runs at a time.
+// a probe shell kept open there between reads (probeShell).
 func (s *Session) ProbeCwd(ctx context.Context) (string, error) {
+	out, found, err := s.probeShell(ctx, cwdBody)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", ErrNoCwd
+	}
+	return cwdPath(out)
+}
+
+// probeShell runs the body made for the session shell's tag ("" untagged) on
+// its connection, through a probe shell kept open there between reads.
+// Should that not start, or break, it runs it on a channel of its own,
+// and the next read starts another; one that never answered is not
+// started again on the connection. One read runs at a time. found is
+// false when the body exited with an error.
+func (s *Session) probeShell(ctx context.Context, body func(tag string) string) (out string, found bool, err error) {
 	s.cwdMu.Lock()
 	defer s.cwdMu.Unlock()
 	s.mu.Lock()
@@ -171,7 +204,7 @@ func (s *Session) ProbeCwd(ctx context.Context) (string, error) {
 	start := client != nil && sh == nil && s.noCwdSh != client
 	s.mu.Unlock()
 	if client == nil {
-		return "", errors.New("session: not connected")
+		return "", false, errors.New("session: not connected")
 	}
 	if start {
 		var err error
@@ -189,13 +222,13 @@ func (s *Session) ProbeCwd(ctx context.Context) (string, error) {
 			s.mu.Unlock()
 			if gone {
 				sh.close()
-				return "", errors.New("session: not connected")
+				return "", false, errors.New("session: not connected")
 			}
 		}
 	}
 	if sh != nil {
-		d, err := sh.cwd(ctx, tag)
-		if err == nil || errors.Is(err, ErrNoCwd) {
+		out, found, err := sh.ask(ctx, body(tag))
+		if err == nil {
 			// Unused for cwdShellIdle (the pane stopped following, or the
 			// shell reports now), it goes.
 			if sh.idle == nil {
@@ -203,7 +236,7 @@ func (s *Session) ProbeCwd(ctx context.Context) (string, error) {
 			} else {
 				sh.idle.Reset(cwdShellIdle)
 			}
-			return d, err
+			return out, found, nil
 		}
 		sh.close()
 		s.mu.Lock()
@@ -215,10 +248,10 @@ func (s *Session) ProbeCwd(ctx context.Context) (string, error) {
 		}
 		s.mu.Unlock()
 		if ctx.Err() != nil {
-			return "", ctx.Err()
+			return "", false, ctx.Err()
 		}
 	}
-	return ShellCwd(ctx, client, tag)
+	return execBody(ctx, client, body(tag))
 }
 
 // dropCwdShell closes the probe shell sh, which the next ProbeCwd starts

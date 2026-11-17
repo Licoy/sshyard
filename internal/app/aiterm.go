@@ -30,10 +30,25 @@ func aiTarget(h assets.Host) agent.Target {
 	}
 }
 
-// aiEngine grades c's actions: a device's command line has its own rules.
+// aiTargetOf is what c's assistant reaches: aiTarget, or an SSH host's
+// linked terminal while the pane types into it.
+func aiTargetOf(c *conn) agent.Target {
+	t := aiTarget(c.host)
+	if t == agent.TargetSSH && c.ai != nil && c.ai.inTerm {
+		return agent.TargetSSHTerminal
+	}
+	return t
+}
+
+// aiEngine grades c's actions: a device's command line has its own rules,
+// and what is typed into an SSH host's terminal switched to root is
+// graded as sudo would make it.
 func aiEngine(c *conn) policy.Engine {
-	if aiTarget(c.host) == agent.TargetDevice {
+	switch aiTargetOf(c) {
+	case agent.TargetDevice:
 		return policy.NewDeviceEngine()
+	case agent.TargetSSHTerminal:
+		return policy.NewRootEngine(c.ai.user.root.Load)
 	}
 	return nil
 }
@@ -60,13 +75,19 @@ var errNoFiles = errors.New("this assistant has no file access: it types into th
 // termTools is the tool layer of an assistant on a Telnet, serial or
 // local terminal: it reads the pane's linked terminal and types into it.
 type termTools struct {
-	a       *App
-	c       *conn
+	a *App
+	c *conn
+	// state is c's assistant as the tools were made, which an SSH host's
+	// tools (ssh) tell who runs the terminal after each line.
+	state   *aiState
+	ssh     bool
 	counted bool
 	nbytes  int64
 }
 
-func newTermTools(a *App, c *conn) *termTools { return &termTools{a: a, c: c} }
+func newTermTools(a *App, c *conn) *termTools {
+	return &termTools{a: a, c: c, state: c.ai, ssh: aiTargetOf(c) == agent.TargetSSHTerminal}
+}
 
 // OutputBytes is what the last line or key printed; negative when the
 // last call typed nothing.
@@ -119,6 +140,11 @@ func (t *termTools) Call(ctx context.Context, name string, raw json.RawMessage) 
 		res, err = console.Line(ctx, term, args.Command, o)
 	} else {
 		res, err = console.Key(ctx, term, args.Key, o)
+	}
+	if t.ssh && ctx.Err() == nil {
+		// What was typed may have been su or exit: the next line is
+		// graded as whoever runs the terminal now.
+		t.a.readTermUser(ctx, t.state, s, "")
 	}
 	return t.result(ctx, res, err)
 }
