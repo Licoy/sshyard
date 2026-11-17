@@ -87,6 +87,7 @@
   "errHostKeyChanged": "{host} 的主机密钥已变更。这可能意味着连接被劫持，SSHYard 已拒绝连接。",
   "errTimeout": "连接 {host} 超时。",
   "errNoBanner": "{host} 接受了连接，但 SSH 服务没有任何响应。请检查 sshd 是否在正常运行、流量是否被防火墙拦截。",
+  "errNoShell": "{host} 已登录，但一直没有打开终端。服务器或它前面的网关可能卡住了，请稍后重试。",
   "errClosed": "会话已结束：{detail}",
   "errGeneric": "{detail}",
   "hostKeyUnknownTitle": "未知主机密钥",

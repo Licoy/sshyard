@@ -539,6 +539,56 @@ func TestShellStartCommand(t *testing.T) {
 	}
 }
 
+// TestShellStartsWhenEnvUnanswered: a server that leaves the env request
+// unanswered (warpgate) gets the shell on another channel, untagged, and
+// is not asked again.
+func TestShellStartsWhenEnvUnanswered(t *testing.T) {
+	srv := server(t)
+	srv.IgnoreEnv = true
+	old := envWait
+	envWait = 50 * time.Millisecond
+	t.Cleanup(func() { envWait = old; noEnv.Delete(srv.Addr) })
+	cfg := Config{Addr: srv.Addr, User: "demo", Credentials: password("secret"), HostKey: trusted(t, srv).Callback()}
+	s := New(cfg, Options{}, 80, 24)
+	defer s.Close()
+	s.Start()
+	waitState(t, s, Connected)
+	waitText(t, s, "Welcome")
+	s.Write([]byte("hello\r"))
+	waitText(t, s, "you said: hello")
+	if _, ok := s.Tag(); ok {
+		t.Error("tagged without the server's answer")
+	}
+	if n := srv.Envs(); n != 1 {
+		t.Fatalf("%d env requests", n)
+	}
+
+	s2 := New(cfg, Options{}, 80, 24)
+	defer s2.Close()
+	s2.Start()
+	waitState(t, s2, Connected)
+	if n := srv.Envs(); n != 1 {
+		t.Errorf("asked again: %d env requests", n)
+	}
+}
+
+// TestShellUnansweredFails: a server that never starts the shell fails
+// the session with ErrNoShell instead of leaving it connecting.
+func TestShellUnansweredFails(t *testing.T) {
+	srv := server(t)
+	srv.IgnoreShell = true
+	old := shellWait
+	shellWait = 100 * time.Millisecond
+	t.Cleanup(func() { shellWait = old })
+	s := New(Config{Addr: srv.Addr, User: "demo", Credentials: password("secret"), HostKey: trusted(t, srv).Callback()}, Options{}, 80, 24)
+	defer s.Close()
+	s.Start()
+	st := waitState(t, s, Failed)
+	if !errors.Is(st.Err, ErrNoShell) || Classify(st.Err) != KindNoShell {
+		t.Fatalf("err %v", st.Err)
+	}
+}
+
 func TestCdLine(t *testing.T) {
 	for dir, want := range map[string]string{
 		"/var/www":  " cd '/var/www'\r",

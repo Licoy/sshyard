@@ -87,6 +87,7 @@
   "errHostKeyChanged": "The host key of {host} has changed. This could mean someone is intercepting the connection, so SSHYard refused to connect.",
   "errTimeout": "Connection to {host} timed out.",
   "errNoBanner": "{host} accepted the connection, but its SSH server sent nothing. Check that sshd is running and that no firewall drops the traffic.",
+  "errNoShell": "{host} logged you in, but never opened a terminal. The server or a gateway in front of it may be stuck; try again later.",
   "errClosed": "The session ended: {detail}",
   "errGeneric": "{detail}",
   "hostKeyUnknownTitle": "Unknown Host Key",

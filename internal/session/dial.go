@@ -78,6 +78,10 @@ var ErrNoCredentials = errors.New("session: no password or key")
 // drops what follows.
 var ErrNoBanner = errors.New("session: the server sent no SSH greeting")
 
+// ErrNoShell reports a server that logged the user in but did not start
+// the shell within shellWait: it left a request unanswered.
+var ErrNoShell = errors.New("session: the server did not start the shell")
+
 // Config is how to connect to a host.
 type Config struct {
 	Addr string // host:port
@@ -464,6 +468,8 @@ const (
 	KindTimeout
 	// KindNoBanner: the server took the connection but never answered.
 	KindNoBanner
+	// KindNoShell: logged in, but the shell never started (ErrNoShell).
+	KindNoShell
 	KindHostUnknown
 	KindHostChanged
 	KindPassphrase
@@ -520,6 +526,8 @@ func Classify(err error) Kind {
 		return KindAuth
 	case errors.Is(err, ErrNoBanner):
 		return KindNoBanner
+	case errors.Is(err, ErrNoShell):
+		return KindNoShell
 	case errors.Is(err, context.DeadlineExceeded), errors.As(err, &ne) && ne.Timeout():
 		return KindTimeout
 	case errors.As(err, new(*net.OpError)), errors.As(err, new(*net.DNSError)),
@@ -533,5 +541,5 @@ func Classify(err error) Kind {
 // Retryable reports whether reconnecting automatically may help: not when
 // the user has to do something first.
 func (k Kind) Retryable() bool {
-	return k == KindNetwork || k == KindTimeout || k == KindNoBanner || k == KindProxy || k == KindOther
+	return k == KindNetwork || k == KindTimeout || k == KindNoBanner || k == KindNoShell || k == KindProxy || k == KindOther
 }

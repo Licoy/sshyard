@@ -509,47 +509,29 @@ func (s *Session) connect(ctx context.Context) error {
 		s.changed()
 		return nil
 	}
-	shell, err := client.NewSession()
-	if err != nil {
-		// A shared connection that cannot open a channel is gone.
+	// A server that leaves a request unanswered would keep the session
+	// connecting forever: past shellWait its connection goes.
+	watch := time.AfterFunc(shellWait, func() {
 		s.broken(client)
-		release()
-		return err
+		client.Close()
+	})
+	shell, stdin, tagged, err := s.startShell(client)
+	if !watch.Stop() {
+		if err == nil {
+			shell.Close()
+		}
+		err = ErrNoShell
 	}
-	fail := func(err error) error {
-		shell.Close()
-		release()
-		return err
-	}
-	s.mu.Lock()
-	cols, rows := s.cols, s.rows
-	s.mu.Unlock()
-	modes := ssh.TerminalModes{ssh.ECHO: 1, ssh.TTY_OP_ISPEED: 115200, ssh.TTY_OP_OSPEED: 115200}
-	if err := shell.RequestPty(s.opts.Term, rows, cols, modes); err != nil {
-		return fail(err)
-	}
-	// Servers take LC_* by default (AcceptEnv): one that does not just
-	// leaves the shell untagged.
-	tagged := shell.Setenv(TagEnv, s.tag) == nil
-	stdin, err := shell.StdinPipe()
 	if err != nil {
-		return fail(err)
-	}
-	out := &termWriter{s: s}
-	shell.Stdout = out
-	shell.Stderr = out
-	// A new shell starts with the terminal's input as at a reset: the
-	// last program may have gone with the mouse or focus reports on.
-	s.Term.ResetOutputStream()
-	s.Term.ResetInputModes(true)
-	s.outAt.Store(0)
-	if err := shell.Shell(); err != nil {
-		return fail(err)
+		release()
+		return err
 	}
 	s.mu.Lock()
 	if s.closed {
 		s.mu.Unlock()
-		return fail(context.Canceled)
+		shell.Close()
+		release()
+		return context.Canceled
 	}
 	s.client, s.release, s.shell, s.stdin, s.tagged = client, release, shell, &serializedInput{WriteCloser: stdin, enters: &s.enters}, tagged
 	s.status.State, s.status.Err, s.status.Attempt = Connected, nil, 0
@@ -560,6 +542,101 @@ func (s *Session) connect(ctx context.Context) error {
 	}
 	s.changed()
 	return nil
+}
+
+// envWait is how long a new shell waits at least for the answer to its
+// env request (TagEnv), or envRTTs round trips of its pty-req when that
+// is longer. shellWait bounds starting the shell once connected.
+var (
+	envWait   = 2 * time.Second
+	shellWait = 30 * time.Second
+)
+
+const envRTTs = 4
+
+// noEnv are the servers, by address, that left an env request
+// unanswered: their shells start without one, untagged.
+var noEnv sync.Map // Addr → struct{}
+
+// startShell starts the shell on client, on a PTY of the terminal's size,
+// its environment tagged when the server takes TagEnv. It closes the
+// channels it opened when it fails.
+func (s *Session) startShell(client *ssh.Client) (*ssh.Session, io.WriteCloser, bool, error) {
+	shell, rtt, err := s.openPTY(client)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	tagged := false
+	if _, skip := noEnv.Load(s.cfg.Addr); !skip {
+		var answered bool
+		if tagged, answered = s.setTag(shell, rtt); !answered {
+			// The server left it unanswered (warpgate): the channel
+			// waits for that answer before taking another request, so
+			// the shell starts on a new one.
+			noEnv.Store(s.cfg.Addr, struct{}{})
+			shell.Close()
+			if shell, _, err = s.openPTY(client); err != nil {
+				return nil, nil, false, err
+			}
+		}
+	}
+	stdin, err := shell.StdinPipe()
+	if err != nil {
+		shell.Close()
+		return nil, nil, false, err
+	}
+	out := &termWriter{s: s}
+	shell.Stdout = out
+	shell.Stderr = out
+	// A new shell starts with the terminal's input as at a reset: the
+	// last program may have gone with the mouse or focus reports on.
+	s.Term.ResetOutputStream()
+	s.Term.ResetInputModes(true)
+	s.outAt.Store(0)
+	if err := shell.Shell(); err != nil {
+		shell.Close()
+		return nil, nil, false, err
+	}
+	return shell, stdin, tagged, nil
+}
+
+// openPTY opens a session channel on client with a PTY of the terminal's
+// size, and returns the round trip of the PTY request.
+func (s *Session) openPTY(client *ssh.Client) (*ssh.Session, time.Duration, error) {
+	shell, err := client.NewSession()
+	if err != nil {
+		// A shared connection that cannot open a channel is gone.
+		s.broken(client)
+		return nil, 0, err
+	}
+	s.mu.Lock()
+	cols, rows := s.cols, s.rows
+	s.mu.Unlock()
+	modes := ssh.TerminalModes{ssh.ECHO: 1, ssh.TTY_OP_ISPEED: 115200, ssh.TTY_OP_OSPEED: 115200}
+	start := time.Now()
+	if err := shell.RequestPty(s.opts.Term, rows, cols, modes); err != nil {
+		shell.Close()
+		return nil, 0, err
+	}
+	return shell, time.Since(start), nil
+}
+
+// setTag asks the server to put the tag in shell's environment, and
+// reports whether it took it and whether it answered within envWait, or
+// envRTTs times rtt.
+func (s *Session) setTag(shell *ssh.Session, rtt time.Duration) (tagged, answered bool) {
+	got := make(chan bool, 1)
+	// Servers take LC_* by default (AcceptEnv): one that does not just
+	// leaves the shell untagged.
+	go func() { got <- shell.Setenv(TagEnv, s.tag) == nil }()
+	t := time.NewTimer(max(envWait, envRTTs*rtt))
+	defer t.Stop()
+	select {
+	case tagged = <-got:
+		return tagged, true
+	case <-t.C:
+		return false, false
+	}
 }
 
 // dirQuiet is how long a new shell prints nothing before enterShell takes

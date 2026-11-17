@@ -909,6 +909,16 @@ func (msgs Messages) ErrNoBanner(host string) string {
 	return Catalog.Format(msgs.locale, "errNoBanner", map[string]any{"host": host})
 }
 
+// ErrNoShell says "{host} logged you in, but never opened a terminal. The server or a gateway in front of it may be stuck; try again later."
+// in the language the app shows.
+func ErrNoShell(host string) string { return In(i18n.Locale()).ErrNoShell(host) }
+
+// ErrNoShell says "{host} logged you in, but never opened a terminal. The server or a gateway in front of it may be stuck; try again later."
+// in the language of msgs.
+func (msgs Messages) ErrNoShell(host string) string {
+	return Catalog.Format(msgs.locale, "errNoShell", map[string]any{"host": host})
+}
+
 // ErrClosed says "The session ended: {detail}"
 // in the language the app shows.
 func ErrClosed(detail string) string { return In(i18n.Locale()).ErrClosed(detail) }
