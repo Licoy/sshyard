@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/internal/sshtest"
+	"github.com/pkg/sftp"
 )
 
 // redialer serves a queue's Client: one connection, dialed again once
@@ -566,6 +568,61 @@ func TestQueueRetriesAfterDrop(t *testing.T) {
 	}
 	if r.n.Load() < 2 {
 		t.Error("never dialed again")
+	}
+}
+
+// failingPut fails the first write at offset at, and takes the rest.
+type failingPut struct {
+	sftp.FileWriter
+	at   int64
+	once *sync.Once
+}
+
+func (p failingPut) Filewrite(r *sftp.Request) (io.WriterAt, error) {
+	w, err := p.FileWriter.Filewrite(r)
+	return failingWriter{w, p}, err
+}
+
+type failingWriter struct {
+	io.WriterAt
+	p failingPut
+}
+
+func (w failingWriter) WriteAt(b []byte, off int64) (int, error) {
+	failed := false
+	if off == w.p.at {
+		w.p.once.Do(func() { failed = true })
+	}
+	if failed {
+		return 0, errors.New("disk hiccup")
+	}
+	return w.WriterAt.WriteAt(b, off)
+}
+
+// An upload's writes go out together: one failing leaves the part longer
+// than what is good, so the retry resumes where it failed, not at the
+// part's end, and leaves no gap.
+func TestQueueUploadResumesBeforeFailedWrite(t *testing.T) {
+	r, _ := queueServer(t)
+	h := sftp.InMemHandler() // one file system for every channel
+	h.FilePut = failingPut{h.FilePut, 1 << 20, &sync.Once{}}
+	r.srv.SFTPHandlers = func() sftp.Handlers { return h }
+	local := t.TempDir()
+	data := bigFile(t, filepath.Join(local, "up.bin"), 4<<20)
+	ts := newQueue(r)
+	ts.Add(Upload, filepath.Join(local, "up.bin"), "/up.bin", "up.bin")
+	ts.Wait()
+	tr := ts.List()[0]
+	if tr.State != Done || tr.Attempt != 1 || tr.Offset != 1<<20 {
+		t.Fatalf("%+v", tr)
+	}
+	c, err := r.get(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _, err := c.ReadFileContext(t.Context(), "/up.bin", 8<<20)
+	if err != nil || !bytes.Equal(got, data) {
+		t.Fatalf("content differs after the retry: %v", err)
 	}
 }
 

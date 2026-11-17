@@ -305,6 +305,11 @@ func (p *progressWriter) Write(b []byte) (int, error) {
 		return 0, err
 	}
 	n, err := p.w.Write(b)
+	p.count(n)
+	return n, err
+}
+
+func (p *progressWriter) count(n int) {
 	p.done += int64(n)
 	if p.step != nil {
 		p.step(p.done)
@@ -313,6 +318,22 @@ func (p *progressWriter) Write(b []byte) (int, error) {
 		p.last = time.Now()
 		p.fn(p.done, p.total)
 	}
+}
+
+// progressReader counts what it reads as progressWriter counts what it
+// writes (its w unused): an SFTP file's ReadFrom reads the source as it
+// sends the writes.
+type progressReader struct {
+	r io.Reader
+	p *progressWriter
+}
+
+func (pr progressReader) Read(b []byte) (int, error) {
+	if err := pr.p.ctx.Err(); err != nil {
+		return 0, err
+	}
+	n, err := pr.r.Read(b)
+	pr.p.count(n)
 	return n, err
 }
 

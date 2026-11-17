@@ -286,6 +286,11 @@ type fakeWriter struct {
 func (w fakeWriter) WriteAt(b []byte, off int64) (int, error) {
 	w.f.mu.Lock()
 	defer w.f.mu.Unlock()
+	if _, ok := w.f.Files[w.p]; !ok {
+		// Removed while open: as with an unlinked file, the writes
+		// still queued land nowhere.
+		return len(b), nil
+	}
 	cur := w.f.Writes[w.p]
 	if need := int(off) + len(b); need > len(cur) {
 		cur = append(cur, make([]byte, need-len(cur))...)

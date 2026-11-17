@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -103,10 +104,15 @@ type Transfer struct {
 	partOwned bool
 	partReady bool
 	partInfo  fs.FileInfo
-	srcSize   int64
-	srcMod    time.Time
-	mark      time.Time
-	markB     int64
+	// partUneven is a part that is good only up to partGood, whatever
+	// its size: an upload sends many writes at once, and when one fails
+	// the ones after it may still land past the gap.
+	partUneven bool
+	partGood   int64
+	srcSize    int64
+	srcMod     time.Time
+	mark       time.Time
+	markB      int64
 }
 
 // Percent is how far the transfer is, 0 to 100.
@@ -150,7 +156,8 @@ type Transfers struct {
 	// Backoff is the wait before retry n (1-based); 1s, 2s, 4s when nil.
 	Backoff func(n int) time.Duration
 
-	// onWrite, for tests, is called after each write of a transfer.
+	// onWrite, for tests, is called after each write of a transfer (each
+	// read of an upload's or relay's source).
 	onWrite func(t *Transfer, done int64)
 
 	mu    sync.Mutex
@@ -417,6 +424,39 @@ type staleError struct{ error }
 
 func (e staleError) Unwrap() error { return e.error }
 
+// writeRemote copies r to the SFTP file f from its offset, many writes
+// in flight at once as OpenSSH's sftp sends them: one at a time, each
+// waits a round trip, which on a distant server is most of the time.
+// A Relay's source is read the same way, through a pipe.
+func (ts *Transfers) writeRemote(t *Transfer, f *sftp.File, r io.Reader, pw *progressWriter) error {
+	if src, ok := r.(*sftp.File); ok {
+		pr, w := io.Pipe()
+		read := make(chan struct{})
+		go func() {
+			defer close(read)
+			_, err := src.WriteTo(w)
+			w.CloseWithError(err)
+		}()
+		defer func() {
+			pr.Close()
+			<-read
+		}()
+		r = pr
+	}
+	_, err := f.ReadFromWithConcurrency(progressReader{r, pw}, 0)
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	if err != nil {
+		// f's offset is where the first write that failed went: all
+		// before it is written, some after it may be.
+		good, _ := f.Seek(0, io.SeekCurrent)
+		t.Bytes, t.partUneven, t.partGood = good, true, good
+		return err
+	}
+	t.Bytes, t.partUneven = pw.done, false
+	return nil
+}
+
 // channelOn is channel on the connection of the client get returns.
 func (ts *Transfers) channelOn(ctx context.Context, get func(context.Context) (*Client, error), t *Transfer, fresh bool) (*Client, func(error) error, error) {
 	shared, err := get(ctx)
@@ -528,6 +568,11 @@ func (ts *Transfers) copy(ctx context.Context, t *Transfer, fresh bool) (err err
 	if pi, err := dst.lstat(part); err == nil && t.partOwned && same && pi.Mode().IsRegular() && pi.Size() <= size {
 		partExists = true
 		off = pi.Size()
+		ts.mu.Lock()
+		if t.partUneven && off > t.partGood {
+			off = t.partGood
+		}
+		ts.mu.Unlock()
 	}
 	if t.partReady && partExists && off == size && same {
 		// A completed part needs only its failed rename retried. Reopening a
@@ -552,7 +597,7 @@ func (ts *Transfers) copy(ctx context.Context, t *Transfer, fresh bool) (err err
 	}
 	if off == 0 {
 		ts.mu.Lock()
-		t.partReady = false
+		t.partReady, t.partUneven = false, false
 		ts.mu.Unlock()
 		if err := dst.mkdirAll(dirOf(t.Dst, remoteDst(t.Dir))); err != nil {
 			return err
@@ -612,10 +657,14 @@ func (ts *Transfers) copy(ctx context.Context, t *Transfer, fresh bool) (err err
 	if ts.onWrite != nil {
 		pw.step = func(done int64) { ts.onWrite(t, done) }
 	}
-	_, err = io.Copy(pw, r)
-	ts.mu.Lock()
-	t.Bytes = pw.done
-	ts.mu.Unlock()
+	if f, ok := w.(*sftp.File); ok {
+		err = ts.writeRemote(t, f, r, pw)
+	} else {
+		_, err = io.Copy(pw, r)
+		ts.mu.Lock()
+		t.Bytes = pw.done
+		ts.mu.Unlock()
+	}
 	if err == nil {
 		if f, ok := w.(*os.File); ok {
 			err = f.Chmod(LocalMode(fi.Mode().Perm()))
