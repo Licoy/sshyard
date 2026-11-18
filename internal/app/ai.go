@@ -14,8 +14,10 @@ import (
 	"github.com/Licoy/sshyard/internal/ai/acp"
 	"github.com/Licoy/sshyard/internal/ai/agent"
 	"github.com/Licoy/sshyard/internal/ai/audit"
+	"github.com/Licoy/sshyard/internal/ai/console"
 	"github.com/Licoy/sshyard/internal/ai/llm"
 	"github.com/Licoy/sshyard/internal/ai/policy"
+	"github.com/Licoy/sshyard/internal/ai/remote"
 	"github.com/Licoy/sshyard/internal/keychain"
 	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/settings"
@@ -57,6 +59,11 @@ type aiState struct {
 	tools    agent.Tools
 	target   agent.Target // what sess's tools reach
 	acp      *acpRuntime
+
+	attachGen    int // invalidates a file pick or read when steering starts
+	turnStart    int // first reply item this run can change
+	steer        *aiSteer
+	interrupting bool // keep holding late output even if the resend was revoked
 	// acpOpts are the ACP agent's model and thinking selectors as its
 	// session last reported them; nil until it reports.
 	acpOpts []acp.Option
@@ -105,14 +112,17 @@ type aiState struct {
 	// still being worked on, as a tool call being written or reviewed.
 	textN, textLen int
 	textAt         time.Time
+	composerInput  ui.Handle
+	composerGen    int
 }
 
 type aiItem struct {
-	kind  string // user, text, think, tool, err
-	text  string
-	files []*aiAttach // a question's attached files
-	tool  agent.ToolCard
-	open  bool // thinking stays folded until the user opens it
+	kind   string // user, text, think, tool, err, interrupted
+	text   string
+	files  []*aiAttach // a question's attached files
+	tool   agent.ToolCard
+	open   bool // thinking stays folded until the user opens it
+	hidden bool // late text and thinking held until the old turn's outcome is known
 }
 
 type aiPend struct {
@@ -425,7 +435,7 @@ func (a *App) ensureAI(c *conn) error {
 func (a *App) aiGate(c *conn) policy.Gate {
 	c.ai.scope = a.aiScope(c)
 	mode := func() policy.Mode { return a.modeOf(c) }
-	ask := aiPrompter{a: a, id: c.id}
+	ask := aiPrompter{a: a, conn: c, state: c.ai}
 	var gate policy.Gate
 	if a.newGate != nil {
 		gate = a.newGate(mode, ask)
@@ -487,7 +497,7 @@ func (a *App) aiOutput(c *conn) string {
 func (a *App) SendAI(id int, text string) {
 	text = strings.TrimSpace(text)
 	c := a.conns[id]
-	if c == nil || c.ai == nil || (text == "" && len(c.ai.attach) == 0) || c.ai.running {
+	if c == nil || c.ai == nil || (text == "" && len(c.ai.attach) == 0) || c.ai.running || c.ai.steer != nil {
 		return
 	}
 	if !a.consented(c.host.ID) {
@@ -596,13 +606,15 @@ func (a *App) launch(c *conn, run func(context.Context, func(agent.Event)) error
 	c.ai.running = true
 	c.ai.paused = false
 	id := c.id
-	c.ai.turn++
-	turn := c.ai.turn
-	tools := c.ai.tools
+	state := c.ai
+	state.turn++
+	state.turnStart = len(state.items)
+	turn, tools := state.turn, state.tools
 	if h, ok := tools.(*hostTools); ok {
 		h.snap()
 	}
 	go func() {
+		defer cancel()
 		// end before onAIDone: the next SendAI waits on running, and must
 		// not dial while this turn is still releasing the connection.
 		err := func() error {
@@ -612,14 +624,14 @@ func (a *App) launch(c *conn, run func(context.Context, func(agent.Event)) error
 			}
 			return run(ctx, func(ev agent.Event) {
 				a.post(func() {
-					if current := a.conns[id]; current != nil && current.ai != nil && current.ai.turn == turn {
+					if a.conns[id] == c && c.ai == state && state.turn == turn && state.running {
 						a.onAIEvent(id, ev)
 					}
 				})
 			})
 		}()
 		a.post(func() {
-			if current := a.conns[id]; current != nil && current.ai != nil && current.ai.turn == turn {
+			if a.conns[id] == c && c.ai == state && state.turn == turn && state.running {
 				a.onAIDone(id, err)
 			}
 		})
@@ -633,14 +645,14 @@ func (a *App) onAIEvent(id int, ev agent.Event) {
 	}
 	switch ev.Kind {
 	case agent.EventText:
-		c.ai.items = appendChunk(c.ai.items, "text", ev.Text)
+		c.ai.appendOutput("text", ev.Text)
 	case agent.EventThinking:
-		c.ai.items = appendChunk(c.ai.items, "think", ev.Text)
+		c.ai.appendOutput("think", ev.Text)
 	case agent.EventTool:
 		if ev.Tool == nil {
 			return
 		}
-		for i := range c.ai.items {
+		for i := c.ai.turnStart; i < len(c.ai.items); i++ {
 			if c.ai.items[i].kind == "tool" && c.ai.items[i].tool.ID == ev.Tool.ID {
 				c.ai.items[i].tool = *ev.Tool
 				return
@@ -653,8 +665,8 @@ func (a *App) onAIEvent(id int, ev agent.Event) {
 		c.ai.paused = true
 		c.ai.pauseCalls = ev.Calls
 	case agent.EventDone:
-		if ev.Text != "" && trailingText(c.ai.items) != ev.Text {
-			c.ai.items = append(c.ai.items, aiItem{kind: "text", text: ev.Text})
+		if ev.Text != "" && trailingText(c.ai.items[c.ai.turnStart:]) != ev.Text {
+			c.ai.items = append(c.ai.items, aiItem{kind: "text", text: ev.Text, hidden: c.ai.interrupting})
 		}
 	}
 }
@@ -664,27 +676,38 @@ func (a *App) onAIDone(id int, err error) {
 	if c == nil || c.ai == nil {
 		return
 	}
-	c.ai.running = false
-	c.ai.cancel = nil
-	if c.ai.agent == "builtin" && c.ai.sess != nil {
-		c.ai.msgs = c.ai.sess.History()
+	s := c.ai
+	steer := s.steer
+	s.running, s.cancel, s.steer = false, nil, nil
+	if s.interrupting {
+		s.finishInterruption(err != nil)
+		if err != nil {
+			if s.agent == "builtin" && s.sess != nil {
+				s.sess.InterruptTurn()
+			}
+			if err == agent.ErrPaused {
+				err = context.Canceled
+			} else if steer != nil && !onlyAICancellation(err) {
+				var failure *acpFailure
+				if errors.As(err, &failure) && failure.stage == "close" {
+					err = errAIStopUnconfirmed
+				}
+				steer = nil
+			}
+		}
+	}
+	if s.agent == "builtin" && s.sess != nil {
+		s.msgs = s.sess.History()
 		// An external agent's session no longer carries all of it.
-		c.ai.acpSID, c.ai.acpAgent, c.ai.acpCwd = "", "", ""
+		s.acpSID, s.acpAgent, s.acpCwd = "", "", ""
 	}
-	defer a.saveChat(c)
-	if err == nil {
-		c.ai.paused = c.ai.sess != nil && c.ai.sess.Paused()
-		return
+	s.paused = err == agent.ErrPaused || s.sess != nil && s.sess.Paused()
+	if err != nil && err != agent.ErrPaused && !(errors.Is(err, context.Canceled) && onlyAICancellation(err)) {
+		s.items = append(s.items, aiItem{kind: "err", text: a.scrubAI(c, err)})
 	}
-	if errors.Is(err, agent.ErrPaused) {
-		c.ai.paused = true
-		return
+	if a.saveChat(c) == nil && steer.matches(c) {
+		a.SendAI(id, steer.input)
 	}
-	var acpError *acpFailure
-	if errors.Is(err, context.Canceled) && !errors.As(err, &acpError) {
-		return
-	}
-	c.ai.items = append(c.ai.items, aiItem{kind: "err", text: a.scrubAI(c, err)})
 }
 
 func (a *App) scrubAI(c *conn, err error) string { return aiErrText(err) }
@@ -692,6 +715,9 @@ func (a *App) scrubAI(c *conn, err error) string { return aiErrText(err) }
 // Only typed, local failure details reach the UI; provider bodies, URLs and
 // arbitrary tool errors may contain credentials and are never rendered here
 func aiErrText(err error) string {
+	if errors.Is(err, errAIStopUnconfirmed) || errors.Is(err, remote.ErrStopUnconfirmed) || errors.Is(err, console.ErrStopUnconfirmed) {
+		return "ai-stop-unconfirmed"
+	}
 	var acpError *acpFailure
 	if errors.As(err, &acpError) {
 		return acpError.Error()
@@ -728,19 +754,23 @@ func aiErrText(err error) string {
 }
 
 func appendChunk(items []aiItem, kind, text string) []aiItem {
-	if text == "" {
+	return appendAIChunk(items, 0, aiItem{kind: kind, text: text})
+}
+
+func appendAIChunk(items []aiItem, start int, item aiItem) []aiItem {
+	if item.text == "" {
 		return items
 	}
-	if n := len(items); n > 0 && items[n-1].kind == kind {
-		items[n-1].text += text
+	if n := len(items); n > start && items[n-1].kind == item.kind && items[n-1].hidden == item.hidden {
+		items[n-1].text += item.text
 		return items
 	}
-	if kind == "think" && strings.TrimSpace(text) == "" {
+	if item.kind == "think" && strings.TrimSpace(item.text) == "" {
 		// Blank lines some models send as thinking, between their text
 		// and their tool calls, start nothing.
 		return items
 	}
-	return append(items, aiItem{kind: kind, text: text})
+	return append(items, item)
 }
 
 // dropAIItem removes the pane's error i, which the user dismissed, from
@@ -750,6 +780,9 @@ func (a *App) dropAIItem(c *conn, i int) {
 		return
 	}
 	c.ai.items = append(c.ai.items[:i:i], c.ai.items[i+1:]...)
+	if i < c.ai.turnStart {
+		c.ai.turnStart--
+	}
 	if !c.ai.running && a.unlocked() {
 		a.saveChat(c)
 	}
@@ -776,20 +809,16 @@ func (a *App) StopAI(id int) {
 	if c == nil || c.ai == nil {
 		return
 	}
+	a.revokeAISteer(c)
+	if a.consent != nil && a.consent.conn == id {
+		a.consent = nil
+	}
 	if c.ai.cancel != nil {
 		c.ai.cancel()
+		c.ai.cancel = nil
 	}
-	if c.ai.acp != nil {
-		c.ai.acp.close()
-		c.ai.acp = nil
-	}
-	if p := c.ai.pending; p != nil {
-		c.ai.pending = nil
-		select {
-		case p.ch <- policy.Cancelled:
-		default:
-		}
-	}
+	a.closeACP(c)
+	a.answerAI(c, policy.Cancelled)
 }
 
 // StopAllAI stops every AI pane.
@@ -989,8 +1018,9 @@ func (a *App) applyFull() {
 
 // aiPrompter is policy.Prompter. Ask blocks the agent goroutine, never the UI thread.
 type aiPrompter struct {
-	a  *App
-	id int
+	a     *App
+	conn  *conn
+	state *aiState
 }
 
 func (p aiPrompter) Ask(ctx context.Context, pr policy.Prompt) policy.Answer {
@@ -999,8 +1029,8 @@ func (p aiPrompter) Ask(ctx context.Context, pr policy.Prompt) policy.Answer {
 	}
 	ch := make(chan policy.Answer, 1)
 	p.a.post(func() {
-		c := p.a.conns[p.id]
-		if c == nil || c.ai == nil || ctx.Err() != nil {
+		c := p.a.conns[p.conn.id]
+		if c != p.conn || c.ai != p.state || ctx.Err() != nil {
 			select {
 			case ch <- policy.Cancelled:
 			default:
@@ -1014,8 +1044,8 @@ func (p aiPrompter) Ask(ctx context.Context, pr policy.Prompt) policy.Answer {
 		return ans
 	case <-ctx.Done():
 		p.a.post(func() {
-			c := p.a.conns[p.id]
-			if c != nil && c.ai != nil && c.ai.pending != nil && c.ai.pending.ch == ch {
+			c := p.a.conns[p.conn.id]
+			if c == p.conn && c.ai == p.state && c.ai.pending != nil && c.ai.pending.ch == ch {
 				c.ai.pending = nil
 			}
 		})

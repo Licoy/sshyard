@@ -221,6 +221,34 @@ func TestAIPaneMarkdownAndSend(t *testing.T) {
 	}
 }
 
+func TestAIComposerEnterRedirectsAndKeepsTyping(t *testing.T) {
+	a, tt := newTestApp(t)
+	h := savedHost(t, a, "web", "10.0.0.8")
+	consentHost(t, a, h.ID)
+	model := &blockModel{done: make(chan struct{})}
+	a.newModel = func(*conn) agent.Streamer { return model }
+	id := openAIPane(t, a, h.ID)
+	cn := a.conns[id]
+	tt.Frame()
+	mustClick(t, tt, "Ask about this host")
+	tt.Type("first instruction")
+	tt.Key(0, ui.KeyEnter)
+	waitFor(t, tt, "first turn", func() bool { return cn.ai.turn == 1 && cn.ai.running })
+
+	tt.Type("replacement instruction")
+	tt.Key(0, ui.KeyEnter)
+	waitFor(t, tt, "replacement turn", func() bool { return cn.ai.turn == 2 && cn.ai.running })
+	last := cn.ai.items[len(cn.ai.items)-1]
+	if last.kind != "user" || last.text != "replacement instruction" {
+		t.Fatalf("Enter submitted the wrong draft: %+v", last)
+	}
+	tt.Type("following draft")
+	tt.Frame()
+	if cn.ai.input != "following draft" || cn.ai.turn != 2 {
+		t.Fatalf("typing after handoff: draft=%q turn=%d", cn.ai.input, cn.ai.turn)
+	}
+}
+
 // TestAIDefaultProvider checks that a pane asks the provider set as the
 // default, else the first, and that a star in the settings sets it.
 func TestAIDefaultProvider(t *testing.T) {

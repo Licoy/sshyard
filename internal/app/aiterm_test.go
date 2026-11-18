@@ -9,11 +9,47 @@ import (
 	"testing"
 
 	"github.com/Licoy/sshyard/internal/ai/agent"
+	"github.com/Licoy/sshyard/internal/ai/console"
 	"github.com/Licoy/sshyard/internal/ai/policy"
 	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/session"
 )
+
+type busyTestWriter func([]byte) (int, error)
+
+func (w busyTestWriter) Write(p []byte) (int, error) { return w(p) }
+
+func TestBusyTerminalInputDoesNotRetryAfterCancel(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	attempts := 0
+	w := busyWriter{ctx: ctx, w: busyTestWriter(func(p []byte) (int, error) {
+		attempts++
+		if attempts == 1 {
+			cancel()
+			return 0, session.ErrInputBusy
+		}
+		return len(p), nil
+	})}
+	if n, err := w.Write([]byte("show run\r")); n != 0 || err != context.Canceled || attempts != 1 {
+		t.Fatalf("bytes=%d error=%v attempts=%d", n, err, attempts)
+	}
+}
+
+func TestTerminalToolCancellationKeepsResultAndStopCause(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	tools := &termTools{}
+	res := console.Result{Status: console.AtPrompt, Output: "finished"}
+	if out, code, err := tools.result(ctx, res, nil); code != 0 || err != nil || !strings.Contains(out, "finished") {
+		t.Fatalf("completed result lost: %q %d %v", out, code, err)
+	}
+	cleanup := errors.Join(context.Canceled, console.ErrStopUnconfirmed)
+	if out, code, err := tools.result(ctx, console.Result{Status: console.Timeout}, cleanup); code != -1 || !errors.Is(err, console.ErrStopUnconfirmed) || !errors.Is(err, context.Canceled) || out != "status: timeout" {
+		t.Fatalf("unconfirmed stop lost: %q %d %v", out, code, err)
+	}
+}
 
 // fakeSwitch is a Telnet switch on ln that answers a few commands; lines
 // is what was typed into it, a line at a time.

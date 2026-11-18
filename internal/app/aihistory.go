@@ -115,7 +115,14 @@ func (a *App) saveChat(c *conn) (err error) {
 			conv.Model = p.Model
 		}
 	}
-	for _, it := range c.ai.items {
+	for i, it := range c.ai.items {
+		if c.ai.interrupting && i >= c.ai.turnStart {
+			var keep bool
+			it, keep = interruptedAIItem(it)
+			if !keep {
+				continue
+			}
+		}
 		if it.kind == "think" && strings.TrimSpace(it.text) == "" {
 			continue
 		}
@@ -128,6 +135,9 @@ func (a *App) saveChat(c *conn) (err error) {
 			item.Tool = &card
 		}
 		conv.Items = append(conv.Items, item)
+	}
+	if c.ai.interrupting {
+		conv.Items = append(conv.Items, history.Item{Kind: "interrupted"})
 	}
 	delete(a.chatList, c.host.ID)
 	return st.Save(conv)
@@ -163,6 +173,7 @@ func (a *App) resetChat(c *conn) {
 	}
 	c.ai.turn++
 	c.ai.running, c.ai.cancel, c.ai.paused = false, nil, false
+	c.ai.interrupting, c.ai.turnStart = false, 0
 	c.ai.sess, c.ai.box, c.ai.tools, c.ai.msgs = nil, nil, nil, nil
 	c.ai.items, c.ai.input, c.ai.attach, c.ai.task = nil, "", nil, ""
 	c.ai.conv, c.ai.title, c.ai.created = "", "", time.Time{}

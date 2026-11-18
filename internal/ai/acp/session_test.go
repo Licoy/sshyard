@@ -581,38 +581,22 @@ func TestPermissionByKindAndStop(t *testing.T) {
 
 func TestUnknownUpdatesIgnoredAndSessionEvents(t *testing.T) {
 	b := &bag{}
-	planned := make(chan struct{}, 1)
-	onUpdate := func(u Update) {
-		b.add(u)
-		if u.Kind == "plan" {
-			select {
-			case planned <- struct{}{}:
-			default:
-			}
-		}
-	}
-	s := mustStart(t, "---\nbad-update\ncommands\nnote _x.ai/ping\nnote not_extension\nunknown-request\nmessage ok\nthought hmm\ntool readme\nplan ship\nstderr {not-json\n", Config{Gate: &fixedGate{run: true}, OnUpdate: onUpdate})
+	s := mustStart(t, "---\nbad-update\ncommands\nnote _x.ai/ping\nnote not_extension\nunknown-request\nmessage ok\nthought hmm\ntool readme\nplan ship\nstderr {not-json\n", Config{Gate: &fixedGate{run: true}, OnUpdate: b.add})
 	reason, err := s.Prompt(t.Context(), "hi", []Resource{{URI: "file:///a", Text: "body"}})
 	if err != nil || reason != "end_turn" {
 		t.Fatalf("prompt %q %v", reason, err)
 	}
-	// Prompt and stderr run independently of the notification pump. Wait
-	// for the script's last known update before inspecting all prior updates.
-	select {
-	case <-planned:
-	case <-time.After(5 * time.Second):
-		t.Fatalf("plan update not delivered; kinds %v", b.kinds())
-	}
-	d := waitDiag(t, s, "{not-json")
 	if strings.Contains(b.texts(), "nope") || !strings.Contains(b.texts(), "ok") || !strings.Contains(b.texts(), "hmm") {
 		t.Fatalf("updates %q kinds %v", b.texts(), b.kinds())
 	}
-	if !strings.Contains(d, "rpc -32601") || !strings.Contains(d, "{not-json") || !strings.Contains(d, "prompt resource text resource") || !strings.Contains(d, "sshyard://instructions") {
-		t.Fatalf("diag %s", d)
-	}
 	joined := strings.Join(b.kinds(), " ")
 	if !strings.Contains(joined, "tool") || !strings.Contains(joined, "plan") {
-		t.Fatalf("kinds %v", b.kinds())
+		t.Fatalf("earlier updates missing at the end of Prompt: %v", b.kinds())
+	}
+	// Stderr still runs independently of the notification pump.
+	d := waitDiag(t, s, "{not-json")
+	if !strings.Contains(d, "rpc -32601") || !strings.Contains(d, "{not-json") || !strings.Contains(d, "prompt resource text resource") || !strings.Contains(d, "sshyard://instructions") {
+		t.Fatalf("diag %s", d)
 	}
 }
 

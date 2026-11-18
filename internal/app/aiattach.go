@@ -119,6 +119,9 @@ func attachData(name string, data []byte) (*aiAttach, error) {
 // as many files as it takes, or they would weigh too much, or the pane's
 // agent cannot read it. It says why in a toast.
 func (a *App) addAttach(cn *conn, f *aiAttach) {
+	if cn.ai.steer != nil {
+		return
+	}
 	var why func(m locales.Messages) string
 	total := len(f.data)
 	for _, g := range cn.ai.attach {
@@ -163,11 +166,13 @@ func (a *App) attachImage(cn *conn, name string, data []byte) {
 // attachRead runs read off the UI thread, and attaches each file it adds
 // to the pane's question, or says in a toast why it cannot.
 func (a *App) attachRead(cn *conn, read func(add func(*aiAttach, error))) {
-	id := cn.id
+	current := a.attachDraft(cn)
+	if !current() {
+		return
+	}
 	go read(func(f *aiAttach, err error) {
 		a.post(func() {
-			cn := a.conns[id]
-			if cn == nil || cn.ai == nil {
+			if !current() {
 				return
 			}
 			var ea *errAttach
@@ -178,6 +183,15 @@ func (a *App) attachRead(cn *conn, read func(add func(*aiAttach, error))) {
 			a.addAttach(cn, f)
 		})
 	})
+}
+
+// attachDraft binds an asynchronous picker or read to its original draft.
+func (a *App) attachDraft(cn *conn) func() bool {
+	s := cn.ai
+	gen, attachGen := s.gen, s.attachGen
+	return func() bool {
+		return a.conns[cn.id] == cn && cn.ai == s && s.gen == gen && s.attachGen == attachGen && s.steer == nil
+	}
 }
 
 // pasteAttach takes a paste into the question that is files, long text
@@ -230,17 +244,18 @@ func longPaste(text string) bool {
 
 // pickAttach asks for files through the system's open dialog.
 func (a *App) pickAttach(cn *conn, m locales.Messages) {
-	if a.p.PickFiles == nil {
+	current := a.attachDraft(cn)
+	if a.p.PickFiles == nil || !current() {
 		return
 	}
-	id, title := cn.id, m.AiAttach()
+	title := m.AiAttach()
 	go func() {
 		paths, err := a.p.PickFiles(title)
 		if err != nil || len(paths) == 0 {
 			return
 		}
 		a.post(func() {
-			if cn := a.conns[id]; cn != nil && cn.ai != nil {
+			if current() {
 				a.attachPaths(cn, paths)
 			}
 		})

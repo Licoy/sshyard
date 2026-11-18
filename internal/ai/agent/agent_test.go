@@ -112,6 +112,44 @@ func TestPauseAfter25AndContinue(t *testing.T) {
 	}
 }
 
+func TestInterruptPausedTurnKeepsToolPairsForNewTurn(t *testing.T) {
+	model := &scriptModel{replies: []llm.Message{
+		{Content: "earlier answer"},
+		{Content: "interrupted reply", Opaque: json.RawMessage(`[{"signature":"signed"}]`), ToolCalls: []llm.ToolCall{
+			{ID: "finished", Name: "run_command", Arguments: `{"command":"first"}`},
+			{ID: "pending", Name: "run_command", Arguments: `{"command":"second"}`},
+		}},
+		{Content: "new answer"},
+	}}
+	tools := &fakeTools{output: "actual result"}
+	one := 1
+	s := New(Config{Model: model, Gate: &recordGate{allow: true}, Tools: tools, MaxToolCalls: &one})
+	if err := s.Turn(t.Context(), "earlier question", HostMeta{}, "", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Turn(t.Context(), "old question", HostMeta{}, "", nil); !errors.Is(err, ErrPaused) {
+		t.Fatalf("old turn: %v", err)
+	}
+	s.InterruptTurn()
+	if s.Paused() {
+		t.Fatal("interrupted turn is still paused")
+	}
+	if err := s.Turn(t.Context(), "new question", HostMeta{}, "", nil); err != nil {
+		t.Fatal(err)
+	}
+	if len(tools.calls) != 1 {
+		t.Fatalf("tools executed: %v", tools.calls)
+	}
+	last := model.reqs[2].Messages
+	reply, finished, pending, next := last[len(last)-4], last[len(last)-3], last[len(last)-2], last[len(last)-1]
+	if !messageHas(last, "assistant", "earlier answer") || reply.Content != "" || len(reply.ToolCalls) != 2 || len(reply.Opaque) == 0 {
+		t.Fatalf("history lost completed reply or tool request: %+v", last)
+	}
+	if finished.ToolCallID != "finished" || finished.Content != "actual result" || pending.ToolCallID != "pending" || pending.Content != "cancelled" || next.Content != "new question" {
+		t.Fatalf("history lost tool results before the next question: %+v", last)
+	}
+}
+
 func TestRedactBeforeSendKeepsTimeline(t *testing.T) {
 	const secret = "AKIA0000000000000000"
 	model := &scriptModel{replies: []llm.Message{

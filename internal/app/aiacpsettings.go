@@ -363,13 +363,15 @@ func (a *App) agentChip(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Mes
 		ch.Brand = aibrands.Agent(cur.Agent)
 	}
 	return a.menuChip(c, "aiagent:"+strconv.Itoa(cn.id), ch.fit(m, fit, 0), func() []menuEntry {
-		out := []menuEntry{{Icon: icons.Robot, Label: m.AiBuiltin(), Checked: cn.ai.agent == "builtin", Do: func() { a.setAIAgent(cn, "builtin") }}}
+		builtin := cn.ai.agent == "builtin"
+		out := []menuEntry{{Icon: icons.Robot, Label: m.AiBuiltin(), Checked: builtin, Disabled: !builtin && cn.ai.interrupting,
+			Do: func() { a.setAIAgent(cn, "builtin") }}}
 		names := acpNames(a.settings.AIACPAgents)
 		for i, cfg := range a.settings.AIACPAgents {
 			on := curOK && cur.ID == cfg.ID
 			backend := "acp:" + cfg.ID
 			// An external agent's tools reach SSH hosts only.
-			e := menuEntry{Icon: icons.Robot, Label: names[i], Checked: on, Disabled: !on && !hasSSH(cn.host), Do: func() {
+			e := menuEntry{Icon: icons.Robot, Label: names[i], Checked: on, Disabled: !on && (!hasSSH(cn.host) || cn.ai.interrupting), Do: func() {
 				if !on {
 					a.setAIAgent(cn, backend)
 				}

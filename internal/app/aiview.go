@@ -197,6 +197,9 @@ func (a *App) effortChip(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Me
 			}
 			e := e
 			entry := menuEntry{Label: effortName(m, e), Checked: e == cur, Do: func() {
+				if e != cur {
+					a.revokeAISteer(cn)
+				}
 				cn.ai.effort = e
 				a.saveLayout()
 			}}
@@ -242,6 +245,10 @@ func (a *App) modelChoices(query string) [][]modelChoice {
 // chooseModel makes the pane ask model of provider p. Another provider
 // starts a new session; another model of the same one keeps it.
 func (a *App) chooseModel(cn *conn, p *settings.AIProvider, model string) {
+	current := a.paneProvider(cn)
+	if current == nil || current.ID != p.ID || paneModel(cn, current) != model {
+		a.revokeAISteer(cn)
+	}
 	if cn.ai.provider != p.ID && !(cn.ai.provider == "" && a.defaultProvider() == p.ID) {
 		a.invalidateAI(cn)
 	}
@@ -485,7 +492,9 @@ func (a *App) aiTimeline(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Me
 	ui.Scroll(c.Key("aitime")).TrackScroll(st).Grow(1).FillWidth().Children(func() {
 		ui.Column(c).Padding(theme.Space(3), theme.Space(3), theme.Space(4), theme.Space(3)).Gap(theme.Space(3)).FillWidth().Children(func() {
 			for i := range cn.ai.items {
-				a.aiCard(c, cn, i, tok, m)
+				if !cn.ai.items[i].hidden {
+					a.aiCard(c, cn, i, tok, m)
+				}
 			}
 			working, wait := aiWorking(cn.ai, c.Now())
 			if wait > 0 {
@@ -524,7 +533,7 @@ const aiQuiet = 800 * time.Millisecond
 // always, unless its text is streaming. Otherwise wait is when to look
 // again, for the text to go quiet.
 func aiWorking(s *aiState, now time.Time) (working bool, wait time.Duration) {
-	if !s.running {
+	if !s.running || s.steer != nil {
 		return false, 0
 	}
 	n := len(s.items)
@@ -543,8 +552,8 @@ func aiWorking(s *aiState, now time.Time) (working bool, wait time.Duration) {
 // aiComposer is the question being written, on two to eight lines of its
 // own that grow with it, then scroll. Under it, in the same box: the
 // permission and the attachment button, and on the right, for the built-in
-// agent, the model and thinking level, then the send button, which stops
-// the turn while one runs. Enter sends; Shift+Enter breaks the line. Full
+// agent, the model and thinking level, then the stop and send controls.
+// Enter sends; Shift+Enter breaks the line. Full
 // access shows a banner above it. The choices show as fit allows.
 func (a *App) aiComposer(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Messages, fit aiFit) {
 	ui.Column(c.Key("aifoot")).Shrink(0).FillWidth().Padding(0, theme.Space(3), theme.Space(3), theme.Space(3)).Gap(theme.Space(2)).Children(func() {
@@ -562,52 +571,37 @@ func (a *App) aiComposer(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Me
 		if box.FocusWithin() {
 			edge = tok.Focus
 		}
-		drag := box.FileDragOver()
+		steering := cn.ai.steer != nil
+		drag := box.FileDragOver() && !steering
 		if drag {
 			edge = tok.Accent
 		}
-		if paths := box.DroppedFiles(); len(paths) > 0 {
+		if paths := box.DroppedFiles(); len(paths) > 0 && !steering {
 			a.attachPaths(cn, paths)
 		}
-		id, svc := cn.id, c.Services()
 		box.Border(1, edge).Children(func() {
 			if drag {
 				ui.Text(c.Key("aidrop"), m.AiDropFiles()).FontSize(theme.Footnote).TextColor(tok.Accent).Padding(theme.Space(1), theme.Space(2), 0, theme.Space(2))
 			}
 			if len(cn.ai.attach) > 0 {
-				ui.Column(c.Key("aiattach")).FillWidth().Padding(theme.Space(1), theme.Space(1), 0, theme.Space(1)).Children(func() {
-					a.attachStrip(c, tok, m, cn.ai.attach, func(i int) {
+				var remove func(int)
+				if !steering {
+					remove = func(i int) {
 						cn.ai.attach = append(cn.ai.attach[:i:i], cn.ai.attach[i+1:]...)
-					})
+					}
+				}
+				ui.Column(c.Key("aiattach")).FillWidth().Padding(theme.Space(1), theme.Space(1), 0, theme.Space(1)).Children(func() {
+					a.attachStrip(c, tok, m, cn.ai.attach, remove)
 				})
 			}
-			in := ui.TextAreaBase(c.Key("aiin:"+strconv.Itoa(cn.id)+":"+strconv.Itoa(cn.ai.gen)), &cn.ai.input).
-				Placeholder(m.AiPlaceholder()).Label(m.AiPlaceholder()).FontSize(theme.Body).Padding(theme.Space(1), theme.Space(2)).
-				FillWidth().Lines(2, 8).
-				OnPaste(func(text string) bool {
-					cn := a.conns[id]
-					return cn != nil && cn.ai != nil && a.pasteAttach(cn, svc, text)
-				}).
-				OnTextKey(func(k ui.TextKey) bool {
-					if k.Key != ui.KeyEnter || k.Mods != 0 {
-						return false
-					}
-					text := k.Text()
-					a.post(func() {
-						if cn := a.conns[id]; cn != nil && cn.ai != nil && !cn.ai.running {
-							cn.ai.input = text
-							a.sendAI(cn)
-						}
-					})
-					return true
-				})
-			if a.focusReq == cn.id && a.page == pageWorkspace {
-				in.Focus()
-				a.focusReq = 0
+			a.aiComposerInput(c, cn, m)
+			if steering {
+				ui.Text(c.Key("aiswitching"), m.AiSwitching()).FontSize(theme.Footnote).TextColor(tok.TextMuted).
+					Padding(0, theme.Space(2))
 			}
 			ui.Row(c.Key("aitools")).FillWidth().Gap(theme.Space(1)).AlignItems(ui.Center).Children(func() {
 				a.modeChip(c, cn, tok, m, fit)
-				if (IconButton{Icon: icons.Attach, Label: m.AiAttach(), Size: Small, Disabled: a.p.PickFiles == nil}).Clicked(c, "aiattachbtn") {
+				if (IconButton{Icon: icons.Attach, Label: m.AiAttach(), Size: Small, Disabled: steering || a.p.PickFiles == nil}).Clicked(c, "aiattachbtn") {
 					a.pickAttach(cn, m)
 				}
 				if cn.ai.agent == "builtin" && hasSSH(cn.host) {
@@ -624,14 +618,20 @@ func (a *App) aiComposer(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Me
 				} else {
 					a.acpOptionChips(c, cn, tok, m, fit)
 				}
+				empty := strings.TrimSpace(cn.ai.input) == "" && len(cn.ai.attach) == 0
+				label := m.AiSend()
 				if cn.ai.running {
 					if (IconButton{Icon: icons.Stop, Label: m.StopAI(), Size: Small, Danger: true, Active: true}).Clicked(c, "aistop") {
 						a.StopAI(cn.id)
+						return
 					}
-					return
+					if empty {
+						return
+					}
+					label = m.AiSendNow()
 				}
-				empty := strings.TrimSpace(cn.ai.input) == "" && len(cn.ai.attach) == 0
-				if (IconButton{Icon: icons.Send, Label: m.AiSend(), Size: Small, Active: !empty, Disabled: empty}).Clicked(c, "aisend") {
+				disabled := empty || cn.ai.sendBlocked()
+				if (IconButton{Icon: icons.Send, Label: label, Size: Small, Active: !disabled, Disabled: disabled}).Clicked(c, "aisend") {
 					a.sendAI(cn)
 				}
 			})
@@ -639,15 +639,59 @@ func (a *App) aiComposer(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Me
 	})
 }
 
+func (a *App) aiComposerInput(c *ui.Context, cn *conn, m locales.Messages) {
+	state, gen, turn, svc := cn.ai, cn.ai.gen, cn.ai.turn, c.Services()
+	currentDraft := func() bool {
+		return a.conns[cn.id] == cn && cn.ai == state && state.gen == gen && state.turn == turn && state.steer == nil
+	}
+	hadFocus := state.composerGen != gen && state.composerInput.Focused(c) && a.focused() == cn
+	state.composerGen = gen
+	in := ui.TextAreaBase(c.Key("aiin:"+strconv.Itoa(cn.id)+":"+strconv.Itoa(gen)), &state.input).
+		Placeholder(m.AiPlaceholder()).Label(m.AiPlaceholder()).FontSize(theme.Body).Padding(theme.Space(1), theme.Space(2)).
+		FillWidth().Lines(2, 8).ReadOnly(state.steer != nil).
+		OnPaste(func(text string) bool {
+			return !currentDraft() || a.pasteAttach(cn, svc, text)
+		}).
+		OnTextKey(func(k ui.TextKey) bool {
+			if k.Key != ui.KeyEnter || k.Mods != 0 {
+				return false
+			}
+			if currentDraft() && !state.sendBlocked() {
+				text := k.Text()
+				a.post(func() {
+					if currentDraft() && !state.sendBlocked() {
+						state.input = text
+						a.sendAI(cn)
+					}
+				})
+			}
+			return true
+		}).Bind(&state.composerInput)
+	if a.page == pageWorkspace && (hadFocus || a.focusReq == cn.id) {
+		in.Focus()
+		if a.focusReq == cn.id {
+			a.focusReq = 0
+		}
+	}
+}
+
+func (s *aiState) sendBlocked() bool {
+	return s.interrupting || s.running && s.cancel == nil
+}
+
 // sendAI sends the question written in the pane, and follows the reply.
 func (a *App) sendAI(cn *conn) {
-	if cn.ai.running || (strings.TrimSpace(cn.ai.input) == "" && len(cn.ai.attach) == 0) {
+	if cn.ai.sendBlocked() || (strings.TrimSpace(cn.ai.input) == "" && len(cn.ai.attach) == 0) {
 		return
 	}
 	// Not math.MaxFloat32: an offset that large swallows the end's place
 	// when the end is revealed in the same layout, and lands at the top.
 	cn.ai.scroll.Y = 1e9
-	a.SendAI(cn.id, cn.ai.input)
+	if cn.ai.running {
+		a.steerAI(cn)
+	} else {
+		a.SendAI(cn.id, cn.ai.input)
+	}
 }
 
 // aiBanner is a rounded notice tinted with col, as the panes' banners are.
@@ -769,6 +813,8 @@ func (a *App) aiCard(c *ui.Context, cn *conn, i int, tok theme.Tokens, m locales
 				})
 			})
 		})
+	case "interrupted":
+		ui.Text(key, m.AiInterrupted()).FontSize(theme.Footnote).TextColor(tok.TextMuted)
 	case "err":
 		aiBanner(key, tok.Danger, icons.Warning, aiErrLine(m, it.text), func() {
 			// After the frame, which is still going through the items.
@@ -951,6 +997,8 @@ func aiErrLine(m locales.Messages, s string) string {
 		return m.AiACPIncomplete()
 	case "acp-warning":
 		return m.AiACPSafetyWarning()
+	case "ai-stop-unconfirmed":
+		return m.AiStopUnconfirmed()
 	case "provider":
 		return m.AiNoModel()
 	case "timeout":

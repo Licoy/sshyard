@@ -125,7 +125,10 @@ func (t *termTools) Call(ctx context.Context, name string, raw json.RawMessage) 
 	default:
 		return "unknown tool " + name, 1, nil
 	}
-	s := t.linked()
+	s := t.linked(ctx)
+	if err := ctx.Err(); err != nil {
+		return "", -1, err
+	}
 	if s == nil {
 		return "no terminal is linked: the user opens this host's terminal in the assistant's tab", 1, nil
 	}
@@ -161,10 +164,13 @@ func (t *termTools) result(ctx context.Context, res console.Result, err error) (
 	if res.Output != "" {
 		text += "\n" + res.Output
 	}
-	if ctx.Err() != nil {
-		return text, -1, ctx.Err()
+	if errors.Is(err, console.ErrStopUnconfirmed) {
+		return text, -1, err
 	}
 	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return text, -1, ctxErr
+		}
 		return joinOut(text, err.Error()), 1, nil
 	}
 	switch res.Status {
@@ -176,7 +182,7 @@ func (t *termTools) result(ctx context.Context, res console.Result, err error) (
 
 // linked is the session of the terminal the pane is linked to, read on
 // the UI thread; nil when there is none.
-func (t *termTools) linked() *session.Session {
+func (t *termTools) linked(ctx context.Context) *session.Session {
 	ch := make(chan *session.Session, 1)
 	t.a.post(func() {
 		var s *session.Session
@@ -192,6 +198,8 @@ func (t *termTools) linked() *session.Session {
 	select {
 	case s := <-ch:
 		return s
+	case <-ctx.Done():
+		return nil
 	case <-timer.C:
 		return nil
 	}
@@ -200,12 +208,12 @@ func (t *termTools) linked() *session.Session {
 // sessionTerm is a session as a console.Terminal.
 type sessionTerm struct{ s *session.Session }
 
-func (t sessionTerm) Input() (io.Writer, error) {
+func (t sessionTerm) Input(ctx context.Context) (io.Writer, error) {
 	w, err := t.s.CaptureInput()
 	if err != nil {
 		return nil, err
 	}
-	return busyWriter{w}, nil
+	return busyWriter{w: w, ctx: ctx}, nil
 }
 
 func (t sessionTerm) Watch(fn func([]byte)) func() { return t.s.Watch(fn) }
@@ -216,15 +224,25 @@ func (t sessionTerm) FullScreen() bool { return t.s.Term.Modes().AltScreen }
 
 // busyWriter waits out a paste being written, as the user's own typing
 // would, for up to two seconds.
-type busyWriter struct{ w io.Writer }
+type busyWriter struct {
+	w   io.Writer
+	ctx context.Context
+}
 
 func (b busyWriter) Write(p []byte) (int, error) {
 	deadline := time.Now().Add(2 * time.Second)
 	for {
+		if err := b.ctx.Err(); err != nil {
+			return 0, err
+		}
 		n, err := b.w.Write(p)
 		if !errors.Is(err, session.ErrInputBusy) || time.Now().After(deadline) {
 			return n, err
 		}
-		time.Sleep(20 * time.Millisecond)
+		select {
+		case <-b.ctx.Done():
+			return 0, b.ctx.Err()
+		case <-time.After(20 * time.Millisecond):
+		}
 	}
 }

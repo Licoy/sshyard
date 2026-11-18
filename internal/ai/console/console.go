@@ -20,7 +20,7 @@ import (
 // Terminal is the terminal the console types into and reads from.
 type Terminal interface {
 	// Input is where typed bytes go, bound to the connection of the call.
-	Input() (io.Writer, error)
+	Input(ctx context.Context) (io.Writer, error)
 	// Watch gives fn the bytes printed from now on, until stop.
 	Watch(fn func(p []byte)) (stop func())
 	// CursorLine is the text of the line the cursor is on.
@@ -106,6 +106,9 @@ var (
 	ErrLine = errors.New("console: a line is one line of printable text")
 	// ErrKey is a key Key does not press.
 	ErrKey = errors.New("console: unknown key")
+	// ErrStopUnconfirmed means input was sent to a shared terminal and
+	// the command's completion could not be confirmed before cancellation.
+	ErrStopUnconfirmed = errors.New("console: command stop could not be confirmed")
 )
 
 // Keys are what Key presses.
@@ -200,6 +203,9 @@ func (c *capture) bytes() []byte {
 }
 
 func run(ctx context.Context, t Terminal, input []byte, echo string, o Options) (Result, error) {
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
+	}
 	o = o.withDefaults()
 	before := strings.TrimRightFunc(t.CursorLine(), unicode.IsSpace)
 	// A line is not typed into a password prompt or a full-screen
@@ -213,7 +219,7 @@ func run(ctx context.Context, t Terminal, input []byte, echo string, o Options) 
 			return Result{Status: FullScreen}, nil
 		}
 	}
-	w, err := t.Input()
+	w, err := t.Input(ctx)
 	if err != nil {
 		return Result{}, err
 	}
@@ -224,9 +230,6 @@ func run(ctx context.Context, t Terminal, input []byte, echo string, o Options) 
 	c.mu.Lock()
 	c.at = start
 	c.mu.Unlock()
-	if _, err := w.Write(input); err != nil {
-		return Result{}, err
-	}
 	res := Result{}
 	finish := func(s Status) Result {
 		res.Status = s
@@ -234,12 +237,21 @@ func run(ctx context.Context, t Terminal, input []byte, echo string, o Options) 
 		res.Output = trimEcho(Flatten(o.Decode(c.bytes())), echo)
 		return res
 	}
+	interrupted := func(err error) (Result, error) {
+		return finish(Timeout), errors.Join(ctx.Err(), ErrStopUnconfirmed, err)
+	}
+	if n, err := writeWhenActive(ctx, w, input); err != nil {
+		if n > 0 && ctx.Err() != nil {
+			return interrupted(err)
+		}
+		return Result{}, err
+	}
 	tick := time.NewTicker(min(o.Settle/4, 50*time.Millisecond))
 	defer tick.Stop()
 	for {
 		select {
 		case <-ctx.Done():
-			return finish(Timeout), ctx.Err()
+			return interrupted(nil)
 		case <-tick.C:
 		}
 		now := time.Now()
@@ -261,13 +273,16 @@ func run(ctx context.Context, t Terminal, input []byte, echo string, o Options) 
 			if res.Pages >= o.MaxPages {
 				return finish(Limit), nil
 			}
-			res.Pages++
 			c.mu.Lock()
 			c.at = now
 			c.mu.Unlock()
-			if _, err := w.Write([]byte{' '}); err != nil {
+			if _, err := writeWhenActive(ctx, w, []byte{' '}); err != nil {
+				if ctx.Err() != nil {
+					return interrupted(err)
+				}
 				return finish(Quiet), err
 			}
+			res.Pages++
 		case passwordLine.MatchString(line):
 			return finish(Password), nil
 		case total > 0 && questionLine.MatchString(line):
@@ -278,6 +293,13 @@ func run(ctx context.Context, t Terminal, input []byte, echo string, o Options) 
 			return finish(Quiet), nil
 		}
 	}
+}
+
+func writeWhenActive(ctx context.Context, w io.Writer, p []byte) (int, error) {
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+	return w.Write(p)
 }
 
 // trimEcho drops the first line when it is the line typed, as the

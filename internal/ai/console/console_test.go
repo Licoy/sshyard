@@ -13,20 +13,22 @@ import (
 // fakeTerm is a terminal on a device that answers what is typed with
 // reply, as the device would, a moment later.
 type fakeTerm struct {
-	mu       sync.Mutex
-	out      string
-	typed    strings.Builder
-	watchers map[int]func([]byte)
-	next     int
-	alt      bool
-	reply    func(f *fakeTerm, typed string)
+	mu           sync.Mutex
+	out          string
+	typed        strings.Builder
+	watchers     map[int]func([]byte)
+	next         int
+	alt          bool
+	reply        func(f *fakeTerm, typed string)
+	onWatch      func()
+	onCursorLine func(string)
 }
 
 func newTerm(prompt string, reply func(f *fakeTerm, typed string)) *fakeTerm {
 	return &fakeTerm{out: prompt, watchers: map[int]func([]byte){}, reply: reply}
 }
 
-func (f *fakeTerm) Input() (io.Writer, error) { return f, nil }
+func (f *fakeTerm) Input(context.Context) (io.Writer, error) { return f, nil }
 
 func (f *fakeTerm) Write(p []byte) (int, error) {
 	f.mu.Lock()
@@ -45,6 +47,9 @@ func (f *fakeTerm) Watch(fn func([]byte)) func() {
 	id := f.next
 	f.next++
 	f.watchers[id] = fn
+	if f.onWatch != nil {
+		f.onWatch()
+	}
 	return func() {
 		f.mu.Lock()
 		defer f.mu.Unlock()
@@ -56,7 +61,11 @@ func (f *fakeTerm) CursorLine() string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	text := Flatten(f.out)
-	return text[strings.LastIndexByte(text, '\n')+1:]
+	line := text[strings.LastIndexByte(text, '\n')+1:]
+	if f.onCursorLine != nil {
+		f.onCursorLine(line)
+	}
+	return line
 }
 
 func (f *fakeTerm) FullScreen() bool {
@@ -206,8 +215,33 @@ func TestLineTimeoutAndCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(50*time.Millisecond, cancel)
 	_, err = Line(ctx, newTerm("$ ", busy), "make", fast)
-	if !errors.Is(err, context.Canceled) {
+	if !errors.Is(err, context.Canceled) || !errors.Is(err, ErrStopUnconfirmed) {
 		t.Fatalf("cancel: %v", err)
+	}
+}
+
+func TestCancelBeforeTerminalWrite(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	f := newTerm("switch#", switchCLI)
+	f.onWatch = cancel
+	_, err := Line(ctx, f, "show run", fast)
+	if err != context.Canceled || f.sent() != "" {
+		t.Fatalf("error %v typed %q", err, f.sent())
+	}
+}
+
+func TestCancelBeforeNextPage(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	f := newTerm("switch#", switchCLI)
+	f.onCursorLine = func(line string) {
+		if pagerLine.MatchString(line) {
+			cancel()
+		}
+	}
+	res, err := Line(ctx, f, "show run", fast)
+	if !errors.Is(err, context.Canceled) || !errors.Is(err, ErrStopUnconfirmed) || res.Pages != 0 || f.sent() != "show run\r" {
+		t.Fatalf("result %+v error %v typed %q", res, err, f.sent())
 	}
 }
 

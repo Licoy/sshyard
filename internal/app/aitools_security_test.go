@@ -3,10 +3,11 @@ package app
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/Licoy/sshyard/internal/ai/remote"
 )
 
 func TestCommandOutputLimitCancelsAndBoundsBothStreams(t *testing.T) {
@@ -44,9 +45,10 @@ func TestCommandOutputBelowLimitRemainsComplete(t *testing.T) {
 }
 
 func TestCommandOutputLimitRetainsCleanupFailures(t *testing.T) {
-	cleanup := fmt.Errorf("%w: failed to terminate remote process group", context.Canceled)
+	detail := errors.New("failed to terminate remote process group")
+	cleanup := errors.Join(context.Canceled, remote.ErrStopUnconfirmed, detail)
 	text, code, err := commandLimitResult(strings.Repeat("x", (1<<20)-4096), cleanup)
-	if code != 1 || err == nil || errors.Is(err, context.Canceled) || !strings.HasPrefix(text, "ai.command_output_limit\n") || !strings.Contains(text, "failed to terminate remote process group") || len(text) > 1<<20 {
+	if code != 1 || !errors.Is(err, context.Canceled) || !errors.Is(err, remote.ErrStopUnconfirmed) || !errors.Is(err, detail) || !strings.HasPrefix(text, "ai.command_output_limit\n") || strings.Contains(text, detail.Error()) || len(text) > 1<<20 {
 		t.Fatalf("limit result: code=%d err=%v len=%d", code, err, len(text))
 	}
 	text, code, err = commandLimitResult("partial", context.Canceled)

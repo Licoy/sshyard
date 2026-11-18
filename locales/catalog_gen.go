@@ -6405,6 +6405,46 @@ func (msgs Messages) AiSend() string {
 	return Catalog.Format(msgs.locale, "aiSend", nil)
 }
 
+// AiSendNow says "Send Now"
+// in the language the app shows.
+func AiSendNow() string { return In(i18n.Locale()).AiSendNow() }
+
+// AiSendNow says "Send Now"
+// in the language of msgs.
+func (msgs Messages) AiSendNow() string {
+	return Catalog.Format(msgs.locale, "aiSendNow", nil)
+}
+
+// AiSwitching says "Switching to the new instruction…"
+// in the language the app shows.
+func AiSwitching() string { return In(i18n.Locale()).AiSwitching() }
+
+// AiSwitching says "Switching to the new instruction…"
+// in the language of msgs.
+func (msgs Messages) AiSwitching() string {
+	return Catalog.Format(msgs.locale, "aiSwitching", nil)
+}
+
+// AiInterrupted says "Previous turn interrupted"
+// in the language the app shows.
+func AiInterrupted() string { return In(i18n.Locale()).AiInterrupted() }
+
+// AiInterrupted says "Previous turn interrupted"
+// in the language of msgs.
+func (msgs Messages) AiInterrupted() string {
+	return Catalog.Format(msgs.locale, "aiInterrupted", nil)
+}
+
+// AiStopUnconfirmed says "Couldn’t confirm that the previous turn stopped. Check the terminal before sending again."
+// in the language the app shows.
+func AiStopUnconfirmed() string { return In(i18n.Locale()).AiStopUnconfirmed() }
+
+// AiStopUnconfirmed says "Couldn’t confirm that the previous turn stopped. Check the terminal before sending again."
+// in the language of msgs.
+func (msgs Messages) AiStopUnconfirmed() string {
+	return Catalog.Format(msgs.locale, "aiStopUnconfirmed", nil)
+}
+
 // AiPlaceholder says "Ask about this host"
 // in the language the app shows.
 func AiPlaceholder() string { return In(i18n.Locale()).AiPlaceholder() }

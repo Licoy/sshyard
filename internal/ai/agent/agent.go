@@ -163,8 +163,40 @@ func (s *Session) Configure(gate policy.Gate, redact bool, maxToolCalls *int) {
 // Paused reports whether the session is waiting for Continue.
 func (s *Session) Paused() bool { return s.paused }
 
+// AbandonPause ends an idle paused turn without running its remaining calls.
+func (s *Session) AbandonPause() {
+	if s.paused {
+		s.cancelRest("cancelled")
+		s.paused = false
+	}
+}
+
+// InterruptTurn removes the interrupted reply from an idle session, keeping
+// tool calls and results paired along with any required provider state.
+func (s *Session) InterruptTurn() {
+	s.AbandonPause()
+	for i := len(s.msgs) - 1; i >= 0; i-- {
+		if s.msgs[i].Role != "user" {
+			continue
+		}
+		keep := s.msgs[:i+1]
+		for _, m := range s.msgs[i+1:] {
+			if m.Role == "assistant" {
+				if len(m.ToolCalls) == 0 {
+					continue
+				}
+				m.Content = ""
+			}
+			keep = append(keep, m)
+		}
+		clear(s.msgs[len(keep):])
+		s.msgs = keep
+		return
+	}
+}
+
 // Turn sends one user message. terminal, when set, is attached as untrusted
-// data. A paused session refuses until Continue.
+// data. A paused session refuses until Continue or AbandonPause.
 func (s *Session) Turn(ctx context.Context, user string, meta HostMeta, terminal string, emit func(Event)) error {
 	return s.TurnWith(ctx, user, nil, meta, terminal, emit)
 }
@@ -413,19 +445,20 @@ func (s *Session) execOne(ctx context.Context, call llm.ToolCall, emit func(Even
 	start := time.Now()
 	out, exitCode, callErr := s.tools.Call(ctx, call.Name, json.RawMessage(raw))
 	dur := time.Since(start).Milliseconds()
-	if callErr != nil && (ctx.Err() != nil || errors.Is(callErr, context.Canceled) || errors.Is(callErr, context.DeadlineExceeded)) {
+	ctxErr := ctx.Err()
+	if callErr != nil && (ctxErr != nil || errors.Is(callErr, context.Canceled) || errors.Is(callErr, context.DeadlineExceeded)) {
 		// Stop, Stop all, and the runner timeout share this path; the command already started.
 		auditErr := s.gate.Done(act, verdict, -1, dur, countedBytes(s.tools, out))
 		card.Phase, card.Status = "done", "cancel"
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) || errors.Is(callErr, context.DeadlineExceeded) {
+		if errors.Is(ctxErr, context.DeadlineExceeded) || ctxErr == nil && errors.Is(callErr, context.DeadlineExceeded) {
 			card.Status = "timeout"
 		}
 		card.Output, card.DurMS = truncOut(out), dur
 		s.emitTool(emit, card)
 		_ = s.auditLost(emit, auditErr)
 		s.dropCall(call.ID)
-		if ctx.Err() != nil {
-			return ctx.Err()
+		if ctxErr != nil && !errors.Is(callErr, ctxErr) {
+			return errors.Join(ctxErr, callErr)
 		}
 		return callErr
 	}

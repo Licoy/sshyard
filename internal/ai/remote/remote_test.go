@@ -6,6 +6,14 @@ import (
 	"time"
 )
 
+func TestHaltKeepsAlreadyReceivedExit(t *testing.T) {
+	errC := make(chan error, 1)
+	errC <- nil
+	if code, err := (&Runner{}).halt(context.Canceled, nil, mark{}, nil, errC, nil); code != 0 || err != nil {
+		t.Fatalf("received success discarded: %d %v", code, err)
+	}
+}
+
 func TestCommandTimeoutClamp(t *testing.T) {
 	tests := []struct {
 		name string

@@ -239,6 +239,77 @@ func TestACPAppProtocolAndLifecycle(t *testing.T) {
 			t.Fatalf("told the question it is asked: %s", d)
 		}
 	})
+	t.Run("send-now-cancels-approval-and-resumes", func(t *testing.T) {
+		a, tt, _, h := bashHost(t)
+		root, err := filepath.EvalSymlinks(t.TempDir())
+		if err != nil {
+			t.Fatal(err)
+		}
+		target := filepath.Join(root, "config")
+		if err := os.WriteFile(target, []byte("before"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		script := filepath.Join(root, "script")
+		write := func(body string) {
+			t.Helper()
+			if err := os.WriteFile(script, []byte(body), 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		write("load\n---\nmessage original answer\ntool original tool\nwrite " + target + " denied\nmessage late answer\n")
+		s := a.Settings()
+		s.AIDefaultAgent = "acp"
+		s.AIACPAgents = []settings.ACPConfig{{Command: binary, Args: []string{script}}}
+		if err := a.ApplySettings(s); err != nil {
+			t.Fatal(err)
+		}
+		id := openAIPane(t, a, h.ID)
+		c := a.conns[id]
+		a.SendAI(id, "original question")
+		waitFor(t, tt, "original approval pending", func() bool {
+			return c.ai.pending != nil && paneHas(a, id, "original answer")
+		})
+		old := c.ai.acp
+		sid := old.session.ID()
+		write("load\nreplay hidden replay\n---\ntool replacement tool\nmessage replacement answer\n")
+		c.ai.input = "replacement question"
+		a.sendAI(c)
+		waitFor(t, tt, "replacement turn completed", func() bool {
+			if c.ai.acp != nil && c.ai.acp != old {
+				select {
+				case <-old.gone:
+				default:
+					t.Fatal("replacement started before old ACP cleanup completed")
+				}
+			}
+			return !c.ai.running && paneHas(a, id, "replacement answer")
+		})
+		next := c.ai.acp
+		if next == nil || next == old || !next.session.Resumed() || next.session.ID() != sid {
+			t.Fatalf("replacement did not resume the conversation in a new process: %+v", c.ai.items)
+		}
+		if data, err := os.ReadFile(target); err != nil || string(data) != "before" {
+			t.Fatalf("unapproved write changed file: %q, %v", data, err)
+		}
+		var interrupted, replacement int
+		var tools []string
+		for _, item := range c.ai.items {
+			switch item.kind {
+			case "interrupted":
+				interrupted++
+			case "user":
+				if item.text == "replacement question" {
+					replacement++
+				}
+			case "tool":
+				tools = append(tools, item.tool.Name)
+			}
+		}
+		if interrupted != 1 || replacement != 1 || strings.Join(tools, ",") != "original tool,replacement tool" ||
+			paneHas(a, id, "late answer") || paneHas(a, id, "hidden replay") || c.ai.pending != nil {
+			t.Fatalf("incorrect ACP handoff timeline: %+v", c.ai.items)
+		}
+	})
 	t.Run("scope-update-cancels-process", func(t *testing.T) {
 		a, tt, _, h := bashHost(t)
 		script := filepath.Join(t.TempDir(), "script")

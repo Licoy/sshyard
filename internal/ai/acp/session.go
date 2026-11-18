@@ -108,11 +108,12 @@ type Session struct {
 	loading bool
 	resumed bool
 
-	updates   chan sdk.SessionNotification
-	closed    chan struct{}
-	wg        sync.WaitGroup
-	closeOnce sync.Once
-	closeErr  error
+	updates     chan sdk.SessionNotification
+	updateFlush chan chan struct{}
+	closed      chan struct{}
+	wg          sync.WaitGroup
+	closeOnce   sync.Once
+	closeErr    error
 }
 
 // Start launches the agent, initializes protocol version 1, and opens a
@@ -130,13 +131,14 @@ func Start(ctx context.Context, cfg Config) (*Session, error) {
 		return nil, err
 	}
 	s := &Session{
-		cfg:     cfg,
-		gate:    cfg.Gate,
-		sandbox: sandbox,
-		stderr:  &ring{cap: stderrCap},
-		closed:  make(chan struct{}),
-		updates: make(chan sdk.SessionNotification, 64),
-		terms:   map[string]*termProc{},
+		cfg:         cfg,
+		gate:        cfg.Gate,
+		sandbox:     sandbox,
+		stderr:      &ring{cap: stderrCap},
+		closed:      make(chan struct{}),
+		updates:     make(chan sdk.SessionNotification, 64),
+		updateFlush: make(chan chan struct{}),
+		terms:       map[string]*termProc{},
 	}
 	if !cfg.probe {
 		// Without the bridge the agent still runs; it has the client's
@@ -145,22 +147,19 @@ func Start(ctx context.Context, cfg Config) (*Session, error) {
 	}
 	if err := s.spawn(); err != nil {
 		if s.bridge != nil {
-			_ = s.bridge.Close()
+			err = errors.Join(err, s.bridge.Close())
 		}
-		_ = os.RemoveAll(sandbox)
-		return nil, err
+		return nil, errors.Join(err, os.RemoveAll(sandbox))
 	}
 	if err := s.initialize(ctx); err != nil {
-		s.Close()
-		return nil, err
+		return nil, errors.Join(err, s.Close())
 	}
 	if err := s.openSession(ctx); err != nil {
 		var auth *AuthRequiredError
 		if errors.As(err, &auth) {
 			return s, err
 		}
-		s.Close()
-		return nil, err
+		return nil, errors.Join(err, s.Close())
 	}
 	return s, nil
 }
@@ -244,7 +243,27 @@ func (s *Session) pump() {
 			return
 		case n := <-s.updates:
 			s.handleUpdate(n)
+		case done := <-s.updateFlush:
+			for range len(s.updates) {
+				select {
+				case n := <-s.updates:
+					s.handleUpdate(n)
+				default:
+				}
+			}
+			close(done)
 		}
+	}
+}
+
+// The SDK queues all earlier updates before delivering a Prompt response.
+// Wait for the pump to emit them before the caller can start a new turn.
+func (s *Session) flushUpdates() {
+	done := make(chan struct{})
+	select {
+	case s.updateFlush <- done:
+		<-done
+	case <-s.closed:
 	}
 }
 
@@ -543,6 +562,7 @@ func (s *Session) Prompt(ctx context.Context, text string, resources []Resource)
 		})}, blocks...)
 	}
 	resp, err := s.conn.Prompt(t.ctx, sdk.PromptRequest{SessionId: sid, Prompt: blocks})
+	s.flushUpdates()
 	// Inspect cancellation after the SDK call instead of racing a done channel.
 	if ctx.Err() != nil || t.ctx.Err() != nil {
 		cancelErr := t.ctx.Err()
@@ -605,13 +625,14 @@ func (s *Session) Close() error {
 				<-done
 			}
 		}
+		s.flushUpdates()
 		close(s.closed)
 		s.wg.Wait()
 		if s.bridge != nil {
-			_ = s.bridge.Close()
+			s.closeErr = errors.Join(s.closeErr, s.bridge.Close())
 		}
 		if s.sandbox != "" {
-			_ = os.RemoveAll(s.sandbox)
+			s.closeErr = errors.Join(s.closeErr, os.RemoveAll(s.sandbox))
 		}
 	})
 	return s.closeErr

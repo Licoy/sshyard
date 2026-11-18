@@ -39,6 +39,9 @@ const (
 	KillGrace = 5 * time.Second
 )
 
+// ErrStopUnconfirmed means the remote command's cleanup could not be verified.
+var ErrStopUnconfirmed = errors.New("remote: command stop could not be confirmed")
+
 // CountingWriter counts bytes written through it. Wrap the stdout and
 // stderr passed to Run and add Bytes for audit Done. The process-group
 // marker is removed before it reaches the writers Run was given.
@@ -171,10 +174,10 @@ func acquire(ctx context.Context, c *ssh.Client) (func(), error) {
 // Run executes cmd with sh -c in its own process group. dir is the
 // remote working directory (empty keeps the server's). A non-zero
 // remote status is the exit code with a nil error. A cancelled context
-// returns -1 and ctx.Err(). A command or turn timeout returns -1 and
+// returns -1 with the cancellation cause. A command or turn timeout uses
 // context.DeadlineExceeded. Cancel and timeout send SSH SIGTERM, then
-// kill the process group, then SIGKILL after KillGrace, and return only
-// once the group is gone.
+// stop the process group, escalating to SIGKILL after KillGrace. If the
+// stop cannot be verified, the error also matches ErrStopUnconfirmed.
 func (r *Runner) Run(ctx context.Context, cmd, dir string, stdout, stderr io.Writer) (int, error) {
 	return r.RunWithTimeout(ctx, cmd, dir, stdout, stderr, r.cmdTimeout)
 }
@@ -231,29 +234,17 @@ func (r *Runner) RunWithTimeout(ctx context.Context, cmd, dir string, stdout, st
 	defer timer.Stop()
 
 	var id mark
-	have := false
 	for {
 		select {
 		case err := <-errc:
-			return mapExit(ctx, err)
+			return mapExit(ctx.Err(), err)
 		case id = <-idC:
-			have = true
+			idC = nil
 		case <-ctx.Done():
-			return r.halt(ctx.Err(), sess.Load(), id, have, idC, errc, cancelCmd)
+			return r.halt(ctx.Err(), &sess, id, idC, errc, cancelCmd)
 		case <-timer.C:
-			return r.halt(timeoutErr(ctx), sess.Load(), id, have, idC, errc, cancelCmd)
+			return r.halt(timeoutErr(ctx), &sess, id, idC, errc, cancelCmd)
 		}
-		if have {
-			break
-		}
-	}
-	select {
-	case err := <-errc:
-		return mapExit(ctx, err)
-	case <-ctx.Done():
-		return r.halt(ctx.Err(), sess.Load(), id, true, nil, errc, cancelCmd)
-	case <-timer.C:
-		return r.halt(timeoutErr(ctx), sess.Load(), id, true, nil, errc, cancelCmd)
 	}
 }
 
@@ -266,17 +257,22 @@ func timeoutErr(ctx context.Context) error {
 
 // halt signals the command, kills what the marker named, and waits until
 // ExecStarted returns. The channel stays open until that kill finishes.
-func (r *Runner) halt(reason error, sess *ssh.Session, id mark, have bool, idC <-chan mark, errc <-chan error, cancelCmd context.CancelFunc) (int, error) {
-	if !have && idC != nil {
+func (r *Runner) halt(reason error, sess *atomic.Pointer[ssh.Session], id mark, idC <-chan mark, errc <-chan error, cancelCmd context.CancelFunc) (int, error) {
+	if idC != nil {
 		select {
 		case id = <-idC:
-		case <-errc:
-			cancelCmd()
-			return -1, reason
+		case err := <-errc:
+			return mapExit(reason, err)
 		case <-time.After(300 * time.Millisecond):
 		}
 	}
-	stopErr := r.stop(sess, id)
+	// A natural exit can be ready at the same time as cancellation.
+	select {
+	case err := <-errc:
+		return mapExit(reason, err)
+	default:
+	}
+	stopErr := r.stop(sess.Load(), id)
 	cancelCmd()
 	select {
 	case <-errc:
@@ -286,7 +282,7 @@ func (r *Runner) halt(reason error, sess *ssh.Session, id mark, have bool, idC <
 		}
 	}
 	if stopErr != nil {
-		return -1, fmt.Errorf("%w: %v", reason, stopErr)
+		return -1, errors.Join(reason, ErrStopUnconfirmed, stopErr)
 	}
 	return -1, reason
 }
@@ -350,19 +346,16 @@ func killScript(id mark) string {
 	return "sh -c " + q
 }
 
-func mapExit(ctx context.Context, err error) (int, error) {
+func mapExit(reason, err error) (int, error) {
 	if err == nil {
 		return 0, nil
 	}
 	var ee *ssh.ExitError
 	if errors.As(err, &ee) {
-		if ctx.Err() != nil {
-			return -1, ctx.Err()
-		}
 		return ee.ExitStatus(), nil
 	}
-	if ctx.Err() != nil {
-		return -1, ctx.Err()
+	if reason != nil {
+		return -1, errors.Join(reason, ErrStopUnconfirmed, err)
 	}
 	return -1, err
 }

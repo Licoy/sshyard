@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/fs"
 	"path"
 	"strings"
@@ -287,7 +286,7 @@ func (h *hostTools) commandTimeout(ctx context.Context, cmd, dir string, seconds
 	h.nbytes = cwOut.Bytes() + cwErr.Bytes()
 	h.counted = true
 	text, limited := output.result()
-	if limited && ctx.Err() == nil {
+	if limited && (ctx.Err() == nil || errors.Is(err, remote.ErrStopUnconfirmed)) {
 		return commandLimitResult(text, err)
 	}
 	if err != nil {
@@ -304,17 +303,13 @@ func (h *hostTools) commandTimeout(ctx context.Context, cmd, dir string, seconds
 }
 
 func commandLimitResult(text string, err error) (string, int, error) {
-	notice := "ai.command_output_limit"
+	text = joinOut("ai.command_output_limit", text)
 	if err != nil && err != context.Canceled {
-		// A wrapped cancellation may contain a remote kill/cleanup failure;
-		// keep it visible as a failed result instead of treating it as user Stop.
-		detail := err.Error()
-		if len(detail) > 2048 {
-			detail = detail[:2048] + "…"
-		}
-		return joinOut(joinOut(notice, detail), text), 1, fmt.Errorf("command output limit: %v", err)
+		// The outer turn can distinguish a failed stop from the expected
+		// cancellation, without putting the remote diagnostic in the card.
+		return text, 1, err
 	}
-	return joinOut(notice, text), 1, nil
+	return text, 1, nil
 }
 
 func joinOut(a, b string) string {
