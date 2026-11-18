@@ -17941,6 +17941,96 @@ func (msgs Messages) RenewalNotifyNote() string {
 	return Catalog.Format(msgs.locale, "renewalNotifyNote", nil)
 }
 
+// NotificationTest says "Notification test"
+// in the language the app shows.
+func NotificationTest() string { return In(i18n.Locale()).NotificationTest() }
+
+// NotificationTest says "Notification test"
+// in the language of msgs.
+func (msgs Messages) NotificationTest() string {
+	return Catalog.Format(msgs.locale, "notificationTest", nil)
+}
+
+// NotificationTestNote says "Send a system notification to check delivery."
+// in the language the app shows.
+func NotificationTestNote() string { return In(i18n.Locale()).NotificationTestNote() }
+
+// NotificationTestNote says "Send a system notification to check delivery."
+// in the language of msgs.
+func (msgs Messages) NotificationTestNote() string {
+	return Catalog.Format(msgs.locale, "notificationTestNote", nil)
+}
+
+// SendTestNotification says "Send test notification"
+// in the language the app shows.
+func SendTestNotification() string { return In(i18n.Locale()).SendTestNotification() }
+
+// SendTestNotification says "Send test notification"
+// in the language of msgs.
+func (msgs Messages) SendTestNotification() string {
+	return Catalog.Format(msgs.locale, "sendTestNotification", nil)
+}
+
+// NotificationTestTitle says "SSHYard notification test"
+// in the language the app shows.
+func NotificationTestTitle() string { return In(i18n.Locale()).NotificationTestTitle() }
+
+// NotificationTestTitle says "SSHYard notification test"
+// in the language of msgs.
+func (msgs Messages) NotificationTestTitle() string {
+	return Catalog.Format(msgs.locale, "notificationTestTitle", nil)
+}
+
+// NotificationTestBody says "System notifications are working."
+// in the language the app shows.
+func NotificationTestBody() string { return In(i18n.Locale()).NotificationTestBody() }
+
+// NotificationTestBody says "System notifications are working."
+// in the language of msgs.
+func (msgs Messages) NotificationTestBody() string {
+	return Catalog.Format(msgs.locale, "notificationTestBody", nil)
+}
+
+// NotificationTestDenied says "Allow notifications for SSHYard in your system settings and try again."
+// in the language the app shows.
+func NotificationTestDenied() string { return In(i18n.Locale()).NotificationTestDenied() }
+
+// NotificationTestDenied says "Allow notifications for SSHYard in your system settings and try again."
+// in the language of msgs.
+func (msgs Messages) NotificationTestDenied() string {
+	return Catalog.Format(msgs.locale, "notificationTestDenied", nil)
+}
+
+// NotificationTestFailed says "Could not send the test notification."
+// in the language the app shows.
+func NotificationTestFailed() string { return In(i18n.Locale()).NotificationTestFailed() }
+
+// NotificationTestFailed says "Could not send the test notification."
+// in the language of msgs.
+func (msgs Messages) NotificationTestFailed() string {
+	return Catalog.Format(msgs.locale, "notificationTestFailed", nil)
+}
+
+// AiApprovalNotificationTitle says "AI approval required"
+// in the language the app shows.
+func AiApprovalNotificationTitle() string { return In(i18n.Locale()).AiApprovalNotificationTitle() }
+
+// AiApprovalNotificationTitle says "AI approval required"
+// in the language of msgs.
+func (msgs Messages) AiApprovalNotificationTitle() string {
+	return Catalog.Format(msgs.locale, "aiApprovalNotificationTitle", nil)
+}
+
+// AiApprovalNotificationBody says "Open SSHYard to review the request."
+// in the language the app shows.
+func AiApprovalNotificationBody() string { return In(i18n.Locale()).AiApprovalNotificationBody() }
+
+// AiApprovalNotificationBody says "Open SSHYard to review the request."
+// in the language of msgs.
+func (msgs Messages) AiApprovalNotificationBody() string {
+	return Catalog.Format(msgs.locale, "aiApprovalNotificationBody", nil)
+}
+
 // BackgroundSection says "Background"
 // in the language the app shows.
 func BackgroundSection() string { return In(i18n.Locale()).BackgroundSection() }

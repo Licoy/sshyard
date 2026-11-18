@@ -377,6 +377,11 @@ func (a *App) prefGeneral(c *ui.Context, m locales.Messages, tok theme.Tokens, s
 				*changed = true
 			}
 		})
+		g.row(m.NotificationTest(), m.NotificationTestNote(), func() {
+			if pill(c, m.SendTestNotification(), false, false, false) {
+				a.testNotification(m)
+			}
+		})
 	})
 	a.settingsSection(c, tok, icons.AppWindow, m.WindowTraySection(), func(g *settingsGroup) {
 		g.row(m.CloseBehavior(), m.CloseBehaviorNote(), func() {

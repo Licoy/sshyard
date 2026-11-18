@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -78,10 +79,10 @@ func TestRemindRenewals(t *testing.T) {
 	m := locales.In("en")
 	type note struct{ id, title, body string }
 	sent := make(chan note, 8)
-	a.p.Notify = func(id, title, body string, clicked func()) error {
-		sent <- note{id, title, body}
-		clicked()
-		return nil
+	a.p.Notify = func(_ context.Context, n Notification) (func(), error) {
+		n.OnClick()
+		sent <- note{n.ID, n.Title, n.Body}
+		return func() {}, nil
 	}
 	next := func() (note, bool) {
 		select {

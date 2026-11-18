@@ -63,10 +63,13 @@ type Platform struct {
 	CopySecret func(text string) error
 	// OpenPath opens a file in its default app; nil can't.
 	OpenPath func(path string) error
-	// Notify shows a system notification, replacing the one of the same
-	// id, and calls clicked as it is clicked; it may block, and is never
-	// called on a frame. nil can't.
-	Notify func(id, title, body string, clicked func()) error
+	// Notify shows a system notification and returns how to withdraw it.
+	// The context cancels delivery, including any wait for permission. This
+	// hook runs off the UI thread. A nil hook means notifications are unavailable.
+	Notify func(context.Context, Notification) (withdraw func(), err error)
+	// MainWindowBackground and ActivateMainWindow run on the UI thread.
+	MainWindowBackground func() bool
+	ActivateMainWindow   func()
 	// CacheDir is where files opened in another app are copied, the
 	// user's cache folder when "".
 	CacheDir string

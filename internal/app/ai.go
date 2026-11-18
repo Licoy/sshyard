@@ -126,8 +126,10 @@ type aiItem struct {
 }
 
 type aiPend struct {
-	prompt policy.Prompt
-	ch     chan policy.Answer
+	prompt             policy.Prompt
+	ch                 chan policy.Answer
+	ctx                context.Context
+	cancelNotification context.CancelFunc
 }
 
 type fullAsk struct {
@@ -1027,25 +1029,28 @@ func (p aiPrompter) Ask(ctx context.Context, pr policy.Prompt) policy.Answer {
 	if ctx.Err() != nil {
 		return policy.Cancelled
 	}
-	ch := make(chan policy.Answer, 1)
+	request := &aiPend{prompt: pr, ch: make(chan policy.Answer, 1), ctx: ctx}
 	p.a.post(func() {
 		c := p.a.conns[p.conn.id]
 		if c != p.conn || c.ai != p.state || ctx.Err() != nil {
-			select {
-			case ch <- policy.Cancelled:
-			default:
-			}
+			request.ch <- policy.Cancelled
 			return
 		}
-		c.ai.pending = &aiPend{prompt: pr, ch: ch}
+		if old := c.ai.pending; old != nil && old.cancelNotification != nil {
+			old.cancelNotification()
+		}
+		c.ai.pending = request
+		if background := p.a.p.MainWindowBackground; background != nil && background() {
+			p.a.notifyApproval(c)
+		}
 	})
 	select {
-	case ans := <-ch:
+	case ans := <-request.ch:
 		return ans
 	case <-ctx.Done():
 		p.a.post(func() {
 			c := p.a.conns[p.conn.id]
-			if c == p.conn && c.ai == p.state && c.ai.pending != nil && c.ai.pending.ch == ch {
+			if c == p.conn && c.ai == p.state && c.ai.pending == request {
 				c.ai.pending = nil
 			}
 		})
@@ -1059,6 +1064,9 @@ func (a *App) answerAI(c *conn, ans policy.Answer) {
 	}
 	p := c.ai.pending
 	c.ai.pending = nil
+	if p.cancelNotification != nil {
+		p.cancelNotification()
+	}
 	select {
 	case p.ch <- ans:
 	default:

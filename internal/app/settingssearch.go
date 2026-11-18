@@ -52,6 +52,7 @@ var settingEntries = []settingEntry{
 	{prefGeneral, locales.Messages.RememberLayout, locales.Messages.RememberLayoutNote},
 	{prefGeneral, locales.Messages.ToolPanes, locales.Messages.ToolPanesNote},
 	{prefGeneral, locales.Messages.RenewalNotify, locales.Messages.RenewalNotifyNote},
+	{prefGeneral, locales.Messages.NotificationTest, locales.Messages.NotificationTestNote},
 	{prefGeneral, locales.Messages.WindowTraySection, nil},
 	{prefGeneral, locales.Messages.CloseBehavior, locales.Messages.CloseBehaviorNote},
 	{prefGeneral, locales.Messages.TrayIconStyle, locales.Messages.TrayIconStyleNote},

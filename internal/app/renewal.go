@@ -1,7 +1,9 @@
 package app
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"maps"
 	"slices"
 	"strings"
@@ -232,7 +234,17 @@ func (a *App) remindRenewals(now time.Time) {
 		title, body, id := m.RenewalNotifyTitle(a.pv(h.Label()), renewWhen(m, days)), strings.Join(parts, " · "), h.ID
 		notify := a.p.Notify
 		// It may wait for the user to allow notifications.
-		go notify("renewal:"+id, title, body, func() { a.post(func() { a.revealHost(id) }) })
+		go func() {
+			_, err := notify(context.Background(), Notification{ID: "renewal:" + id, Title: title, Body: body, OnClick: func() {
+				a.post(func() {
+					a.activateMainWindow()
+					a.revealHost(id)
+				})
+			}})
+			if err != nil {
+				log.Printf("show renewal notification: %v", err)
+			}
+		}()
 	}
 	if maps.Equal(notified, a.settings.RenewalNotified) {
 		return
