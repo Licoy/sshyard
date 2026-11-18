@@ -985,11 +985,15 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 		if isAppShortcut(v.shortcuts, ev.Key, mods) {
 			return false
 		}
-		// Ctrl+Shift+C and V copy and paste on Linux and Windows, where
-		// Ctrl+C is the interrupt.
-		if runtime.GOOS != "darwin" && mods&(ui.Ctrl|ui.Shift) == ui.Ctrl|ui.Shift && mods&ui.Alt == 0 {
+		// Windows also uses Ctrl+V to paste and Ctrl+C to copy a selection.
+		windowsCtrl := runtime.GOOS == "windows" && mods == ui.Ctrl
+		shiftedClipboard := runtime.GOOS != "darwin" && mods&(ui.Ctrl|ui.Shift) == ui.Ctrl|ui.Shift && mods&ui.Alt == 0
+		if windowsCtrl || shiftedClipboard {
 			switch ev.Key {
 			case ui.KeyC:
+				if windowsCtrl && !v.selected {
+					break // Let Ctrl+C interrupt the shell when there is no selection.
+				}
 				if s := v.SelectedText(); s != "" {
 					cb.WriteClipboard(s)
 				}

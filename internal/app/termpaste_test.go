@@ -1,6 +1,7 @@
 package app
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/Licoy/sshyard/internal/vt"
@@ -57,6 +58,45 @@ func TestPasteClipboardImage(t *testing.T) {
 			}
 			if tc.want == "\x16" && len(fanned) != 0 {
 				t.Errorf("Ctrl+V went to the other terminals too: %q", fanned)
+			}
+		})
+	}
+}
+
+func TestWindowsTerminalClipboardShortcuts(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows terminal shortcuts")
+	}
+	const selected = "remote output"
+	const copied = "外部文本"
+	for _, tc := range []struct {
+		name          string
+		mods          ui.Modifiers
+		key           ui.Key
+		selection     bool
+		clipboard     string
+		wantClipboard string
+		wantInput     string
+	}{
+		{"paste text", ui.Ctrl, ui.KeyV, false, copied, copied, "\x1b[200~" + copied + "\x1b[201~"},
+		{"paste empty clipboard", ui.Ctrl, ui.KeyV, false, "", "", ""},
+		{"copy selection", ui.Ctrl, ui.KeyC, true, copied, selected, ""},
+		{"interrupt without a selection", ui.Ctrl, ui.KeyC, false, copied, copied, "\x03"},
+		{"shifted paste", ui.Ctrl | ui.Shift, ui.KeyV, false, copied, copied, "\x1b[200~" + copied + "\x1b[201~"},
+		{"shifted copy without a selection", ui.Ctrl | ui.Shift, ui.KeyC, false, copied, copied, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var sent []byte
+			term := vt.New(20, 4)
+			term.Write([]byte("\x1b[?2004h" + selected))
+			tv := newTermView(recordTarget{term: term, out: &sent}, 13)
+			tv.selected, tv.selB = tc.selection, vt.Pos{Col: len(selected) - 1}
+			cb := &keptClipboard{text: tc.clipboard}
+			if !tv.input(ui.InputEvent{Kind: ui.InputKeyDown, Key: tc.key, Mods: tc.mods}, cb) {
+				t.Fatal("terminal did not handle the shortcut")
+			}
+			if cb.text != tc.wantClipboard || string(sent) != tc.wantInput {
+				t.Errorf("clipboard %q, sent %q; want clipboard %q, sent %q", cb.text, sent, tc.wantClipboard, tc.wantInput)
 			}
 		})
 	}

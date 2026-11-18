@@ -208,7 +208,7 @@ func pasteBytes(text string, m vt.Modes) []byte {
 }
 
 // appMods are the modifiers of SSHYard's own shortcuts: Cmd on macOS, and
-// Ctrl+Shift elsewhere, since Ctrl alone belongs to the shell.
+// Ctrl+Shift elsewhere, leaving plain Ctrl combinations to the terminal.
 var appMods = func() ui.Modifiers {
 	if runtime.GOOS == "darwin" {
 		return ui.Super
