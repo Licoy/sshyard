@@ -73,6 +73,22 @@ func TestTitleBar(t *testing.T) {
 	}
 }
 
+func TestTitleBarDragKeepsTerminalInput(t *testing.T) {
+	srv, sh := startScript(t, "ready")
+	a, tt := newTestApp(t)
+	connected(t, a, tt, srv)
+	tt.Frame()
+	tt.Type("before drag")
+	expectRead(t, tt, sh, "before drag")
+
+	// Drag the empty part of the title bar, then type without clicking the terminal.
+	tt.Press(600, 8)
+	tt.Move(660, 28)
+	tt.Release(660, 28)
+	tt.Type("after drag")
+	expectRead(t, tt, sh, "after drag")
+}
+
 // TestTabs switches between the tabs with a click.
 func TestTabs(t *testing.T) {
 	a, tt := newTestApp(t)

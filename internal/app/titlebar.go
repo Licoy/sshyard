@@ -29,7 +29,9 @@ func (a *App) SetMaximized(on bool) { a.post(func() { a.maximized = on }) }
 // on the band's middle, the traffic lights' line (barLine).
 func (a *App) titleBar(c *ui.Context, m locales.Messages, tok theme.Tokens, clear bool) {
 	bar := c.TitleBar()
-	row := ui.Row(c.Key("titlebar")).Height(bandHeight(c)).Shrink(0).FillWidth().AlignItems(ui.Center).DragWindow()
+	// Moving the window should leave keyboard input with the current pane.
+	row := ui.Row(c.Key("titlebar")).Height(bandHeight(c)).Shrink(0).FillWidth().AlignItems(ui.Center).
+		DragWindow().KeepFocus()
 	if a.hasBackground() || !clear {
 		row.Background(a.chromeFill(tok.Sidebar))
 	}
