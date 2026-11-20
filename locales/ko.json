@@ -221,6 +221,7 @@
   "authAsk": "매번 비밀번호 묻기",
   "authAuto": "자동(로컬 키, 실패 시 비밀번호 요청)",
   "authAgent": "SSH 에이전트",
+  "authNone": "비밀번호 없음",
   "credKindPassword": "비밀번호",
   "credKindKey": "키",
   "inUse": "{names}에서 아직 사용 중입니다.",

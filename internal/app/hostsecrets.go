@@ -14,7 +14,7 @@ import (
 
 // Host-only choices stay out of quick connect and credential rebinding.
 func (a *App) hostAuthChoices(m locales.Messages) []authChoice {
-	return append([]authChoice{{m.CredKindPassword(), assets.AuthPassword, ""}, {m.CredKindKey(), assets.AuthKey, ""}}, a.authChoices(m)...)
+	return append([]authChoice{{m.CredKindPassword(), assets.AuthPassword, ""}, {m.CredKindKey(), assets.AuthKey, ""}, {m.AuthNone(), assets.AuthNone, ""}}, a.authChoices(m)...)
 }
 
 func (a *App) hostSecretFields(c *ui.Context, m locales.Messages, tok theme.Tokens, f *hostForm) {

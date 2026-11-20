@@ -55,8 +55,10 @@ const (
 	// AuthAsk keeps nothing: the password is asked at each connection
 	// and held in memory only.
 	AuthAsk AuthMethod = "ask"
-	// AuthNone is a Telnet or serial host logged in to by hand, in the
-	// terminal: its prompts are not answered.
+	// AuthNone keeps nothing. A Telnet or serial host is logged in to by
+	// hand, in the terminal: its prompts are not answered. An SSH host
+	// logs in with no password or key: the server's "none" method or an
+	// empty password, any question it asks put to the user.
 	AuthNone AuthMethod = "none"
 )
 
@@ -325,7 +327,7 @@ func (h Host) Validate() error {
 		return &FieldError{"port", "out of range"}
 	case h.User == "":
 		return &FieldError{"user", "required"}
-	case h.Auth != AuthPassword && h.Auth != AuthKey && h.Auth != AuthCredential && h.Auth != AuthAgent && h.Auth != AuthAsk:
+	case h.Auth != AuthPassword && h.Auth != AuthKey && h.Auth != AuthCredential && h.Auth != AuthAgent && h.Auth != AuthAsk && h.Auth != AuthNone:
 		return &FieldError{"auth", "unknown method"}
 	case h.Auth == AuthCredential && h.CredentialID == "":
 		return &FieldError{"credential", "required"}

@@ -221,6 +221,7 @@
   "authAsk": "每次询问密码",
   "authAuto": "自动（本机密钥，失败再询问密码）",
   "authAgent": "SSH Agent",
+  "authNone": "无密码",
   "credKindPassword": "密码",
   "credKindKey": "密钥",
   "inUse": "仍被 {names} 使用。",

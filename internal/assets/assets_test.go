@@ -170,6 +170,9 @@ func TestValidation(t *testing.T) {
 	if _, err := s.Add(Host{Address: "bad host", User: "u"}); err == nil {
 		t.Error("address with a space accepted")
 	}
+	if h, err := s.Add(Host{Address: "h", User: "u", Auth: AuthNone}); err != nil || h.Auth != AuthNone {
+		t.Errorf("SSH host without a password: %+v, %v", h, err)
+	}
 }
 
 func TestTargetAndAddr(t *testing.T) {

@@ -1373,6 +1373,12 @@ func (a *App) credentials(c *conn, h assets.Host) (session.Credentials, error) {
 		return a.hostCredentials(h, typed)
 	case assets.AuthAgent:
 		out.Agent = true
+	case assets.AuthNone:
+		if !h.SSH() {
+			// A Telnet or serial host logged in to by hand.
+			return out, session.ErrNoCredentials
+		}
+		out.None = true
 	case assets.AuthCredential:
 		cr, ok := a.store.Credential(h.CredentialID)
 		if !ok {

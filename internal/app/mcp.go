@@ -405,7 +405,7 @@ func (a *App) mcpLogin(h assets.Host) error {
 	}
 	for _, hop := range append(path, h) {
 		switch hop.Auth {
-		case assets.AuthAgent:
+		case assets.AuthAgent, assets.AuthNone:
 		case assets.AuthPassword, assets.AuthKey:
 			if _, err := a.hostCredentials(hop, nil); err != nil {
 				if errors.Is(err, session.ErrNoCredentials) || errors.Is(err, errMCPNeedsInput) {
@@ -438,6 +438,10 @@ func (a *App) mcpCredentials(h assets.Host) (session.Credentials, error) {
 	}
 	if h.Auth == assets.AuthAgent {
 		out.Agent = true
+		return out, nil
+	}
+	if h.Auth == assets.AuthNone {
+		out.None = true
 		return out, nil
 	}
 	if h.Auth == assets.AuthAsk && a.lkMCP.Load() {

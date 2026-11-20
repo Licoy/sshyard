@@ -44,6 +44,8 @@ type Server struct {
 	Password string
 	// AuthorizedKey, when set, may log in too.
 	AuthorizedKey ssh.PublicKey
+	// NoClientAuth logs anyone in with the "none" method.
+	NoClientAuth atomic.Bool
 	// AuthorizedKeysFile, when set, is read at each public-key attempt;
 	// any key in it may log in. As with OpenSSH's StrictModes, it is
 	// ignored when it or its directory is writable by group or others.
@@ -198,6 +200,7 @@ func (s *Server) config() *ssh.ServerConfig {
 			}
 			return nil, fmt.Errorf("unknown key")
 		},
+		NoClientAuth:  s.NoClientAuth.Load(),
 		ServerVersion: "SSH-2.0-SSHYardTest",
 	}
 	s.mu.Lock()

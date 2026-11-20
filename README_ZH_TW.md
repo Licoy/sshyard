@@ -72,7 +72,7 @@ SSHYard 是一款原生桌面 SSH / SFTP 用戶端，支援 macOS、Windows 和 
 
 - **主機與憑證**
   - 從 SSH 設定匯入，從 Xshell、MobaXterm、PuTTY 等十種用戶端遷移，或貼上文字批次匯入；也可透過 `user@host:port` 快速連線
-  - 支援密碼、OpenSSH / PEM / PuTTY 金鑰、OpenSSH 憑證和 SSH Agent
+  - 支援密碼、OpenSSH / PEM / PuTTY 金鑰、OpenSSH 憑證、SSH Agent 和無密碼登入
   - 群組不限層級，可拖動整理，支援多選與測速
   - 記錄服務商、續費週期和備註，續費前發送提醒
   - 憑證本地加密儲存，支援產生金鑰和安裝公鑰；主機金鑰變更時核對指紋，並可管理已知主機

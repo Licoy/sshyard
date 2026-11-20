@@ -221,6 +221,7 @@
   "authAsk": "Ask for password each time",
   "authAuto": "Auto (local keys, then ask for password)",
   "authAgent": "SSH agent",
+  "authNone": "No password",
   "credKindPassword": "Password",
   "credKindKey": "Key",
   "inUse": "Still in use by {names}.",

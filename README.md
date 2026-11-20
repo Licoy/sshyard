@@ -72,7 +72,7 @@ SSHYard is a native desktop SSH / SFTP client for macOS, Windows and Linux, brin
 
 - **Hosts and credentials**
   - Import from SSH config, migrate from ten clients such as Xshell, MobaXterm and PuTTY, or paste a list of hosts as text; or connect quickly with `user@host:port`
-  - Passwords, OpenSSH / PEM / PuTTY keys, OpenSSH certificates and SSH agent support
+  - Passwords, OpenSSH / PEM / PuTTY keys, OpenSSH certificates, SSH agent and password-less login support
   - Nested groups you can rearrange by dragging, with multi-select and latency tests
   - Provider, renewal schedule and notes for each host, with a reminder before renewal
   - Local encrypted credential storage, key generation and public-key installation; changed host keys are checked by fingerprint, and known hosts can be managed

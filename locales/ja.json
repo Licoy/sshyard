@@ -221,6 +221,7 @@
   "authAsk": "毎回パスワードを確認",
   "authAuto": "自動（ローカルの鍵、失敗したらパスワードを尋ねる）",
   "authAgent": "SSHエージェント",
+  "authNone": "パスワードなし",
   "credKindPassword": "パスワード",
   "credKindKey": "鍵",
   "inUse": "{names}が引き続き使用中です。",

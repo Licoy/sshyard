@@ -2257,6 +2257,16 @@ func (msgs Messages) AuthAgent() string {
 	return Catalog.Format(msgs.locale, "authAgent", nil)
 }
 
+// AuthNone says "No password"
+// in the language the app shows.
+func AuthNone() string { return In(i18n.Locale()).AuthNone() }
+
+// AuthNone says "No password"
+// in the language of msgs.
+func (msgs Messages) AuthNone() string {
+	return Catalog.Format(msgs.locale, "authNone", nil)
+}
+
 // CredKindPassword says "Password"
 // in the language the app shows.
 func CredKindPassword() string { return In(i18n.Locale()).CredKindPassword() }

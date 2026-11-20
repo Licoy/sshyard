@@ -676,6 +676,9 @@ func (a *App) authText(m locales.Messages, h assets.Host) string {
 			return m.AuthLabelCredential(cr.Name)
 		}
 	case assets.AuthNone:
+		if h.SSH() {
+			return m.AuthNone()
+		}
 		return m.AuthManual()
 	}
 	return m.MetricsDash()

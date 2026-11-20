@@ -32,6 +32,10 @@ type Credentials struct {
 	Certificate []byte
 	// Agent signs with the system SSH agent's keys.
 	Agent bool
+	// None logs in with no password or key: the server's "none" method,
+	// then an empty password, then keyboard-interactive, its questions
+	// asked through Config.Ask.
+	None bool
 	// User, when set, logs in instead of Config.User (a credential's
 	// own user name).
 	User string
@@ -186,6 +190,9 @@ func authMethods(cr Credentials, kbd ssh.KeyboardInteractiveChallenge) ([]ssh.Au
 	}
 	if cr.Password != "" {
 		ms = append(ms, ssh.Password(cr.Password))
+	} else if cr.None {
+		// x/crypto tries "none" first on its own.
+		ms = append(ms, ssh.Password(""))
 	}
 	// Last, as the one that may ask the user: after a key, or along with
 	// one, the server may want a one-time password too.

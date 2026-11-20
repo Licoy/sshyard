@@ -72,7 +72,7 @@ SSHYard는 macOS, Windows 및 Linux용 네이티브 데스크톱 SSH / SFTP 클�
 
 - **호스트 및 자격 증명**
   - SSH 설정에서 가져오기, Xshell, MobaXterm, PuTTY 등 10종의 클라이언트에서 마이그레이션, 텍스트로 일괄 가져오기 또는 `user@host:port`로 빠르게 연결
-  - 비밀번호, OpenSSH / PEM / PuTTY 키, OpenSSH 인증서 및 SSH 에이전트 지원
+  - 비밀번호, OpenSSH / PEM / PuTTY 키, OpenSSH 인증서, SSH 에이전트 및 비밀번호 없는 로그인 지원
   - 단계 제한 없는 그룹, 드래그로 정리, 다중 선택과 응답 속도 측정
   - 호스트별 제공업체, 갱신 주기 및 메모 기록과 갱신 전 알림
   - 로컬 암호화 자격 증명 저장소, 키 생성 및 공개 키 설치, 호스트 키가 바뀌면 지문을 확인하고 알려진 호스트 관리
