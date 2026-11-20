@@ -133,7 +133,7 @@ var actions = append([]action{
 	{actSessionLogs, locales.Messages.SessionLogs, icons.FileText, keymap.Combo{Mods: aiMods, Key: ui.KeyL}, false},
 	{actHistory, locales.Messages.CommandHistory, icons.History, keymap.Combo{Mods: aiMods, Key: ui.KeyH}, false},
 	{actCompletePath, locales.Messages.CompletePath, icons.PathList, keymap.Combo{Mods: appMods, Key: ui.KeyJ}, false},
-	{actLock, locales.Messages.AppLockAction, icons.Lock, keymap.Combo{Mods: appMods, Key: ui.KeyL}, false},
+	{actLock, locales.Messages.AppLockAction, icons.Lock, keymap.Combo{Mods: appMods, Key: ui.KeyY}, false},
 }, tabActions()...)
 
 // actionOf is the action with id.
