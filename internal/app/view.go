@@ -21,12 +21,21 @@ func (a *App) View(c *ui.Context) {
 	}
 	a.drain()
 	a.applyZoom(c, true)
-	for _, t := range a.toasts {
-		c.AddToast(t(locales.In(c.Locale())))
+	c.Root().ObserveInput(a.noteInput)
+	// What toasts would tell, which may name hosts, waits for the unlock.
+	locked := a.ready() && a.lockGate(c)
+	if !locked {
+		for _, t := range a.toasts {
+			c.AddToast(t(locales.In(c.Locale())))
+		}
+		a.toasts = nil
 	}
-	a.toasts = nil
 	if !a.ready() {
 		a.unlockView(c)
+		return
+	}
+	if locked {
+		a.lockView(c)
 		return
 	}
 	a.commitMetricsMount()
@@ -157,6 +166,7 @@ func (a *App) View(c *ui.Context) {
 	a.costView(c, m)
 	a.unlockModal(c, m, tok)
 	a.masterPasswordView(c, m)
+	a.lockFormView(c, m)
 	a.observeLayout(c)
 }
 

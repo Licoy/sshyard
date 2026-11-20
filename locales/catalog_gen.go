@@ -19888,3 +19888,433 @@ func FileSearchResults() string { return In(i18n.Locale()).FileSearchResults() }
 func (msgs Messages) FileSearchResults() string {
 	return Catalog.Format(msgs.locale, "fileSearchResults", nil)
 }
+
+// SecuritySection says "Security"
+// in the language the app shows.
+func SecuritySection() string { return In(i18n.Locale()).SecuritySection() }
+
+// SecuritySection says "Security"
+// in the language of msgs.
+func (msgs Messages) SecuritySection() string {
+	return Catalog.Format(msgs.locale, "securitySection", nil)
+}
+
+// SecurityDesc says "Lock SSHYard with a password or one-time codes, and choose when it locks by itself."
+// in the language the app shows.
+func SecurityDesc() string { return In(i18n.Locale()).SecurityDesc() }
+
+// SecurityDesc says "Lock SSHYard with a password or one-time codes, and choose when it locks by itself."
+// in the language of msgs.
+func (msgs Messages) SecurityDesc() string {
+	return Catalog.Format(msgs.locale, "securityDesc", nil)
+}
+
+// AppLockSection says "App Lock"
+// in the language the app shows.
+func AppLockSection() string { return In(i18n.Locale()).AppLockSection() }
+
+// AppLockSection says "App Lock"
+// in the language of msgs.
+func (msgs Messages) AppLockSection() string {
+	return Catalog.Format(msgs.locale, "appLockSection", nil)
+}
+
+// AppLockMethod says "Unlock with"
+// in the language the app shows.
+func AppLockMethod() string { return In(i18n.Locale()).AppLockMethod() }
+
+// AppLockMethod says "Unlock with"
+// in the language of msgs.
+func (msgs Messages) AppLockMethod() string {
+	return Catalog.Format(msgs.locale, "appLockMethod", nil)
+}
+
+// AppLockOff says "Off"
+// in the language the app shows.
+func AppLockOff() string { return In(i18n.Locale()).AppLockOff() }
+
+// AppLockOff says "Off"
+// in the language of msgs.
+func (msgs Messages) AppLockOff() string {
+	return Catalog.Format(msgs.locale, "appLockOff", nil)
+}
+
+// AppLockPassword says "Password"
+// in the language the app shows.
+func AppLockPassword() string { return In(i18n.Locale()).AppLockPassword() }
+
+// AppLockPassword says "Password"
+// in the language of msgs.
+func (msgs Messages) AppLockPassword() string {
+	return Catalog.Format(msgs.locale, "appLockPassword", nil)
+}
+
+// AppLockTotp says "One-time code"
+// in the language the app shows.
+func AppLockTotp() string { return In(i18n.Locale()).AppLockTotp() }
+
+// AppLockTotp says "One-time code"
+// in the language of msgs.
+func (msgs Messages) AppLockTotp() string {
+	return Catalog.Format(msgs.locale, "appLockTotp", nil)
+}
+
+// AppLockBoth says "Password and code"
+// in the language the app shows.
+func AppLockBoth() string { return In(i18n.Locale()).AppLockBoth() }
+
+// AppLockBoth says "Password and code"
+// in the language of msgs.
+func (msgs Messages) AppLockBoth() string {
+	return Catalog.Format(msgs.locale, "appLockBoth", nil)
+}
+
+// AppLockEnableEllipsis says "Turn On…"
+// in the language the app shows.
+func AppLockEnableEllipsis() string { return In(i18n.Locale()).AppLockEnableEllipsis() }
+
+// AppLockEnableEllipsis says "Turn On…"
+// in the language of msgs.
+func (msgs Messages) AppLockEnableEllipsis() string {
+	return Catalog.Format(msgs.locale, "appLockEnableEllipsis", nil)
+}
+
+// AppLockChangeEllipsis says "Change…"
+// in the language the app shows.
+func AppLockChangeEllipsis() string { return In(i18n.Locale()).AppLockChangeEllipsis() }
+
+// AppLockChangeEllipsis says "Change…"
+// in the language of msgs.
+func (msgs Messages) AppLockChangeEllipsis() string {
+	return Catalog.Format(msgs.locale, "appLockChangeEllipsis", nil)
+}
+
+// AppLockDisableEllipsis says "Turn Off…"
+// in the language the app shows.
+func AppLockDisableEllipsis() string { return In(i18n.Locale()).AppLockDisableEllipsis() }
+
+// AppLockDisableEllipsis says "Turn Off…"
+// in the language of msgs.
+func (msgs Messages) AppLockDisableEllipsis() string {
+	return Catalog.Format(msgs.locale, "appLockDisableEllipsis", nil)
+}
+
+// AppLockTurnOff says "Turn Off"
+// in the language the app shows.
+func AppLockTurnOff() string { return In(i18n.Locale()).AppLockTurnOff() }
+
+// AppLockTurnOff says "Turn Off"
+// in the language of msgs.
+func (msgs Messages) AppLockTurnOff() string {
+	return Catalog.Format(msgs.locale, "appLockTurnOff", nil)
+}
+
+// AppLockIdle says "Lock automatically"
+// in the language the app shows.
+func AppLockIdle() string { return In(i18n.Locale()).AppLockIdle() }
+
+// AppLockIdle says "Lock automatically"
+// in the language of msgs.
+func (msgs Messages) AppLockIdle() string {
+	return Catalog.Format(msgs.locale, "appLockIdle", nil)
+}
+
+// AppLockIdleNote says "Locks once SSHYard has had no keyboard or mouse input for this long."
+// in the language the app shows.
+func AppLockIdleNote() string { return In(i18n.Locale()).AppLockIdleNote() }
+
+// AppLockIdleNote says "Locks once SSHYard has had no keyboard or mouse input for this long."
+// in the language of msgs.
+func (msgs Messages) AppLockIdleNote() string {
+	return Catalog.Format(msgs.locale, "appLockIdleNote", nil)
+}
+
+// AppLockMinutes says "{n} min"
+// in the language the app shows.
+func AppLockMinutes(n string) string { return In(i18n.Locale()).AppLockMinutes(n) }
+
+// AppLockMinutes says "{n} min"
+// in the language of msgs.
+func (msgs Messages) AppLockMinutes(n string) string {
+	return Catalog.Format(msgs.locale, "appLockMinutes", map[string]any{"n": n})
+}
+
+// AppLockNever says "Never"
+// in the language the app shows.
+func AppLockNever() string { return In(i18n.Locale()).AppLockNever() }
+
+// AppLockNever says "Never"
+// in the language of msgs.
+func (msgs Messages) AppLockNever() string {
+	return Catalog.Format(msgs.locale, "appLockNever", nil)
+}
+
+// AppLockOnSleep says "Lock when the screen locks or the computer sleeps"
+// in the language the app shows.
+func AppLockOnSleep() string { return In(i18n.Locale()).AppLockOnSleep() }
+
+// AppLockOnSleep says "Lock when the screen locks or the computer sleeps"
+// in the language of msgs.
+func (msgs Messages) AppLockOnSleep() string {
+	return Catalog.Format(msgs.locale, "appLockOnSleep", nil)
+}
+
+// AppLockNow says "Lock now"
+// in the language the app shows.
+func AppLockNow() string { return In(i18n.Locale()).AppLockNow() }
+
+// AppLockNow says "Lock now"
+// in the language of msgs.
+func (msgs Messages) AppLockNow() string {
+	return Catalog.Format(msgs.locale, "appLockNow", nil)
+}
+
+// AppLockAction says "Lock SSHYard"
+// in the language the app shows.
+func AppLockAction() string { return In(i18n.Locale()).AppLockAction() }
+
+// AppLockAction says "Lock SSHYard"
+// in the language of msgs.
+func (msgs Messages) AppLockAction() string {
+	return Catalog.Format(msgs.locale, "appLockAction", nil)
+}
+
+// AppLockScopeNote says "The app lock keeps your hosts and sessions from anyone else using this computer; while it is locked, sessions, forwar…"
+// in the language the app shows.
+func AppLockScopeNote() string { return In(i18n.Locale()).AppLockScopeNote() }
+
+// AppLockScopeNote says "The app lock keeps your hosts and sessions from anyone else using this computer; while it is locked, sessions, forwar…"
+// in the language of msgs.
+func (msgs Messages) AppLockScopeNote() string {
+	return Catalog.Format(msgs.locale, "appLockScopeNote", nil)
+}
+
+// AppLockedTitle says "SSHYard is locked"
+// in the language the app shows.
+func AppLockedTitle() string { return In(i18n.Locale()).AppLockedTitle() }
+
+// AppLockedTitle says "SSHYard is locked"
+// in the language of msgs.
+func (msgs Messages) AppLockedTitle() string {
+	return Catalog.Format(msgs.locale, "appLockedTitle", nil)
+}
+
+// AppLockedPasswordPrompt says "Enter your password to unlock."
+// in the language the app shows.
+func AppLockedPasswordPrompt() string { return In(i18n.Locale()).AppLockedPasswordPrompt() }
+
+// AppLockedPasswordPrompt says "Enter your password to unlock."
+// in the language of msgs.
+func (msgs Messages) AppLockedPasswordPrompt() string {
+	return Catalog.Format(msgs.locale, "appLockedPasswordPrompt", nil)
+}
+
+// AppLockedCodePrompt says "Enter the code from your authenticator app to unlock."
+// in the language the app shows.
+func AppLockedCodePrompt() string { return In(i18n.Locale()).AppLockedCodePrompt() }
+
+// AppLockedCodePrompt says "Enter the code from your authenticator app to unlock."
+// in the language of msgs.
+func (msgs Messages) AppLockedCodePrompt() string {
+	return Catalog.Format(msgs.locale, "appLockedCodePrompt", nil)
+}
+
+// AppLockedBothPrompt says "Enter your password and the code from your authenticator app to unlock."
+// in the language the app shows.
+func AppLockedBothPrompt() string { return In(i18n.Locale()).AppLockedBothPrompt() }
+
+// AppLockedBothPrompt says "Enter your password and the code from your authenticator app to unlock."
+// in the language of msgs.
+func (msgs Messages) AppLockedBothPrompt() string {
+	return Catalog.Format(msgs.locale, "appLockedBothPrompt", nil)
+}
+
+// AppLockUnlock says "Unlock"
+// in the language the app shows.
+func AppLockUnlock() string { return In(i18n.Locale()).AppLockUnlock() }
+
+// AppLockUnlock says "Unlock"
+// in the language of msgs.
+func (msgs Messages) AppLockUnlock() string {
+	return Catalog.Format(msgs.locale, "appLockUnlock", nil)
+}
+
+// AppLockCode says "Code"
+// in the language the app shows.
+func AppLockCode() string { return In(i18n.Locale()).AppLockCode() }
+
+// AppLockCode says "Code"
+// in the language of msgs.
+func (msgs Messages) AppLockCode() string {
+	return Catalog.Format(msgs.locale, "appLockCode", nil)
+}
+
+// AppLockWrong says "The password or code is incorrect."
+// in the language the app shows.
+func AppLockWrong() string { return In(i18n.Locale()).AppLockWrong() }
+
+// AppLockWrong says "The password or code is incorrect."
+// in the language of msgs.
+func (msgs Messages) AppLockWrong() string {
+	return Catalog.Format(msgs.locale, "appLockWrong", nil)
+}
+
+// AppLockWait says "Too many attempts. Try again in {seconds} s."
+// in the language the app shows.
+func AppLockWait(seconds string) string { return In(i18n.Locale()).AppLockWait(seconds) }
+
+// AppLockWait says "Too many attempts. Try again in {seconds} s."
+// in the language of msgs.
+func (msgs Messages) AppLockWait(seconds string) string {
+	return Catalog.Format(msgs.locale, "appLockWait", map[string]any{"seconds": seconds})
+}
+
+// AppLockSecretMissing says "The one-time code secret is missing from the credential store. Quit SSHYard and delete applock.json in the data folde…"
+// in the language the app shows.
+func AppLockSecretMissing() string { return In(i18n.Locale()).AppLockSecretMissing() }
+
+// AppLockSecretMissing says "The one-time code secret is missing from the credential store. Quit SSHYard and delete applock.json in the data folde…"
+// in the language of msgs.
+func (msgs Messages) AppLockSecretMissing() string {
+	return Catalog.Format(msgs.locale, "appLockSecretMissing", nil)
+}
+
+// AppLockBroken says "The app lock settings can't be read. Quit SSHYard and delete applock.json in the data folder to remove the lock."
+// in the language the app shows.
+func AppLockBroken() string { return In(i18n.Locale()).AppLockBroken() }
+
+// AppLockBroken says "The app lock settings can't be read. Quit SSHYard and delete applock.json in the data folder to remove the lock."
+// in the language of msgs.
+func (msgs Messages) AppLockBroken() string {
+	return Catalog.Format(msgs.locale, "appLockBroken", nil)
+}
+
+// AppLockForgot says "Can't unlock? Quit SSHYard and delete applock.json in the data folder."
+// in the language the app shows.
+func AppLockForgot() string { return In(i18n.Locale()).AppLockForgot() }
+
+// AppLockForgot says "Can't unlock? Quit SSHYard and delete applock.json in the data folder."
+// in the language of msgs.
+func (msgs Messages) AppLockForgot() string {
+	return Catalog.Format(msgs.locale, "appLockForgot", nil)
+}
+
+// AppLockShowMain says "Unlock in the Main Window"
+// in the language the app shows.
+func AppLockShowMain() string { return In(i18n.Locale()).AppLockShowMain() }
+
+// AppLockShowMain says "Unlock in the Main Window"
+// in the language of msgs.
+func (msgs Messages) AppLockShowMain() string {
+	return Catalog.Format(msgs.locale, "appLockShowMain", nil)
+}
+
+// AppLockEnableTitle says "Turn On App Lock"
+// in the language the app shows.
+func AppLockEnableTitle() string { return In(i18n.Locale()).AppLockEnableTitle() }
+
+// AppLockEnableTitle says "Turn On App Lock"
+// in the language of msgs.
+func (msgs Messages) AppLockEnableTitle() string {
+	return Catalog.Format(msgs.locale, "appLockEnableTitle", nil)
+}
+
+// AppLockChangeTitle says "Change App Lock"
+// in the language the app shows.
+func AppLockChangeTitle() string { return In(i18n.Locale()).AppLockChangeTitle() }
+
+// AppLockChangeTitle says "Change App Lock"
+// in the language of msgs.
+func (msgs Messages) AppLockChangeTitle() string {
+	return Catalog.Format(msgs.locale, "appLockChangeTitle", nil)
+}
+
+// AppLockDisableTitle says "Turn Off App Lock"
+// in the language the app shows.
+func AppLockDisableTitle() string { return In(i18n.Locale()).AppLockDisableTitle() }
+
+// AppLockDisableTitle says "Turn Off App Lock"
+// in the language of msgs.
+func (msgs Messages) AppLockDisableTitle() string {
+	return Catalog.Format(msgs.locale, "appLockDisableTitle", nil)
+}
+
+// AppLockCurrentPassword says "Current password"
+// in the language the app shows.
+func AppLockCurrentPassword() string { return In(i18n.Locale()).AppLockCurrentPassword() }
+
+// AppLockCurrentPassword says "Current password"
+// in the language of msgs.
+func (msgs Messages) AppLockCurrentPassword() string {
+	return Catalog.Format(msgs.locale, "appLockCurrentPassword", nil)
+}
+
+// AppLockCurrentCode says "Current code"
+// in the language the app shows.
+func AppLockCurrentCode() string { return In(i18n.Locale()).AppLockCurrentCode() }
+
+// AppLockCurrentCode says "Current code"
+// in the language of msgs.
+func (msgs Messages) AppLockCurrentCode() string {
+	return Catalog.Format(msgs.locale, "appLockCurrentCode", nil)
+}
+
+// AppLockScan says "Scan the QR code with an authenticator app, such as Google Authenticator, Microsoft Authenticator or 1Password, or ty…"
+// in the language the app shows.
+func AppLockScan() string { return In(i18n.Locale()).AppLockScan() }
+
+// AppLockScan says "Scan the QR code with an authenticator app, such as Google Authenticator, Microsoft Authenticator or 1Password, or ty…"
+// in the language of msgs.
+func (msgs Messages) AppLockScan() string {
+	return Catalog.Format(msgs.locale, "appLockScan", nil)
+}
+
+// AppLockSetupKey says "Setup key"
+// in the language the app shows.
+func AppLockSetupKey() string { return In(i18n.Locale()).AppLockSetupKey() }
+
+// AppLockSetupKey says "Setup key"
+// in the language of msgs.
+func (msgs Messages) AppLockSetupKey() string {
+	return Catalog.Format(msgs.locale, "appLockSetupKey", nil)
+}
+
+// AppLockCopyKey says "Copy Setup Key"
+// in the language the app shows.
+func AppLockCopyKey() string { return In(i18n.Locale()).AppLockCopyKey() }
+
+// AppLockCopyKey says "Copy Setup Key"
+// in the language of msgs.
+func (msgs Messages) AppLockCopyKey() string {
+	return Catalog.Format(msgs.locale, "appLockCopyKey", nil)
+}
+
+// AppLockQrAlt says "QR code for the authenticator app"
+// in the language the app shows.
+func AppLockQrAlt() string { return In(i18n.Locale()).AppLockQrAlt() }
+
+// AppLockQrAlt says "QR code for the authenticator app"
+// in the language of msgs.
+func (msgs Messages) AppLockQrAlt() string {
+	return Catalog.Format(msgs.locale, "appLockQrAlt", nil)
+}
+
+// AppLockKeepAuthenticator says "The authenticator app already set up keeps giving the codes."
+// in the language the app shows.
+func AppLockKeepAuthenticator() string { return In(i18n.Locale()).AppLockKeepAuthenticator() }
+
+// AppLockKeepAuthenticator says "The authenticator app already set up keeps giving the codes."
+// in the language of msgs.
+func (msgs Messages) AppLockKeepAuthenticator() string {
+	return Catalog.Format(msgs.locale, "appLockKeepAuthenticator", nil)
+}
+
+// AppLockCodeWrong says "The code doesn't match. Check that the time on your phone and computer is right, then enter the current code."
+// in the language the app shows.
+func AppLockCodeWrong() string { return In(i18n.Locale()).AppLockCodeWrong() }
+
+// AppLockCodeWrong says "The code doesn't match. Check that the time on your phone and computer is right, then enter the current code."
+// in the language of msgs.
+func (msgs Messages) AppLockCodeWrong() string {
+	return Catalog.Format(msgs.locale, "appLockCodeWrong", nil)
+}

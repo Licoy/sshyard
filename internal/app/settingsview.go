@@ -31,6 +31,7 @@ type prefPage string
 
 const (
 	prefGeneral     prefPage = "general"
+	prefSecurity    prefPage = "security"
 	prefAppearance  prefPage = "appearance"
 	prefTerminal    prefPage = "terminal"
 	prefMonitoring  prefPage = "monitoring"
@@ -64,6 +65,7 @@ func prefGroups(m locales.Messages) []prefGroup {
 	return []prefGroup{
 		{m.SettingsGroupPreferences(), []prefItem{
 			{prefGeneral, icons.Settings, m.General(), m.GeneralDesc()},
+			{prefSecurity, icons.Lock, m.SecuritySection(), m.SecurityDesc()},
 			{prefAppearance, icons.Appearance, m.Appearance(), m.AppearanceDesc()},
 			{prefTerminal, icons.Terminal, m.TerminalSection(), m.TerminalDesc()},
 			{prefMonitoring, icons.Monitor, m.MonitoringSection(), m.MonitoringDesc()},
@@ -273,6 +275,8 @@ func (a *App) settingsPage(c *ui.Context, m locales.Messages, tok theme.Tokens) 
 			switch cur {
 			case prefGeneral:
 				a.prefGeneral(c, m, tok, &s, &changed)
+			case prefSecurity:
+				a.securityPage(c, m, tok)
 			case prefAppearance:
 				a.prefAppearance(c, m, tok, &s, &changed)
 			case prefTerminal:

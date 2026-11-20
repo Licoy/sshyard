@@ -19,6 +19,7 @@ require (
 	golang.org/x/sys v0.49.0
 	golang.org/x/text v0.43.0
 	mvdan.cc/sh/v3 v3.14.1
+	rsc.io/qr v0.2.0
 )
 
 require (

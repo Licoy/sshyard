@@ -22,6 +22,7 @@ const (
 	TrayQuickConnect  TrayAction = "quick-connect"
 	TrayLocalTerminal TrayAction = "local-terminal"
 	TrayNewHost       TrayAction = "new-host"
+	TrayLock          TrayAction = "lock"
 	TrayQuit          TrayAction = "quit"
 )
 
@@ -58,9 +59,14 @@ func (p *TrayPanel) View(c *ui.Context) {
 	// Store edits can happen in another window; schedule only while this view lives.
 	c.After(500 * time.Millisecond)
 	m := locales.In(c.Locale())
+	c.Root().ObserveInput(a.noteInput)
+	locked := a.lockGate(c)
 	ui.Column(c).Fill().MinWidth(0).MinHeight(0).Background(fill).TextColor(tok.Text).Children(func() {
 		p.header(c, m, tok)
-		if a.ready() {
+		if locked {
+			ui.Text(c, m.AppLockedTitle()).FontSize(theme.Body).TextColor(tok.TextMuted).Padding(theme.Space(3), theme.Space(4))
+			ui.Spacer(c)
+		} else if a.ready() {
 			p.searchField(c, m, tok)
 			ui.Box(c.Key("hostviewport")).FillWidth().Grow(1).Shrink(1).MinWidth(0).MinHeight(0).Clip().Children(func() { p.hosts(c, m, tok) })
 		} else {
@@ -69,6 +75,10 @@ func (p *TrayPanel) View(c *ui.Context) {
 		}
 		ui.Box(c).FillWidth().Height(1).Shrink(0).Background(tok.Line)
 		ui.Column(c).FillWidth().Shrink(0).Padding(theme.Space(2)).Gap(theme.Space(1)).Children(func() {
+			if locked {
+				p.actionRow(c, "open", icons.Lock, m.AppLockShowMain(), TrayOpenMain, tok)
+				return
+			}
 			p.actionRow(c, "open", icons.OpenInTab, m.TrayOpenPanel(), TrayOpenMain, tok)
 			p.actionRow(c, "settings", icons.Settings, m.Settings(), TraySettings, tok)
 		})
@@ -96,7 +106,7 @@ func (p *TrayPanel) header(c *ui.Context, m locales.Messages, tok theme.Tokens) 
 }
 
 func (p *TrayPanel) headerAction(c *ui.Context, key string, icon *icons.Icon, label string, action TrayAction) {
-	disabled := !p.app.ready() && (action == TrayQuickConnect || action == TrayLocalTerminal || action == TrayNewHost)
+	disabled := trayDisabled(p.app, action)
 	if (IconButton{Icon: icon, Label: label, Size: Small, Disabled: disabled, InstantTooltip: true}).Clicked(c, key) {
 		p.app.post(func() { p.dispatch(action) })
 	}
@@ -192,7 +202,7 @@ func (p *TrayPanel) host(c *ui.Context, h assets.Host, prefix string, tok theme.
 }
 
 func (p *TrayPanel) actionRow(c *ui.Context, key string, icon *icons.Icon, label string, action TrayAction, tok theme.Tokens) {
-	disabled := !p.app.ready() && (action == TrayQuickConnect || action == TrayLocalTerminal || action == TrayNewHost)
+	disabled := trayDisabled(p.app, action)
 	row := ui.ButtonBase(c.Key(key)).Disabled(disabled).FillWidth().Justify(ui.Start).Padding(theme.Space(2)).Gap(theme.Space(2)).Radius(theme.RadiusControl).Label(label).Cursor(ui.CursorPointer)
 	if row.Hovered() || row.FocusVisible() {
 		row.Background(tok.Hover)
@@ -215,10 +225,22 @@ func (p *TrayPanel) connect(hostID string) {
 	})
 }
 
+// trayDisabled reports whether action cannot run now: only the main
+// window opens while the app is locked.
+func trayDisabled(a *App, action TrayAction) bool {
+	if a.appLocked() {
+		return action != TrayOpenMain
+	}
+	return !a.ready() && (action == TrayQuickConnect || action == TrayLocalTerminal || action == TrayNewHost)
+}
+
 // ConnectFromTray always resolves a saved host afresh and follows normal secret gates.
 func (a *App) ConnectFromTray(hostID string) error {
 	if !a.ready() {
 		return keychain.ErrLocked
+	}
+	if a.checkIdle(); a.appLocked() {
+		return nil
 	}
 	if _, ok := a.store.Get(hostID); !ok {
 		return assets.ErrNotFound
@@ -229,6 +251,16 @@ func (a *App) ConnectFromTray(hostID string) error {
 
 // RunTrayAction runs after the desktop owner has shown the main window.
 func (a *App) RunTrayAction(action TrayAction) {
+	// The main window shows the lock screen; nothing runs behind it.
+	if a.checkIdle(); a.appLocked() {
+		a.invalidate()
+		return
+	}
+	if action == TrayLock {
+		a.runAction(actLock)
+		a.invalidate()
+		return
+	}
 	if !a.ready() && (action == TrayQuickConnect || action == TrayLocalTerminal || action == TrayNewHost) {
 		a.trayError(keychain.ErrLocked)
 		return

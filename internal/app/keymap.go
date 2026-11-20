@@ -40,6 +40,7 @@ const (
 	// number, 1 to tabJumps; the last shows the last tab.
 	actTab          = "selectTab"
 	actCompletePath = "completePath"
+	actLock         = "lockApp"
 )
 
 // tabJumps is how many tabs have a shortcut of their own: the first
@@ -132,6 +133,7 @@ var actions = append([]action{
 	{actSessionLogs, locales.Messages.SessionLogs, icons.FileText, keymap.Combo{Mods: aiMods, Key: ui.KeyL}, false},
 	{actHistory, locales.Messages.CommandHistory, icons.History, keymap.Combo{Mods: aiMods, Key: ui.KeyH}, false},
 	{actCompletePath, locales.Messages.CompletePath, icons.PathList, keymap.Combo{Mods: appMods, Key: ui.KeyJ}, false},
+	{actLock, locales.Messages.AppLockAction, icons.Lock, keymap.Combo{Mods: appMods, Key: ui.KeyL}, false},
 }, tabActions()...)
 
 // actionOf is the action with id.
@@ -298,6 +300,13 @@ func (a *App) shortcuts(c *ui.Context) {
 // the command palette.
 func (a *App) runAction(id string) {
 	switch id {
+	case actLock:
+		// With no lock set up, it shows where one is.
+		if !a.lock.cfg.Enabled() {
+			a.openSettings(prefSecurity)
+			return
+		}
+		a.LockApp()
 	case actCommandPalette:
 		a.openPalette()
 	case actQuickConnect:

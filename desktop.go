@@ -106,6 +106,7 @@ func (d *desktop) menu() *mygo.Menu {
 		{locales.QuickConnect(), app.TrayQuickConnect},
 		{locales.LocalTerminal(), app.TrayLocalTerminal},
 		{locales.NewHost(), app.TrayNewHost},
+		{locales.AppLockAction(), app.TrayLock},
 	} {
 		items = append(items, &mygo.MenuItem{Label: item.label, Click: func(*mygo.MenuItem, *mygo.Window) { d.trayAction(item.action) }})
 	}

@@ -22,8 +22,8 @@ var Kinds = []Kind{Password, PrivateKey, Passphrase}
 // The keys of the entries SSHYard keeps; there are no others:
 // host/<id>/<kind>, cred/<id>/<kind>, proxy/<id>/password, forward/<id>/password,
 // snippet/<id>/content, ai/<profileID>/apikey, ai/<agentID>/env/<NAME>,
-// backup/<id>/secret, backup/<id>/key, localkey/<keyID>/passphrase and
-// mcp/token.
+// backup/<id>/secret, backup/<id>/key, localkey/<keyID>/passphrase,
+// mcp/token and applock/totp.
 
 // Cred is the entry of a credential's secret: cred/<id>/<kind>.
 // Host is a host-owned secret entry.
@@ -60,6 +60,10 @@ func LocalKeyPassphrase(keyID string) string { return "localkey/" + keyID + "/pa
 
 // MCPToken is the bearer token of the MCP endpoint.
 const MCPToken = "mcp/token"
+
+// AppLockTOTP is the secret of the one-time codes that open the app lock
+// on this computer, so no backup holds it.
+const AppLockTOTP = "applock/totp"
 
 // AIKey is the API key of a built-in provider profile: ai/<profileID>/apikey.
 func AIKey(profileID string) string { return "ai/" + profileID + "/apikey" }

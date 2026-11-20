@@ -67,6 +67,7 @@ func (a *App) prepareStorage() error {
 		a.closeSecrets(kc)
 		return &keychain.OpError{Op: "file-read", Err: err}
 	}
+	a.loadAppLock()
 	_, statErr := os.Stat(filepath.Join(a.p.DataDir, "secrets.enc"))
 	if statErr != nil && !errors.Is(statErr, os.ErrNotExist) {
 		a.closeSecrets(kc)

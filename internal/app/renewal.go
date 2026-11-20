@@ -211,7 +211,7 @@ func (a *App) startRenewalReminders() {
 // reminder at now, once for each, while the setting allows. What it
 // notified of stays in the settings, for the renewals still to come.
 func (a *App) remindRenewals(now time.Time) {
-	if a.p.Notify == nil || !a.settings.RenewalNotify || !a.ready() {
+	if a.p.Notify == nil || !a.settings.RenewalNotify || !a.ready() || a.appLocked() {
 		return
 	}
 	m := locales.In(i18n.Locale())

@@ -76,6 +76,17 @@ func platform() app.Platform {
 		OpenWindow:   openWindow,
 		WatchNetwork: netwatch.Watch,
 		Awake:        awake.System(),
+		WatchSleep:   watchSleep,
+	}
+}
+
+// watchSleep calls fn as the screen locks or the computer goes to sleep.
+func watchSleep(fn func()) (stop func()) {
+	offLock := mygo.Power.OnLockScreen(fn)
+	offSleep := mygo.Power.OnSuspend(fn)
+	return func() {
+		offLock()
+		offSleep()
 	}
 }
 

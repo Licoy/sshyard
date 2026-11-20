@@ -122,6 +122,9 @@ type Platform struct {
 	// Awake is the system's hold that keeps the computer from sleeping
 	// while files transfer (awake.System); nil holds nothing.
 	Awake awake.Backend
+	// WatchSleep calls fn, on any goroutine, each time the screen locks
+	// or the computer goes to sleep, until stop; nil tells nothing.
+	WatchSleep func(fn func()) (stop func())
 }
 
 // WindowSpec is a window the app opens beside the main one.
@@ -665,6 +668,8 @@ type App struct {
 	masterPw     *masterPwForm
 	masterPwOpen bool
 	masterPwHold focusHold
+	// lock is the app lock in front of the windows
+	lock appLock
 	// cloud is what this device knows of the places it backs up to, read
 	// once; cloudCtx ends their requests when the app closes. target is
 	// the backup location sheet open, remotes the sheet of a place's
@@ -920,6 +925,7 @@ func (a *App) startIndependent() {
 	}
 	a.unlock.started = true
 	a.watchNetwork()
+	a.watchSleep()
 	a.loadLayout()
 	if a.settings.OpenLocalOnStart {
 		a.post(func() {
@@ -1005,6 +1011,9 @@ func (a *App) Close() {
 	a.cloudStop()
 	if a.netStop != nil {
 		a.netStop()
+	}
+	if a.lock.stopSleep != nil {
+		a.lock.stopSleep()
 	}
 	a.stopCollectors()
 	a.stopMCP()

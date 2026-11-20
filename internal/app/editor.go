@@ -507,6 +507,11 @@ func (a *App) editorWindowView(c *ui.Context, cn *conn) {
 	if a.conns[cn.id] != cn {
 		return
 	}
+	c.Root().ObserveInput(a.noteInput)
+	if a.lockGate(c) {
+		a.lockedWindowView(c, cn)
+		return
+	}
 	ew := cn.ed
 	if !ew.local {
 		a.ensureSFTP(cn)

@@ -109,6 +109,7 @@ var (
 	OpenWithApp  = load("apps-line")
 	CopyPath     = load("file-copy-line")
 	Chmod        = load("lock-line")
+	Lock         = load("lock-line")
 	Follow       = load("footprint-line")
 	FollowOn     = load("footprint-fill")
 	Collapse     = load("arrow-down-s-line")
