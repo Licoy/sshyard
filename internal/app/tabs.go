@@ -174,6 +174,9 @@ func (a *App) newTabButton(c *ui.Context, m locales.Messages) {
 	add := a.menuButton(c, "newtab", IconButton{Icon: icons.Add, Label: m.NewTab()}, func() []menuEntry {
 		return a.newTabEntries(c, m)
 	})
+	if a.menu.key != "newtab" {
+		a.newTabQuery = ""
+	}
 	if cn == nil {
 		return
 	}
@@ -201,22 +204,39 @@ func (a *App) newTabButton(c *ui.Context, m locales.Messages) {
 	})
 }
 
-// newTabEntries are the entries of the "+" after the tabs: a new
-// connection, then the saved hosts, each with its tile.
+// newTabEntries are the entries of the "+" after the tabs: a search of
+// the saved hosts, a new connection, then the saved hosts, each with its
+// tile. While searching, only the hosts found show, and Enter connects to
+// the first.
 func (a *App) newTabEntries(c *ui.Context, m locales.Messages) []menuEntry {
-	tok := currentTokens(c)
-	entries := []menuEntry{
+	fixed := []menuEntry{
 		a.bound(actQuickConnect, menuEntry{Icon: icons.Quick, Label: m.QuickConnectMenu(), Do: a.OpenQuickConnect}),
 		{Icon: icons.Host, Label: m.NewHost(), Do: func() { a.openEditor(nil) }},
 		a.localEntry(m),
 	}
 	hosts := a.store.List()
-	if len(hosts) > 0 {
-		entries = append(entries, menuSep)
+	if len(hosts) == 0 {
+		return fixed
 	}
+	query := strings.TrimSpace(a.newTabQuery)
+	if query != "" {
+		hosts = a.store.Search(query)
+	}
+	entries := []menuEntry{{Search: &a.newTabQuery, Label: m.SearchHosts(), Do: func() {
+		if query != "" && len(hosts) > 0 {
+			a.Connect(hosts[0].ID, openAt{})
+		}
+	}}}
+	if query == "" {
+		entries = append(entries, fixed...)
+	}
+	if len(hosts) == 0 {
+		return append(entries, menuEntry{Label: m.PaletteNoResults(), Disabled: true})
+	}
+	entries = append(entries, menuSep)
 	for _, h := range hosts {
 		entries = append(entries, menuEntry{
-			Lead:  func() { hostAvatar(c, tok, h, 16) },
+			Lead:  func() { hostAvatar(c, currentTokens(c), h, 16) },
 			Label: a.pv(h.Label()),
 			Do:    func() { a.Connect(h.ID, openAt{}) },
 		})

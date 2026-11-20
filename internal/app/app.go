@@ -386,6 +386,8 @@ type App struct {
 	search      string
 	searchFocus bool // the search, its field or button, takes the focus next frame
 	searchOpen  bool // the search shows its field across the toolbar
+	// newTabQuery is the search of the "+" menu's hosts, while it shows.
+	newTabQuery string
 	// ping is the hosts' latency the sidebar shows
 	ping pingState
 	// multi is the sidebar choosing several hosts and groups

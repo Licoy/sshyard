@@ -345,6 +345,43 @@ func TestNewTabButton(t *testing.T) {
 	}
 }
 
+// TestNewTabSearch: the "+" menu's search narrows the saved hosts to
+// those found, in place of the new connections, and Enter connects to
+// the first; the search is gone once the menu closes.
+func TestNewTabSearch(t *testing.T) {
+	a, tt := newTestApp(t)
+	m := locales.In("en")
+	for _, h := range []assets.Host{{Name: "web", Address: "10.0.0.5"}, {Name: "db", Address: "10.0.0.6"}} {
+		h.User, h.Auth = "root", assets.AuthAgent
+		if _, err := a.Store().Add(h); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tt.Frame()
+	labels := func() []string { return menuLabels(a.newTabEntries(nil, m)) }
+	if got := labels(); len(got) != 7 || got[0] != m.SearchHosts() || got[1] != m.QuickConnectMenu() {
+		t.Fatalf("menu %q", got)
+	}
+	a.newTabQuery = " DB "
+	if got := labels(); len(got) != 3 || got[1] != "-" || got[2] != "db" {
+		t.Fatalf("searching: %q", got)
+	}
+	a.newTabQuery = "nothing"
+	if got := labels(); len(got) != 2 || got[1] != m.PaletteNoResults() {
+		t.Fatalf("no match: %q", got)
+	}
+	a.newTabQuery = "db"
+	a.newTabEntries(nil, m)[0].Do()
+	if cn := a.focused(); cn == nil || cn.host.Name != "db" {
+		t.Fatalf("Enter connected to %+v", cn)
+	}
+	a.menu = dropMenu{}
+	tt.Frame()
+	if a.newTabQuery != "" {
+		t.Fatalf("search kept after the menu closed: %q", a.newTabQuery)
+	}
+}
+
 // TestDuplicateTab: the tab's menu opens a new session on its host in a
 // new tab, a files pane for a files pane.
 func TestDuplicateTab(t *testing.T) {

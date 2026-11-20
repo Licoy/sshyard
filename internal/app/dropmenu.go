@@ -41,6 +41,10 @@ type menuEntry struct {
 	Sub []menuEntry
 	// SubWidth is the narrowest that submenu grows to; 0 for menuWidth.
 	SubWidth float32
+	// Search, when set, makes the entry a search field editing it, Label
+	// its placeholder; it takes the keyboard as the menu opens and Do runs
+	// on Enter.
+	Search *string
 	// Do runs as the entry is chosen.
 	Do func()
 }
@@ -275,6 +279,23 @@ func (a *App) menuPanel(c *ui.Context, tok theme.Tokens, panel ui.Element, entri
 				for i, e := range entries {
 					if e.Sep {
 						ui.Box(c.Key("sep:"+strconv.Itoa(i))).Height(1).Margin(4, 8).Background(tok.Line)
+						continue
+					}
+					if e.Search != nil {
+						var in ui.Element
+						ui.Box(c.Key("search:"+strconv.Itoa(i))).FillWidth().Padding(0, 0, 4, 0).Children(func() {
+							in = searchField(c, locales.In(c.Locale()), tok, "field", e.Search, e.Label)
+						})
+						if focus {
+							in.Focus()
+							focus = false
+						}
+						if in.Submitted() {
+							a.menu = dropMenu{}
+							if e.Do != nil {
+								e.Do()
+							}
+						}
 						continue
 					}
 					row := a.menuRow(c, tok, e, i, level, compact)
