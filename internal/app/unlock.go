@@ -78,6 +78,9 @@ func (a *App) prepareStorage() error {
 	a.keychainOK = true
 	a.unlock.ready.Store(true)
 	a.unlock.secretsReady.Store(kc.Unlocked())
+	if kc.Unlocked() {
+		a.adoptLockRecord()
+	}
 	a.syncChoices()
 	a.resolveFonts(false, false, false)
 	a.updateCheck = a.settings.CheckUpdates
@@ -183,6 +186,11 @@ func (a *App) acceptUnlock(err error) {
 	after := a.unlock.after
 	a.unlock.after = nil
 	a.unlock.mu.Unlock()
+	// What asked for the store is dropped when the lock was found
+	// replaced: the store's own record locks the app again first.
+	if a.adoptLockRecord() {
+		after = nil
+	}
 	a.startRestoredConnections()
 	if !a.unlock.servicesStarted {
 		a.unlock.servicesStarted = true

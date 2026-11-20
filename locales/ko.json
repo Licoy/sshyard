@@ -2899,7 +2899,7 @@
   "appLockOnSleep": "화면이 잠기거나 컴퓨터가 잠자기에 들어가면 잠금",
   "appLockNow": "지금 잠금",
   "appLockAction": "SSHYard 잠금",
-  "appLockScopeNote": "앱 잠금은 이 컴퓨터를 사용하는 다른 사람에게 호스트와 세션을 숨깁니다. 잠겨 있는 동안에도 세션, 포워딩, 전송은 계속 실행됩니다. 데이터 폴더를 암호화하지는 않습니다. 잠금을 해제할 수 없게 되면 SSHYard를 종료하고 데이터 폴더의 applock.json을 삭제하세요. 호스트와 비밀 정보는 그대로 유지됩니다.",
+  "appLockScopeNote": "앱 잠금은 이 컴퓨터를 사용하는 다른 사람에게 호스트와 세션을 숨깁니다. 잠겨 있는 동안에도 세션, 포워딩, 전송은 계속 실행됩니다. 데이터 폴더를 암호화하지는 않습니다. 잠금을 해제할 수 없게 되면 잠금 화면에서 앱 잠금을 재설정하세요. 이 컴퓨터에 저장된 비밀 정보는 삭제되고 호스트와 설정은 그대로 유지됩니다.",
   "appLockedTitle": "SSHYard가 잠겨 있습니다",
   "appLockedPasswordPrompt": "잠금을 해제하려면 암호를 입력하세요.",
   "appLockedCodePrompt": "잠금을 해제하려면 인증 앱의 코드를 입력하세요.",
@@ -2908,9 +2908,8 @@
   "appLockCode": "코드",
   "appLockWrong": "암호 또는 코드가 올바르지 않습니다.",
   "appLockWait": "시도 횟수가 너무 많습니다. {seconds}초 후에 다시 시도하세요.",
-  "appLockSecretMissing": "자격 증명 저장소에 일회용 코드 비밀 키가 없습니다. SSHYard를 종료하고 데이터 폴더의 applock.json을 삭제하면 잠금이 해제됩니다.",
-  "appLockBroken": "앱 잠금 설정을 읽을 수 없습니다. SSHYard를 종료하고 데이터 폴더의 applock.json을 삭제하면 잠금이 해제됩니다.",
-  "appLockForgot": "잠금을 해제할 수 없나요? SSHYard를 종료한 뒤 데이터 폴더의 applock.json을 삭제하세요.",
+  "appLockSecretMissing": "자격 증명 저장소에 일회용 코드 비밀 키가 없습니다. 앱 잠금을 재설정하면 해제됩니다.",
+  "appLockBroken": "앱 잠금 설정을 읽을 수 없습니다. 저장된 비밀 정보를 잠금 해제하면 복원되며, 앱 잠금을 재설정할 수도 있습니다.",
   "appLockShowMain": "기본 창에서 잠금 해제",
   "appLockEnableTitle": "앱 잠금 켜기",
   "appLockChangeTitle": "앱 잠금 변경",
@@ -2922,5 +2921,11 @@
   "appLockCopyKey": "설정 키 복사",
   "appLockQrAlt": "인증 앱용 QR 코드",
   "appLockKeepAuthenticator": "이미 설정된 인증 앱이 계속 코드를 제공합니다.",
-  "appLockCodeWrong": "코드가 일치하지 않습니다. 휴대폰과 컴퓨터의 시간이 정확한지 확인한 다음 현재 코드를 입력하세요."
+  "appLockCodeWrong": "코드가 일치하지 않습니다. 휴대폰과 컴퓨터의 시간이 정확한지 확인한 다음 현재 코드를 입력하세요.",
+  "appLockResetEllipsis": "앱 잠금 재설정…",
+  "appLockResetTitle": "앱 잠금을 재설정할까요?",
+  "appLockResetBody": "재설정하면 앱 잠금이 꺼지고 이 컴퓨터에 저장된 모든 비밀 정보(비밀번호, 개인 키, 암호 문구, API 키, 백업 자격 증명)가 삭제됩니다. 호스트, 그룹, 설정은 그대로 유지됩니다. 이 작업은 되돌릴 수 없습니다.",
+  "appLockReset": "재설정하고 비밀 정보 삭제",
+  "appLockResetDone": "앱 잠금을 재설정했으며 저장된 비밀 정보를 삭제했습니다.",
+  "appLockRestored": "SSHYard 외부에서 앱 잠금이 변경되어 복원했습니다."
 }

@@ -298,3 +298,49 @@ func TestClosedStoreCannotBypassFacade(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// TestWipe: an unlocked store wipes to an empty one, still unlocked; a
+// locked one loses its file without the master key, and opens empty
+// with the same master key after.
+func TestWipe(t *testing.T) {
+	o := options(t)
+	k, err := Open(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := k.Apply([]Change{{Key: "a", Value: []byte("1")}, {Key: "b", Value: []byte("2")}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := k.Wipe(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := k.Get("a"); !errors.Is(err, ErrNotFound) || !k.Unlocked() {
+		t.Fatalf("after wipe: %v, unlocked %v", err, k.Unlocked())
+	}
+	if err := k.Set("c", []byte("3")); err != nil {
+		t.Fatal(err)
+	}
+	k.Close()
+	master, _ := o.System.Get(MasterKey)
+
+	k, err = OpenLocked(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer k.Close()
+	if err := k.Wipe(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(o.Path); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("file left: %v", err)
+	}
+	if err := k.Unlock(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := k.Get("c"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("secret kept: %v", err)
+	}
+	if now, _ := o.System.Get(MasterKey); !bytes.Equal(now, master) {
+		t.Fatal("master key replaced")
+	}
+}

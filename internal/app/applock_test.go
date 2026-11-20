@@ -227,6 +227,9 @@ func TestAppLockChangeAndDisable(t *testing.T) {
 	if a.lock.cfg.Method != applock.Both {
 		t.Fatalf("method %q", a.lock.cfg.Method)
 	}
+	if rec, _ := a.kc.Get(keychain.AppLock); !bytes.Equal(rec, a.lock.cfg.Record()) {
+		t.Fatal("the store's record is not the changed lock")
+	}
 	if stored, _ := a.kc.Get(keychain.AppLockTOTP); !bytes.Equal(stored, secret) {
 		t.Fatal("the change replaced the authenticator")
 	}
@@ -239,8 +242,8 @@ func TestAppLockChangeAndDisable(t *testing.T) {
 		t.Fatalf("removal not tried: %q", f.err)
 	}
 	waitForIn(t, tt, slowWait, "the lock removed", func() bool { return a.lock.form == nil })
-	if a.lock.cfg.Enabled() || a.kc.Has(keychain.AppLockTOTP) {
-		t.Fatalf("lock left: %+v, secret %v", a.lock.cfg, a.kc.Has(keychain.AppLockTOTP))
+	if a.lock.cfg.Enabled() || a.kc.Has(keychain.AppLockTOTP) || a.kc.Has(keychain.AppLock) {
+		t.Fatalf("lock left: %+v, secret %v, record %v", a.lock.cfg, a.kc.Has(keychain.AppLockTOTP), a.kc.Has(keychain.AppLock))
 	}
 	if saved, _ := applock.Load(filepath.Join(a.p.DataDir, applock.File)); saved.Enabled() || saved.Verifier != nil {
 		t.Fatalf("saved lock: %+v", saved)
@@ -262,8 +265,8 @@ func TestAppLockRollback(t *testing.T) {
 	if msg := a.commitLock(en, applock.Off, next, f.secret); msg == "" {
 		t.Fatal("saved over a directory")
 	}
-	if a.kc.Has(keychain.AppLockTOTP) || a.lock.cfg.Enabled() {
-		t.Fatal("secret or lock kept after the save failed")
+	if a.kc.Has(keychain.AppLockTOTP) || a.kc.Has(keychain.AppLock) || a.lock.cfg.Enabled() {
+		t.Fatal("secret, record or lock kept after the save failed")
 	}
 }
 
@@ -386,7 +389,121 @@ func TestAppLockNotInBackup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := p.Secrets[keychain.AppLockTOTP]; ok {
-		t.Fatal("the app lock's secret is in the backup")
+	for _, key := range []string{keychain.AppLockTOTP, keychain.AppLock} {
+		if _, ok := p.Secrets[key]; ok {
+			t.Fatalf("the app lock's %s is in the backup", key)
+		}
+	}
+}
+
+// reopenLockApp quits a and starts SSHYard again on its data and its
+// system keychain, as after a restart.
+func reopenLockApp(t *testing.T, a *App) (*App, *ui.Tester) {
+	t.Helper()
+	dir, sys := a.p.DataDir, a.p.Secrets
+	a.Close()
+	b, err := New(Platform{DataDir: dir, Secrets: sys, HomeDir: dir, CacheDir: filepath.Join(dir, "cache")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(b.Close)
+	b.kdf = a.kdf
+	b.lock.now = a.lock.now
+	b.Start()
+	b.withSecrets(nil)
+	tt := ui.NewTester(b.View, 1200, 760)
+	tt.SetLocale("en")
+	tt.Frame()
+	waitFor(t, tt, "credential store unlocked", b.unlocked)
+	return b, tt
+}
+
+// TestAppLockRecordWins: applock.json deleted, replaced with a lock whose
+// password someone else knows, or damaged, is put back from the store's
+// record as the store unlocks, and the app locks again.
+func TestAppLockRecordWins(t *testing.T) {
+	a, tt, now := lockTestApp(t)
+	setUpLock(t, a, tt, applock.Password, "correct horse", *now)
+	path := filepath.Join(a.p.DataDir, applock.File)
+	mine := a.lock.cfg.Verifier
+	forged, err := applock.NewVerifier([]byte("intruder pass"), a.kdf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, tamper := range map[string]func() error{
+		"deleted":  func() error { return os.Remove(path) },
+		"replaced": func() error { return applock.Save(path, applock.Config{Method: applock.Password, Verifier: forged}) },
+		"damaged":  func() error { return os.WriteFile(path, []byte("{"), 0o600) },
+	} {
+		if err := tamper(); err != nil {
+			t.Fatal(err)
+		}
+		a, tt = reopenLockApp(t, a)
+		if !a.appLocked() || a.lock.broken || !bytes.Equal(a.lock.cfg.Verifier, mine) || a.lock.err == "" {
+			t.Fatalf("%s: not restored: locked %v, broken %v, %+v", name, a.appLocked(), a.lock.broken, a.lock.cfg)
+		}
+		if saved, err := applock.Load(path); err != nil || !bytes.Equal(saved.Verifier, mine) {
+			t.Fatalf("%s: file not restored: %v", name, err)
+		}
+		unlockWith(t, a, tt, "intruder pass", "")
+		if !a.appLocked() {
+			t.Fatalf("%s: the forged password opened the lock", name)
+		}
+		unlockWith(t, a, tt, "correct horse", "")
+		if a.appLocked() {
+			t.Fatalf("%s: own password refused: %q", name, a.lock.err)
+		}
+	}
+
+	// A check under way against a forged lock opens nothing once the
+	// record took its place.
+	a.lock.cfg.Verifier = forged
+	a.lock.locked = true
+	a.lock.password = "intruder pass"
+	if !a.SubmitAppUnlock(en) {
+		t.Fatal("unlock not tried")
+	}
+	if !a.adoptLockRecord() {
+		t.Fatal("the forged lock was not replaced")
+	}
+	waitForIn(t, tt, slowWait, "the unlock checked", func() bool { return !a.lock.busy })
+	if !a.appLocked() {
+		t.Fatal("a check against the forged lock opened the app")
+	}
+}
+
+// TestAppLockReset: a reset deletes every saved secret, then the lock,
+// and keeps the hosts.
+func TestAppLockReset(t *testing.T) {
+	a, tt, now := lockTestApp(t)
+	h, err := a.store.Add(assets.Host{Name: "kept", Address: "127.0.0.1", User: "demo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.kc.Set(keychain.Host(h.ID, keychain.Password), []byte("hunter2")); err != nil {
+		t.Fatal(err)
+	}
+	setUpLock(t, a, tt, applock.Both, "correct horse", *now)
+	a.LockApp()
+	if msg := a.ResetAppLock(en); msg != "" {
+		t.Fatal(msg)
+	}
+	if a.appLocked() || a.lock.cfg.Enabled() {
+		t.Fatal("still locked after the reset")
+	}
+	for _, key := range []string{keychain.Host(h.ID, keychain.Password), keychain.AppLock, keychain.AppLockTOTP} {
+		if a.kc.Has(key) {
+			t.Fatalf("%s kept after the reset", key)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(a.p.DataDir, applock.File)); !os.IsNotExist(err) {
+		t.Fatalf("applock.json kept: %v", err)
+	}
+	a, _ = reopenLockApp(t, a)
+	if a.appLocked() {
+		t.Fatal("locked again after a restart")
+	}
+	if _, ok := a.store.Get(h.ID); !ok {
+		t.Fatal("the reset removed a host")
 	}
 }

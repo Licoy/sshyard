@@ -58,6 +58,18 @@ func (a *App) lockView(c *ui.Context) {
 			sheetTitle(c, m.AppLockedTitle())
 			if l.broken {
 				ui.Text(c, m.AppLockBroken()).FontSize(theme.Body).TextColor(tok.TextMuted).TextAlign(ui.Center).MaxWidth(420)
+				if l.err != "" {
+					ui.Text(c, l.err).FontSize(theme.Footnote).TextColor(tok.Danger).TextAlign(ui.Center).MaxWidth(420)
+				}
+				// The store's record of the lock restores it.
+				ui.Row(c).Gap(theme.Space(2)).Children(func() {
+					if pill(c, m.AppLockResetEllipsis(), false, true, false) {
+						l.resetOpen = true
+					}
+					if !a.unlocked() && pill(c, m.SecretsRetry(), true, false, a.unlock.busy) {
+						a.withSecrets(nil)
+					}
+				})
 				return
 			}
 			method := l.cfg.Method
@@ -102,15 +114,22 @@ func (a *App) lockView(c *ui.Context) {
 					ui.Text(c, msg).FontSize(theme.Footnote).TextColor(tok.Danger)
 				}
 				ui.Row(c).FillWidth().Children(func() {
+					if pill(c, m.AppLockResetEllipsis(), false, false, l.busy) {
+						l.resetOpen = true
+					}
 					ui.Spacer(c)
 					if pill(c, m.AppLockUnlock(), true, false, l.busy || wait != "") {
 						a.SubmitAppUnlock(m)
 					}
 				})
 			})
-			ui.Text(c, m.AppLockForgot()).FontSize(theme.Caption).TextColor(tok.TextMuted).TextAlign(ui.Center).MaxWidth(420)
 		})
 	})
+	if ui.AlertDialog(c, &l.resetOpen, m.AppLockResetTitle(), m.AppLockResetBody(), m.Cancel(), m.AppLockReset()) == 1 {
+		if msg := a.ResetAppLock(m); msg != "" {
+			l.err = msg
+		}
+	}
 	a.unlockModal(c, m, tok)
 	a.masterPasswordView(c, m)
 }

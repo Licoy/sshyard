@@ -14,6 +14,7 @@ import (
 	"github.com/Licoy/sshyard/internal/applock"
 	"github.com/Licoy/sshyard/internal/keychain"
 	"github.com/Licoy/sshyard/locales"
+	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"rsc.io/qr"
 )
@@ -24,14 +25,19 @@ import (
 // forwards, transfers and backups go on. It locks as the app starts, after
 // the minutes without input it is set to, as the screen locks or the
 // computer sleeps, and when asked. The secret of its one-time codes is in
-// the encrypted store, which must be unlocked to check a code.
+// the encrypted store, which must be unlocked to check a code; so is what
+// opens it (keychain.AppLock), which wins over applock.json once the
+// store is unlocked, as anyone reading the data folder can delete or
+// replace that file. A lock that can no longer be opened is reset, which
+// deletes every secret before the lock.
 
 // appLock is the lock and the lock screen's fields, which live only while
 // it shows.
 type appLock struct {
 	cfg applock.Config
 	// loaded is set once applock.json was read; broken when it could not
-	// be, which keeps the app locked until the file is removed
+	// be, which keeps the app locked until the store's record restores it
+	// or the lock is reset
 	loaded, broken bool
 	locked         bool
 	// input is when a window last had input
@@ -45,9 +51,11 @@ type appLock struct {
 	gen  int
 	hold focusHold
 	// form is the sheet setting the lock up, changing or removing it
-	form      *lockForm
-	formOpen  bool
-	formHold  focusHold
+	form     *lockForm
+	formOpen bool
+	formHold focusHold
+	// resetOpen asks whether to reset the lock
+	resetOpen bool
 	stopSleep func()
 	// now is time.Now, replaced in tests
 	now func() time.Time
@@ -208,7 +216,7 @@ func (a *App) SubmitAppUnlock(m locales.Messages) bool {
 		})
 		return false
 	}
-	pw, code := []byte(l.password), l.code
+	pw, code, gen := []byte(l.password), l.code, l.gen
 	l.busy = true
 	go func() {
 		ok, err := true, error(nil)
@@ -216,15 +224,17 @@ func (a *App) SubmitAppUnlock(m locales.Messages) bool {
 			ok, err = applock.CheckPassword(cfg.Verifier, pw)
 		}
 		clear(pw)
-		a.post(func() { a.appUnlockDone(m, ok, err, code) })
+		a.post(func() { a.appUnlockDone(m, ok, err, code, gen) })
 	}()
 	return true
 }
 
-func (a *App) appUnlockDone(m locales.Messages, ok bool, err error, code string) {
+// appUnlockDone takes the password's check, made against the lock as it
+// was at gen: one the store's record replaced since opens nothing.
+func (a *App) appUnlockDone(m locales.Messages, ok bool, err error, code string, gen int) {
 	l := &a.lock
 	l.busy = false
-	if !l.locked {
+	if !l.locked || l.gen != gen {
 		return
 	}
 	if err != nil {
@@ -388,9 +398,8 @@ func (a *App) SubmitLockForm(m locales.Messages) bool {
 			return false
 		}
 	}
-	// The store holds the codes' secret: to check one, keep a new one or
-	// forget the old.
-	if (cur.Method.NeedsCode() || fresh) && !a.unlocked() {
+	// The store keeps what opens the lock, and the codes' secret.
+	if !a.unlocked() {
 		a.withSecrets(func() {
 			if a.lock.form == f {
 				a.SubmitLockForm(m)
@@ -465,15 +474,20 @@ func (a *App) lockFormDone(m locales.Messages, f *lockForm, ok bool, err error, 
 }
 
 // commitLock keeps next as the lock, with secret as its codes' secret
-// when a new authenticator is bound: the store first, which a failure to
-// save the lock puts back. The secret of a method that no longer asks for
-// codes is forgotten after. It says why it could not.
+// when a new authenticator is bound: the store's record of it first,
+// which a failure to save the lock puts back. The secret of a method that
+// no longer asks for codes is forgotten after. It says why it could not.
 func (a *App) commitLock(m locales.Messages, was applock.Method, next applock.Config, secret []byte) string {
 	tx := &secretTx{kc: a.kc}
+	changes := []keychain.Change{{Key: keychain.AppLock, Delete: true}}
+	if next.Enabled() {
+		changes[0] = keychain.Change{Key: keychain.AppLock, Value: next.Record()}
+	}
 	if secret != nil {
-		if err := tx.setBatch([]keychain.Change{{Key: keychain.AppLockTOTP, Value: secret}}); err != nil {
-			return m.ErrKeychainSave(secretStoreErrorText(m, err))
-		}
+		changes = append(changes, keychain.Change{Key: keychain.AppLockTOTP, Value: secret})
+	}
+	if err := tx.setBatch(changes); err != nil {
+		return m.ErrKeychainSave(secretStoreErrorText(m, err))
 	}
 	if err := a.saveLock(next); err != nil {
 		msg := m.ErrGeneric(err.Error())
@@ -487,6 +501,72 @@ func (a *App) commitLock(m locales.Messages, was applock.Method, next applock.Co
 			a.toastError(m.ErrGeneric(secretStoreErrorText(m, err)))
 		}
 	}
+	return ""
+}
+
+// adoptLockRecord runs as the store unlocks: the lock opens as the
+// store's record says, whatever applock.json says, which anyone reading
+// the data folder may have deleted or replaced. A lock that opened
+// another way locks the app again, and it reports so.
+func (a *App) adoptLockRecord() bool {
+	l := &a.lock
+	if !l.loaded || a.kc == nil {
+		return false
+	}
+	rec, err := a.kc.Get(keychain.AppLock)
+	if errors.Is(err, keychain.ErrNotFound) {
+		return false
+	}
+	if err != nil {
+		log.Printf("sshyard: app lock record unreadable: %v", err)
+		return false
+	}
+	defer clear(rec)
+	cfg := l.cfg
+	if l.broken {
+		cfg = applock.Default()
+	}
+	changed, err := cfg.Adopt(rec)
+	if err != nil {
+		log.Printf("sshyard: app lock record invalid: %v", err)
+		return false
+	}
+	if !changed && !l.broken {
+		return false
+	}
+	l.broken = false
+	if err := a.saveLock(cfg); err != nil {
+		log.Printf("sshyard: app lock not saved: %v", err)
+		l.cfg = cfg
+	}
+	a.LockApp()
+	l.password, l.code, l.hold = "", "", focusHold{}
+	l.gen++
+	l.err = locales.In(i18n.Locale()).AppLockRestored()
+	return true
+}
+
+// ResetAppLock is the way out of a lock that can no longer be opened:
+// every saved secret is deleted, then the lock, so that removing it never
+// hands over what it stood in front of. Hosts and settings stay. It says
+// why it could not.
+func (a *App) ResetAppLock(m locales.Messages) string {
+	if err := a.kc.Wipe(); err != nil {
+		return m.ErrGeneric(secretStoreErrorText(m, err))
+	}
+	a.unlock.stored = a.unlocked()
+	if err := os.Remove(a.lockPath()); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return m.ErrGeneric(err.Error())
+	}
+	l := &a.lock
+	l.cfg, l.broken, l.locked = applock.Default(), false, false
+	l.password, l.code, l.err, l.hold = "", "", "", focusHold{}
+	l.gen++
+	l.input = a.lockClock()
+	l.resetOpen = false
+	a.closeLockForm()
+	a.toast(func(m locales.Messages) ui.Toast { return ui.Toast{Title: m.AppLockResetDone()} })
+	a.invalidate()
 	return ""
 }
 

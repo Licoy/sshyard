@@ -1,6 +1,7 @@
 package applock
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -153,6 +154,38 @@ func TestLoadSave(t *testing.T) {
 		}
 		if c, err := Load(path); err == nil {
 			t.Errorf("%s: loaded %+v", name, c)
+		}
+	}
+}
+
+// TestAdopt: the store's record decides how the lock opens, whatever the
+// file says; the file keeps its own idle and sleep choices, and a record
+// that opens nothing is refused.
+func TestAdopt(t *testing.T) {
+	v, err := NewVerifier([]byte("correct horse"), cheap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mine := Config{Method: Password, Verifier: v}
+	forged, err := NewVerifier([]byte("intruder pass"), cheap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range []Config{Default(), {Method: Password, Verifier: forged, IdleMinutes: 5}, {Method: TOTP}} {
+		c := file
+		changed, err := c.Adopt(mine.Record())
+		if err != nil || !changed || c.Method != Password || !bytes.Equal(c.Verifier, v) || c.IdleMinutes != file.IdleMinutes {
+			t.Fatalf("adopt over %+v: %+v %v %v", file, c, changed, err)
+		}
+	}
+	c := mine
+	if changed, err := c.Adopt(mine.Record()); err != nil || changed {
+		t.Fatalf("same record: %v %v", changed, err)
+	}
+	for _, bad := range [][]byte{Default().Record(), (Config{Method: Password}).Record(), []byte("{")} {
+		c := mine
+		if _, err := c.Adopt(bad); err == nil || c.Method != Password {
+			t.Fatalf("bad record %q adopted: %+v", bad, c)
 		}
 	}
 }

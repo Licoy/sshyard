@@ -6,13 +6,17 @@
 // It keeps the host list and the sessions from whoever sits down at an
 // unlocked computer; it does not encrypt the metadata on disk, which
 // anyone reading the data folder reads anyway. Its file, applock.json,
-// stays on this computer: no backup takes it, and deleting it removes the
-// lock. The password itself is never stored, only a vault-sealed check
-// that opens with it; the one-time code's secret is a secret of the
-// encrypted local store (keychain.AppLockTOTP).
+// stays on this computer, and no backup takes it. What opens the lock is
+// also a Record in the encrypted local store (keychain.AppLock), which
+// wins over the file once the store is unlocked: deleting or replacing
+// the file does not remove the lock. The password itself is never
+// stored, only a vault-sealed check that opens with it; the one-time
+// code's secret is a secret of the encrypted store too
+// (keychain.AppLockTOTP).
 package applock
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io/fs"
@@ -103,6 +107,37 @@ func (c Config) valid() bool {
 		return false
 	}
 	return !c.Method.NeedsPassword() || vault.Check(c.Verifier) == nil
+}
+
+// record is what opens the lock, as the encrypted store keeps it.
+type record struct {
+	Method   Method `json:"method"`
+	Verifier []byte `json:"verifier,omitempty"`
+}
+
+// Record is what opens c, for the encrypted store.
+func (c Config) Record() []byte {
+	b, _ := json.Marshal(record{c.Method, c.Verifier})
+	return b
+}
+
+// Adopt makes what the store's record opens with the way c opens, and
+// reports whether c opened another way: the store wins over the file.
+func (c *Config) Adopt(rec []byte) (bool, error) {
+	var r record
+	if err := json.Unmarshal(rec, &r); err != nil {
+		return false, err
+	}
+	n := *c
+	n.Method, n.Verifier = r.Method, r.Verifier
+	if !n.Enabled() || !n.valid() {
+		return false, errors.New("applock: invalid record")
+	}
+	if c.Method == n.Method && bytes.Equal(c.Verifier, n.Verifier) {
+		return false, nil
+	}
+	*c = n
+	return true, nil
 }
 
 // Save writes the lock to path atomically.

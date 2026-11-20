@@ -2899,7 +2899,7 @@
   "appLockOnSleep": "Lock when the screen locks or the computer sleeps",
   "appLockNow": "Lock now",
   "appLockAction": "Lock SSHYard",
-  "appLockScopeNote": "The app lock keeps your hosts and sessions from anyone else using this computer; while it is locked, sessions, forwards and transfers keep running. It does not encrypt the data folder. If you can no longer unlock, quit SSHYard and delete applock.json in the data folder: your hosts and secrets stay.",
+  "appLockScopeNote": "The app lock keeps your hosts and sessions from anyone else using this computer; while it is locked, sessions, forwards and transfers keep running. It does not encrypt the data folder. If you can no longer unlock, reset the app lock from the lock screen: this deletes the secrets saved on this computer, while hosts and settings stay.",
   "appLockedTitle": "SSHYard is locked",
   "appLockedPasswordPrompt": "Enter your password to unlock.",
   "appLockedCodePrompt": "Enter the code from your authenticator app to unlock.",
@@ -2908,9 +2908,8 @@
   "appLockCode": "Code",
   "appLockWrong": "The password or code is incorrect.",
   "appLockWait": "Too many attempts. Try again in {seconds} s.",
-  "appLockSecretMissing": "The one-time code secret is missing from the credential store. Quit SSHYard and delete applock.json in the data folder to remove the lock.",
-  "appLockBroken": "The app lock settings can't be read. Quit SSHYard and delete applock.json in the data folder to remove the lock.",
-  "appLockForgot": "Can't unlock? Quit SSHYard and delete applock.json in the data folder.",
+  "appLockSecretMissing": "The one-time code secret is missing from the credential store. Reset the app lock to remove it.",
+  "appLockBroken": "The app lock settings can't be read. Unlock saved secrets to restore them, or reset the app lock.",
   "appLockShowMain": "Unlock in the Main Window",
   "appLockEnableTitle": "Turn On App Lock",
   "appLockChangeTitle": "Change App Lock",
@@ -2922,5 +2921,11 @@
   "appLockCopyKey": "Copy Setup Key",
   "appLockQrAlt": "QR code for the authenticator app",
   "appLockKeepAuthenticator": "The authenticator app already set up keeps giving the codes.",
-  "appLockCodeWrong": "The code doesn't match. Check that the time on your phone and computer is right, then enter the current code."
+  "appLockCodeWrong": "The code doesn't match. Check that the time on your phone and computer is right, then enter the current code.",
+  "appLockResetEllipsis": "Reset App Lock…",
+  "appLockResetTitle": "Reset the app lock?",
+  "appLockResetBody": "Resetting turns off the app lock and deletes every secret saved on this computer: passwords, private keys, passphrases, API keys and backup credentials. Hosts, groups and settings stay. This can't be undone.",
+  "appLockReset": "Reset and Delete Secrets",
+  "appLockResetDone": "The app lock was reset and saved secrets were deleted.",
+  "appLockRestored": "The app lock was changed outside SSHYard and has been restored."
 }

@@ -23,7 +23,7 @@ var Kinds = []Kind{Password, PrivateKey, Passphrase}
 // host/<id>/<kind>, cred/<id>/<kind>, proxy/<id>/password, forward/<id>/password,
 // snippet/<id>/content, ai/<profileID>/apikey, ai/<agentID>/env/<NAME>,
 // backup/<id>/secret, backup/<id>/key, localkey/<keyID>/passphrase,
-// mcp/token and applock/totp.
+// mcp/token, applock/config and applock/totp.
 
 // Cred is the entry of a credential's secret: cred/<id>/<kind>.
 // Host is a host-owned secret entry.
@@ -60,6 +60,11 @@ func LocalKeyPassphrase(keyID string) string { return "localkey/" + keyID + "/pa
 
 // MCPToken is the bearer token of the MCP endpoint.
 const MCPToken = "mcp/token"
+
+// AppLock is what opens the app lock (applock.Config.Record), which
+// wins over applock.json, so that deleting or replacing that file does
+// not remove the lock.
+const AppLock = "applock/config"
 
 // AppLockTOTP is the secret of the one-time codes that open the app lock
 // on this computer, so no backup holds it.
@@ -196,6 +201,30 @@ func (k *Keychain) DeleteCred(id string) error {
 		changes = append(changes, Change{Key: Cred(id, kind), Delete: true})
 	}
 	return k.Apply(changes)
+}
+
+// Wipe deletes every secret, whether or not the store is unlocked: a
+// locked one loses its file, and starts empty when it is unlocked again.
+// The master key stays.
+func (k *Keychain) Wipe() error {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	if k.closed {
+		return &OpError{Op: "closed", Err: ErrLocked}
+	}
+	switch b := k.b.(type) {
+	case *encryptedStore:
+		return b.wipe()
+	case *Memory:
+		b.mu.Lock()
+		defer b.mu.Unlock()
+		if b.Fail != nil {
+			return b.Fail
+		}
+		b.m = map[string][]byte{}
+		return nil
+	}
+	return errors.New("keychain: this store cannot be wiped")
 }
 
 // Close clears the cached master key and releases the lifetime lock.

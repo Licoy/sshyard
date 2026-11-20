@@ -20169,34 +20169,24 @@ func (msgs Messages) AppLockWait(seconds string) string {
 	return Catalog.Format(msgs.locale, "appLockWait", map[string]any{"seconds": seconds})
 }
 
-// AppLockSecretMissing says "The one-time code secret is missing from the credential store. Quit SSHYard and delete applock.json in the data folde…"
+// AppLockSecretMissing says "The one-time code secret is missing from the credential store. Reset the app lock to remove it."
 // in the language the app shows.
 func AppLockSecretMissing() string { return In(i18n.Locale()).AppLockSecretMissing() }
 
-// AppLockSecretMissing says "The one-time code secret is missing from the credential store. Quit SSHYard and delete applock.json in the data folde…"
+// AppLockSecretMissing says "The one-time code secret is missing from the credential store. Reset the app lock to remove it."
 // in the language of msgs.
 func (msgs Messages) AppLockSecretMissing() string {
 	return Catalog.Format(msgs.locale, "appLockSecretMissing", nil)
 }
 
-// AppLockBroken says "The app lock settings can't be read. Quit SSHYard and delete applock.json in the data folder to remove the lock."
+// AppLockBroken says "The app lock settings can't be read. Unlock saved secrets to restore them, or reset the app lock."
 // in the language the app shows.
 func AppLockBroken() string { return In(i18n.Locale()).AppLockBroken() }
 
-// AppLockBroken says "The app lock settings can't be read. Quit SSHYard and delete applock.json in the data folder to remove the lock."
+// AppLockBroken says "The app lock settings can't be read. Unlock saved secrets to restore them, or reset the app lock."
 // in the language of msgs.
 func (msgs Messages) AppLockBroken() string {
 	return Catalog.Format(msgs.locale, "appLockBroken", nil)
-}
-
-// AppLockForgot says "Can't unlock? Quit SSHYard and delete applock.json in the data folder."
-// in the language the app shows.
-func AppLockForgot() string { return In(i18n.Locale()).AppLockForgot() }
-
-// AppLockForgot says "Can't unlock? Quit SSHYard and delete applock.json in the data folder."
-// in the language of msgs.
-func (msgs Messages) AppLockForgot() string {
-	return Catalog.Format(msgs.locale, "appLockForgot", nil)
 }
 
 // AppLockShowMain says "Unlock in the Main Window"
@@ -20317,4 +20307,64 @@ func AppLockCodeWrong() string { return In(i18n.Locale()).AppLockCodeWrong() }
 // in the language of msgs.
 func (msgs Messages) AppLockCodeWrong() string {
 	return Catalog.Format(msgs.locale, "appLockCodeWrong", nil)
+}
+
+// AppLockResetEllipsis says "Reset App Lock…"
+// in the language the app shows.
+func AppLockResetEllipsis() string { return In(i18n.Locale()).AppLockResetEllipsis() }
+
+// AppLockResetEllipsis says "Reset App Lock…"
+// in the language of msgs.
+func (msgs Messages) AppLockResetEllipsis() string {
+	return Catalog.Format(msgs.locale, "appLockResetEllipsis", nil)
+}
+
+// AppLockResetTitle says "Reset the app lock?"
+// in the language the app shows.
+func AppLockResetTitle() string { return In(i18n.Locale()).AppLockResetTitle() }
+
+// AppLockResetTitle says "Reset the app lock?"
+// in the language of msgs.
+func (msgs Messages) AppLockResetTitle() string {
+	return Catalog.Format(msgs.locale, "appLockResetTitle", nil)
+}
+
+// AppLockResetBody says "Resetting turns off the app lock and deletes every secret saved on this computer: passwords, private keys, passphrase…"
+// in the language the app shows.
+func AppLockResetBody() string { return In(i18n.Locale()).AppLockResetBody() }
+
+// AppLockResetBody says "Resetting turns off the app lock and deletes every secret saved on this computer: passwords, private keys, passphrase…"
+// in the language of msgs.
+func (msgs Messages) AppLockResetBody() string {
+	return Catalog.Format(msgs.locale, "appLockResetBody", nil)
+}
+
+// AppLockReset says "Reset and Delete Secrets"
+// in the language the app shows.
+func AppLockReset() string { return In(i18n.Locale()).AppLockReset() }
+
+// AppLockReset says "Reset and Delete Secrets"
+// in the language of msgs.
+func (msgs Messages) AppLockReset() string {
+	return Catalog.Format(msgs.locale, "appLockReset", nil)
+}
+
+// AppLockResetDone says "The app lock was reset and saved secrets were deleted."
+// in the language the app shows.
+func AppLockResetDone() string { return In(i18n.Locale()).AppLockResetDone() }
+
+// AppLockResetDone says "The app lock was reset and saved secrets were deleted."
+// in the language of msgs.
+func (msgs Messages) AppLockResetDone() string {
+	return Catalog.Format(msgs.locale, "appLockResetDone", nil)
+}
+
+// AppLockRestored says "The app lock was changed outside SSHYard and has been restored."
+// in the language the app shows.
+func AppLockRestored() string { return In(i18n.Locale()).AppLockRestored() }
+
+// AppLockRestored says "The app lock was changed outside SSHYard and has been restored."
+// in the language of msgs.
+func (msgs Messages) AppLockRestored() string {
+	return Catalog.Format(msgs.locale, "appLockRestored", nil)
 }

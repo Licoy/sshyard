@@ -259,6 +259,16 @@ func (b *encryptedStore) commit(values map[string][]byte) error {
 	b.exists = true
 	return nil
 }
+func (b *encryptedStore) wipe() error {
+	if len(b.key) != 0 {
+		return b.commit(map[string][]byte{})
+	}
+	if err := os.Remove(b.path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return &OpError{Op: "file-write", Err: err}
+	}
+	b.sealed, b.exists = nil, false
+	return nil
+}
 func (b *encryptedStore) close() error {
 	clear(b.key)
 	b.key = nil
