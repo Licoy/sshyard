@@ -291,6 +291,17 @@ def icon_svg(name: str) -> str:
     fail(f"no icon {name}.svg in website/icons or internal/icons/svg")
 
 
+@functools.cache
+def file_icon_svg(name: str) -> str:
+    """A Material Icon Theme file or folder icon, unchanged but for the
+    attributes the page needs; the artwork keeps its own colours."""
+    p = REPO / "internal" / "fileicons" / "svg" / f"{name}.svg"
+    if not p.exists():
+        fail(f"no file icon {name}.svg in internal/fileicons/svg")
+    svg = p.read_text("utf-8").strip()
+    return svg.replace("<svg ", f'<svg class="fi" data-fi="{name}" aria-hidden="true" focusable="false" width="16" height="16" ', 1)
+
+
 def fingerprint(out: Path, rel: str, data: bytes) -> str:
     stem, dot, ext = rel.rpartition(".")
     name = f"{stem}.{hashlib.sha256(data).hexdigest()[:10]}.{ext}"
@@ -363,7 +374,8 @@ class Site:
                                undefined=StrictUndefined, trim_blocks=True, lstrip_blocks=True,
                                keep_trailing_newline=True)
         self.env.filters["fill"] = fill
-        self.env.globals.update(icon=lambda name: Markup(icon_svg(name)), github=GITHUB,
+        self.env.globals.update(icon=lambda name: Markup(icon_svg(name)),
+                                file_icon=lambda name: Markup(file_icon_svg(name)), github=GITHUB,
                                 platforms=PLATFORMS, platform_icons=PLATFORM_ICONS, format_size=format_size)
 
     # URLs ---------------------------------------------------------
@@ -453,7 +465,11 @@ class Site:
                        **t["download"]["platforms"]["linux"]["files"]},
             "linuxPage": self.path("download-linux", lang),
             "theme": {"auto": t["nav"]["theme_auto"], "light": t["nav"]["theme_light"], "dark": t["nav"]["theme_dark"]},
+            "palette": t["palette"],
         }
+        if page.key == "home":
+            # The demo window's strings; its hosts, files and shell are in site.js.
+            data["demo"] = {**t["demo"], "modes": t["ai"]["modes"], "card": t["ai"]["card"]}
         return Markup(script_json(data))
 
     def render_page(self, lang: Lang, page: Page) -> None:

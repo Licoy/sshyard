@@ -16,79 +16,121 @@
     <p class="hero-note reveal"><span class="dl-meta" data-dl-meta></span>{{ t.hero.note }}</p>
   </div>
 
-  <div class="wrap demo-wrap reveal">
-    <div class="demo" role="img" aria-label="{{ t.demo.aria }}">
+  <div class="wrap demo-wrap">
+    <div class="demo reveal" role="region" aria-label="{{ t.demo.aria }}" data-demo>
       <div class="win">
         <div class="win-bar">
           <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
-          <div class="win-tabs">
-            <span class="wtab on"><span class="tile" style="--tint: var(--tint-green)">w</span>web-01<i class="dot"></i></span>
-            <span class="wtab"><span class="tile" style="--tint: var(--tint-orange)">d</span>db-primary</span>
-            <span class="wtab-add">{{ icon('add-line') }}</span>
+          <div class="win-tabs" data-tabs>
+            <span class="wtab on"><span class="tile" style="--tint: var(--tint-green)">w</span><span class="wtab-name">web-01</span><i class="dot"></i></span>
+            <span class="wtab"><span class="tile" style="--tint: var(--tint-orange)">d</span><span class="wtab-name">db-primary</span><i class="dot"></i></span>
           </div>
-          <span class="win-actions">{{ icon('upload-cloud-2-line') }}{{ icon('settings-3-line') }}</span>
+          <button type="button" class="wbtn wtab-add" data-new-tab aria-label="{{ t.demo.new_tab }}" title="{{ t.demo.new_tab }}" aria-haspopup="true" aria-expanded="false">{{ icon('add-line') }}</button>
+          <span class="win-actions"><button type="button" class="wbtn" data-palette aria-label="{{ t.palette.label }}" title="{{ t.palette.label }}">{{ icon('command-line') }}</button></span>
+          <div class="tab-menu" data-tab-menu hidden>
+            <label class="side-search">{{ icon('search-line') }}<input type="search" data-tab-menu-search placeholder="{{ t.demo.search }}" aria-label="{{ t.demo.search }}" autocomplete="off" spellcheck="false"></label>
+            <ul role="list" data-tab-menu-list></ul>
+          </div>
         </div>
         <div class="win-body">
           <aside class="win-side">
-            <div class="side-search">{{ icon('search-line') }}<span>{{ t.demo.search }}</span></div>
+            <label class="side-search">{{ icon('search-line') }}<input type="search" data-host-search placeholder="{{ t.demo.search }}" aria-label="{{ t.demo.search }}" autocomplete="off" spellcheck="false"></label>
             <div class="side-group">{{ t.demo.group }}</div>
-            <ul>
-              <li class="on"><span class="tile" style="--tint: var(--tint-green)">w</span>web-01<i class="dot"></i></li>
-              <li><span class="tile" style="--tint: var(--tint-orange)">d</span>db-primary<i class="dot"></i></li>
-              <li><span class="tile" style="--tint: var(--tint-teal)">s</span>staging</li>
-              <li><span class="tile" style="--tint: var(--tint-purple)">b</span>bastion</li>
+            <ul role="list" data-hosts>
+              <li class="on"><span class="host"><span class="tile" style="--tint: var(--tint-green)">w</span>web-01<i class="dot"></i></span></li>
+              <li><span class="host"><span class="tile" style="--tint: var(--tint-orange)">d</span>db-primary<i class="dot"></i></span></li>
+              <li><span class="host"><span class="tile" style="--tint: var(--tint-teal)">s</span>staging</span></li>
+              <li><span class="host"><span class="tile" style="--tint: var(--tint-purple)">b</span>bastion</span></li>
             </ul>
-            <div class="side-foot">{{ t.demo.hosts }}</div>
+            <p class="side-empty muted" data-hosts-empty hidden>{{ t.demo.no_hosts }}</p>
           </aside>
-          <section class="pane term">
-            <div class="pane-head"><i class="dot"></i><strong>web-01</strong><span class="muted">deploy@10.0.1.12</span><span class="pane-icons">{{ icon('search-line') }}{{ icon('folder-3-line') }}{{ icon('layout-column-line') }}</span></div>
-            <pre class="term-out"><span class="tl t-dim">Last login: Tue Nov  3 09:12:44 2026 from 10.0.0.8</span>
+          <div class="win-main" data-main>
+            <div class="term-group" data-terms>
+              <section class="pane term focused" data-pane>
+                <div class="pane-head"><i class="dot"></i><span class="tile" style="--tint: var(--tint-green)">w</span><strong>web-01</strong><span class="muted">deploy@10.0.1.12</span></div>
+                <pre class="term-out"><span class="tl t-dim">Last login: Tue Nov  3 09:12:44 2026 from 10.0.0.8</span>
 <span class="tl">{{ prompt }}<span class="cmd">systemctl is-active nginx</span></span>
 <span class="tl">active</span>
-<span class="tl" data-at="1">{{ prompt }}<span class="cmd" data-type>curl -sI localhost | head -1</span></span>
-<span class="tl t-red" data-at="2">HTTP/1.1 502 Bad Gateway</span>
-<span class="tl" data-at="3">{{ prompt }}<span class="cmd" data-type-at="10">curl -sI localhost | head -1</span></span>
-<span class="tl t-ok" data-at="11">HTTP/1.1 200 OK</span>
-<span class="tl" data-at="12">{{ prompt }}<span class="cmd"></span><i class="cursor"></i></span></pre>
-            <div class="term-stats">
-              <span>{{ icon('cpu-line') }}<b data-stat="cpu">3%</b></span>
-              <span>{{ icon('ram-2-line') }}<b data-stat="mem">1.1G/1.6G</b></span>
-              <span>{{ icon('hard-drive-2-line') }}<b>33%</b></span>
-              <span>{{ icon('arrow-up-line') }}<b data-stat="up">437B/s</b></span>
-              <span>{{ icon('arrow-down-line') }}<b data-stat="down">863B/s</b></span>
-              <span class="lat">{{ icon('pulse-line') }}<b data-stat="lat">14 ms</b></span>
+<span class="tl">{{ prompt }}<span class="cmd">curl -sI localhost | head -1</span></span>
+<span class="tl t-red">HTTP/1.1 502 Bad Gateway</span>
+<span class="tl">{{ prompt }}<span class="cmd">curl -sI localhost | head -1</span></span>
+<span class="tl t-ok">HTTP/1.1 200 OK</span>
+<span class="tl">{{ prompt }}<i class="cursor"></i></span></pre>
+                <div class="term-stats">
+                  <span>{{ icon('cpu-line') }}<b>3%</b></span>
+                  <span>{{ icon('ram-2-line') }}<b>1.1G/1.6G</b></span>
+                  <span>{{ icon('hard-drive-2-line') }}<b>33%</b></span>
+                  <span>{{ icon('arrow-up-line') }}<b>437B/s</b></span>
+                  <span>{{ icon('arrow-down-line') }}<b>863B/s</b></span>
+                  <span class="lat">{{ icon('pulse-line') }}<b>14 ms</b></span>
+                </div>
+              </section>
             </div>
-          </section>
-          <section class="pane ai">
-            <div class="pane-head">{{ icon('robot-2-line') }}<strong>{{ t.demo.ai_title }} · web-01</strong></div>
-            <div class="ai-log">
-              <div class="msg-user" data-at="4"><span>{{ t.demo.user_q }}</span></div>
-              <div class="tool" data-at="5">
-                <div class="tool-head">{{ icon('terminal-box-line') }}<b>{{ t.demo.tool_run }}</b><span class="muted">{{ t.demo.tool_ok }}</span><span class="t-ok">{{ t.demo.tool_done }}</span></div>
-                <code>systemctl is-active php8.3-fpm</code>
-                <code class="t-red">failed</code>
+            <section class="pane tool" data-tool-pane data-kind="ai">
+              <div class="pane-head"><span class="tool-icon" data-tool-icon>{{ icon('robot-2-fill') }}</span><strong data-tool-title>{{ t.demo.ai_title }} · web-01</strong><span class="pane-icons" data-tool-actions></span><button type="button" class="wbtn" data-tool-close aria-label="{{ t.demo.tools.close }}" title="{{ t.demo.tools.close }}">{{ icon('close-line') }}</button></div>
+              <div class="tool-body ai-body" data-tool="ai">
+                <div class="ai-full" data-ai-full hidden>{{ icon('error-warning-line') }}<span>{{ t.ai.card.full_bar }}</span></div>
+                <div class="ai-log" data-ai-log>
+                  <div class="msg-user"><span>{{ t.demo.user_q }}</span></div>
+                  <div class="tool">
+                    <div class="tool-head">{{ icon('terminal-box-line') }}<b>{{ t.demo.tool_run }}</b><span class="muted">{{ t.demo.tool_ok }}</span><span class="t-ok">{{ t.demo.tool_done }}</span></div>
+                    <code>systemctl is-active php8.3-fpm</code>
+                    <code class="t-red">failed</code>
+                  </div>
+                  <p class="msg-ai">{{ t.demo.a1 }}</p>
+                  <div class="tool">
+                    <div class="tool-head">{{ icon('file-edit-line') }}<b>{{ t.demo.tool_edit }}</b><span class="muted">{{ t.demo.tool_ok }}</span><span class="t-ok">{{ t.demo.tool_done }}</span></div>
+                    <code>/etc/php/8.3/fpm/pool.d/www.conf</code>
+                    <code class="t-red">- listen = /run/php/php8.2-fpm.sock</code>
+                    <code class="t-ok">+ listen = /run/php/php8.3-fpm.sock</code>
+                  </div>
+                  <div class="tool">
+                    <div class="tool-head">{{ icon('terminal-box-line') }}<b>{{ t.demo.tool_run }}</b><span class="muted">{{ t.demo.tool_ok }}</span><span class="t-ok">{{ t.demo.tool_done }}</span></div>
+                    <code>sudo systemctl restart php8.3-fpm</code>
+                  </div>
+                  <p class="msg-ai">{{ t.demo.a2 }}</p>
+                </div>
+                <div class="ai-sugg" data-ai-sugg>
+                  {% for s in t.demo.suggestions %}
+                  <button type="button" class="chip" data-q="{{ loop.index0 }}">{{ icon('lightbulb-line') }}{{ s.q }}</button>
+                  {% endfor %}
+                </div>
+                <form class="ai-input" data-ai-form>
+                  <input type="text" data-ai-input placeholder="{{ t.demo.placeholder }}" aria-label="{{ t.demo.placeholder }}" autocomplete="off" spellcheck="false">
+                  <span class="ai-input-row">
+                    <button type="button" class="chip chip-mode" data-ai-mode title="{{ t.ai.modes_label }}">{{ icon('eye-line') }}<span>{{ t.ai.modes[1].label }}</span></button>
+                    <button type="submit" class="wbtn" aria-label="{{ t.demo.send }}" title="{{ t.demo.send }}">{{ icon('send-plane-2-line') }}</button>
+                  </span>
+                </form>
               </div>
-              <p class="msg-ai" data-at="6" data-stream>{{ t.demo.a1 }}</p>
-              <div class="tool" data-at="7">
-                <div class="tool-head">{{ icon('file-edit-line') }}<b>{{ t.demo.tool_edit }}</b><span class="muted">{{ t.demo.tool_ok }}</span><span class="t-ok">{{ t.demo.tool_done }}</span></div>
-                <code>/etc/php/8.3/fpm/pool.d/www.conf</code>
-                <code class="t-red">- listen = /run/php/php8.2-fpm.sock</code>
-                <code class="t-ok">+ listen = /run/php/php8.3-fpm.sock</code>
-              </div>
-              <div class="tool" data-at="8">
-                <div class="tool-head">{{ icon('terminal-box-line') }}<b>{{ t.demo.tool_run }}</b><span class="muted">{{ t.demo.tool_ok }}</span><span class="t-ok">{{ t.demo.tool_done }}</span></div>
-                <code>sudo systemctl restart php8.3-fpm</code>
-              </div>
-              <p class="msg-ai" data-at="9" data-stream>{{ t.demo.a2 }}</p>
-            </div>
-            <div class="ai-input">
-              <span class="muted">{{ t.demo.placeholder }}</span>
-              <span class="ai-input-row"><span class="chip chip-warn">{{ icon('eye-line') }}{{ t.demo.mode }}</span>{{ icon('send-plane-2-line') }}</span>
-            </div>
-          </section>
+              <div class="tool-body" data-tool="monitor" hidden></div>
+              <div class="tool-body" data-tool="files" hidden></div>
+              <div class="tool-body" data-tool="snippets" hidden></div>
+            </section>
+          </div>
+          <nav class="win-rail" aria-label="{{ t.palette.demo }}">
+            <button type="button" class="wbtn" data-rail="monitor" aria-label="{{ t.demo.tools.monitor }}" title="{{ t.demo.tools.monitor }}" aria-pressed="false">{{ icon('pulse-line') }}{{ icon('pulse-fill') }}</button>
+            <button type="button" class="wbtn" data-rail="files" aria-label="{{ t.demo.tools.files }}" title="{{ t.demo.tools.files }}" aria-pressed="false">{{ icon('folder-3-line') }}{{ icon('folder-3-fill') }}</button>
+            <button type="button" class="wbtn on" data-rail="ai" aria-label="{{ t.demo.tools.ai }}" title="{{ t.demo.tools.ai }}" aria-pressed="true">{{ icon('robot-2-line') }}{{ icon('robot-2-fill') }}</button>
+            <button type="button" class="wbtn" data-rail="snippets" aria-label="{{ t.demo.tools.snippets }}" title="{{ t.demo.tools.snippets }}" aria-pressed="false">{{ icon('code-s-slash-line') }}{{ icon('code-s-slash-line') }}</button>
+          </nav>
         </div>
+        <div class="win-status">
+          <span class="st-hosts">{{ t.demo.hosts }}</span>
+          <span class="st-host" data-st-host><i class="dot"></i><b>web-01</b><span class="muted">deploy@10.0.1.12</span></span>
+          <span class="st-item" data-st-time>{{ icon('time-line') }}<span></span></span>
+          <span class="st-item" data-st-sessions>{{ icon('window-line') }}<span>{{ t.demo.session_many | fill(n=2) }}</span></span>
+          <button type="button" class="wbtn st-theme" data-st-theme aria-label="{{ t.nav.theme }}" title="{{ t.nav.theme }}">{{ icon('moon-line') }}{{ icon('sun-line') }}</button>
+        </div>
+        <input class="term-input" type="text" data-term-input aria-label="{{ t.features['items'][0].title }}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" tabindex="-1">
+        <input type="file" multiple hidden data-file-pick>
       </div>
+      <template data-icons>
+        {% for n in ['close-line', 'add-line', 'folder-3-line', 'layout-column-line', 'cpu-line', 'ram-2-line', 'hard-drive-2-line', 'arrow-up-line', 'arrow-down-line', 'pulse-line', 'terminal-box-line', 'file-edit-line', 'play-circle-line', 'terminal-line', 'corner-left-up-line', 'refresh-line', 'upload-2-line', 'footprint-line', 'footprint-fill', 'arrow-left-line', 'arrow-right-s-line', 'shield-check-line', 'eye-line', 'lock-unlock-line', 'restart-line', 'server-line', 'global-line', 'time-line', 'checkbox-circle-fill', 'close-circle-line', 'robot-2-fill', 'pulse-fill', 'folder-3-fill', 'code-s-slash-line', 'computer-line', 'search-line', 'lightbulb-line'] %}<span data-i="{{ n }}">{{ icon(n) }}</span>{% endfor %}
+        {% for n in ['folder', 'folder-config', 'folder-log', 'folder-public', 'folder-src', 'folder-temp', 'folder-database', 'folder-lib', 'file', 'document', 'settings', 'log', 'php', 'json', 'console', 'markdown', 'nginx', 'html', 'yaml', 'image', 'zip', 'database', 'javascript', 'css', 'lock', 'docker', 'pdf', 'python', 'go', 'certificate'] %}{{ file_icon(n) }}{% endfor %}
+      </template>
     </div>
+    <p class="demo-hint reveal">{{ icon('mouse-line') }}<span>{{ t.demo.hint }}</span></p>
   </div>
 </section>
 
@@ -130,11 +172,15 @@
       {% for s in t.tour["items"] %}
       {% set shot = shots[s.key] %}
       <div class="shot{% if loop.first %} on{% endif %}" role="tabpanel" id="shot-{{ s.key }}" aria-labelledby="tab-{{ s.key }}"><figure>
-        <img src="{{ file(shot.src) }}" srcset="{% for f, w in shot.srcset %}{{ file(f) }} {{ w }}w{{ ', ' if not loop.last }}{% endfor %}" sizes="(min-width: 1240px) 1160px, calc(100vw - 32px)" width="{{ shot.width }}" height="{{ shot.height }}" alt="{{ s.alt }}" loading="lazy" decoding="async">
+        <img data-zoom title="{{ t.tour.zoom }}" src="{{ file(shot.src) }}" srcset="{% for f, w in shot.srcset %}{{ file(f) }} {{ w }}w{{ ', ' if not loop.last }}{% endfor %}" sizes="(min-width: 1240px) 1160px, calc(100vw - 32px)" width="{{ shot.width }}" height="{{ shot.height }}" alt="{{ s.alt }}" loading="lazy" decoding="async">
         <figcaption>{{ s.caption }}</figcaption>
       </figure></div>
       {% endfor %}
     </div>
+    <dialog class="lightbox" data-lightbox aria-label="{{ t.tour.zoom }}">
+      <img alt="" decoding="async">
+      <form method="dialog"><button class="icon-btn lightbox-close" aria-label="{{ t.tour.close }}" title="{{ t.tour.close }}">{{ icon('close-line') }}</button></form>
+    </dialog>
   </div>
 </section>
 
@@ -155,21 +201,25 @@
       </div>
       {% endfor %}
     </div>
-    <div class="ai-visual reveal" aria-hidden="true">
-      <div class="approval" data-mode="ask">
+    <div class="ai-visual reveal">
+      <div class="approval" data-mode="ask" data-step="wait" data-approval>
         <div class="full-bar">{{ icon('error-warning-line') }}<span>{{ t.ai.card.full_bar }}</span></div>
         <div class="approval-card">
           <div class="tool-head">{{ icon('terminal-box-line') }}<b>{{ t.demo.tool_run }}</b>
-            <span class="state" data-for="ask">{{ icon('time-line') }}{{ t.ai.card.waiting }}</span>
-            <span class="state t-ok" data-for="review">{{ icon('shield-check-line') }}{{ t.ai.card.reviewed }}</span>
-            <span class="state t-warn" data-for="full">{{ icon('flashlight-line') }}{{ t.ai.card.ran }}</span>
+            <span class="state" data-state="wait">{{ icon('time-line') }}{{ t.ai.card.waiting }}</span>
+            <span class="state" data-state="check">{{ icon('eye-line') }}{{ t.ai.card.reviewing }}</span>
+            <span class="state t-ok" data-state="ok">{{ icon('shield-check-line') }}{{ t.demo.tool_done }}</span>
+            <span class="state t-red" data-state="denied">{{ icon('close-circle-line') }}{{ t.ai.card.denied }}</span>
+            <span class="state t-ok" data-state="reviewed">{{ icon('shield-check-line') }}{{ t.ai.card.reviewed }}</span>
+            <span class="state t-warn" data-state="ran">{{ icon('flashlight-line') }}{{ t.ai.card.ran }}</span>
+            <button type="button" class="wbtn approval-replay" data-approval-replay aria-label="{{ t.ai.card.replay }}" title="{{ t.ai.card.replay }}">{{ icon('restart-line') }}</button>
           </div>
           <code>$ {{ t.ai.card.command }}</code>
-          <div class="approval-actions" data-for="ask">
-            <span class="btn btn-quiet btn-sm">{{ t.ai.card.deny }}</span>
-            <span class="btn btn-primary btn-sm">{{ t.ai.card.allow }}</span>
+          <div class="approval-actions">
+            <button type="button" class="btn btn-quiet btn-sm" data-approval-deny>{{ t.ai.card.deny }}</button>
+            <button type="button" class="btn btn-primary btn-sm" data-approval-allow>{{ t.ai.card.allow }}</button>
           </div>
-          <div class="approval-out" data-for="review full"><code class="t-dim">● php8.3-fpm.service — active (running)</code></div>
+          <div class="approval-out"><code class="t-dim"><span class="t-ok">●</span> php8.3-fpm.service — active (running)</code></div>
         </div>
       </div>
     </div>
@@ -206,6 +256,13 @@
         <li>{{ icon('shield-check-line') }}<span>{{ p }}</span></li>
         {% endfor %}
       </ul>
+      <div class="seal card" data-seal hidden>
+        <h3>{{ icon('lock-password-line') }}{{ t.security.demo.title }}</h3>
+        <label class="seal-field"><span>{{ t.security.demo.label }}</span><input type="text" value="{{ t.security.demo.sample }}" data-seal-input autocomplete="off" spellcheck="false" maxlength="64"></label>
+        <div class="seal-row"><span class="seal-k">{{ t.security.demo.plain }}</span><code data-seal-plain></code></div>
+        <div class="seal-row"><span class="seal-k">{{ icon('lock-line') }}{{ t.security.demo.sealed }} <span class="muted" data-seal-bytes data-tpl="{{ t.security.demo.bytes }}"></span></span><code class="seal-out" data-seal-out></code></div>
+        <p class="seal-note">{{ t.security.demo.note }}</p>
+      </div>
     </div>
     <ol class="chain" role="list">
       {% for s in t.security.steps %}

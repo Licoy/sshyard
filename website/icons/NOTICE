@@ -2,3 +2,7 @@ These SVG files are copied unchanged from Remix Icon v4.8.0
 (https://github.com/Remix-Design/RemixIcon/tree/v4.8.0/icons), licensed
 under the Apache License 2.0; see ../../internal/icons/LICENSE. The site
 also reads the app's own Remix icons from internal/icons/svg/.
+
+The demo window's file and folder icons are read unchanged from
+internal/fileicons/svg/ (Material Icon Theme v5.40.0, MIT); its licence
+and notices are in ../../resources/licenses/material-icon-theme/.

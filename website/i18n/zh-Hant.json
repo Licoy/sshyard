@@ -27,6 +27,15 @@
     "theme_dark": "深色",
     "skip": "跳至主要內容"
   },
+  "palette": {
+    "label": "命令面板",
+    "placeholder": "搜尋頁面、設定和操作",
+    "empty": "沒有相符項目",
+    "go": "前往",
+    "demo": "示範視窗",
+    "connect": "連線到 {host}",
+    "open": "開啟{name}"
+  },
   "hero": {
     "release": "版本 {version}",
     "release_link": "更新內容",
@@ -42,9 +51,69 @@
     "note": "免費開源 · 無需註冊帳號 · 支援 macOS、Windows 和 Linux"
   },
   "demo": {
-    "aria": "動畫示例：在 SSHYard 中，AI 助理查明伺服器回傳 502 的原因並完成修復，終端機始終保持開啟。",
+    "aria": "一個可以操作的 SSHYard 視窗：在分頁中開啟主機、在終端機中輸入命令，並從右側開啟系統監視、檔案、AI 助理和快速指令。",
+    "hint": "這個視窗可以直接操作：選擇一臺主機，在終端機中輸入命令（先試試 help），或從右側開啟一個窗格。",
     "search": "搜尋主機",
     "group": "主機",
+    "hosts": "4 臺主機",
+    "no_hosts": "沒有相符的主機",
+    "new_tab": "新建分頁",
+    "close_tab": "關閉分頁",
+    "split": "向右拆分",
+    "close_pane": "關閉窗格",
+    "connecting": "正在連線 {host}…",
+    "disconnected": "已中斷。按 Enter 鍵重新連線。",
+    "no_tabs": "沒有開啟的分頁。選擇一臺主機進行連線。",
+    "session_one": "1 個工作階段",
+    "session_many": "{n} 個工作階段",
+    "shell": {
+      "help": "在這個示範中可以試試這些命令：",
+      "keys": "Tab 補全，↑ 和 ↓ 瀏覽歷史記錄，Ctrl+C 中止，Ctrl+L 清除畫面。",
+      "editor": "這個示範無法執行 {cmd}，檔案已在「檔案」窗格中開啟。",
+      "ssh": "要連線其他主機，請在側邊欄或 + 選單中選擇。"
+    },
+    "tools": {"monitor": "系統監視", "files": "檔案", "ai": "AI", "snippets": "快速指令", "close": "關閉"},
+    "monitor": {
+      "system": "系統",
+      "address": "位址",
+      "os": "作業系統",
+      "latency": "延遲",
+      "connected": "已連線",
+      "cores": "{n} 核心",
+      "average": "平均使用率",
+      "load": "平均負載",
+      "memory": "記憶體",
+      "physical": "實體記憶體",
+      "swap": "交換分割槽",
+      "network": "網路",
+      "disk": "磁碟"
+    },
+    "files": {
+      "up": "上一層",
+      "refresh": "重新整理",
+      "upload": "上傳檔案…",
+      "follow": "檔案跟隨終端機目錄",
+      "name": "名稱",
+      "size": "大小",
+      "drop": "將檔案拖放到這裡即可上傳",
+      "uploading": "正在上傳 {name}",
+      "uploaded": "已上傳 {name}",
+      "note": "檔案不會離開你的瀏覽器：示範只讀取檔名和大小。",
+      "empty": "此資料夾是空的",
+      "back": "返回"
+    },
+    "snippets": {
+      "run": "執行命令",
+      "insert": "僅插入",
+      "items": [
+        {"name": "磁碟用量", "cmd": "df -h"},
+        {"name": "記憶體", "cmd": "free -h"},
+        {"name": "佔用最高的處理程序", "cmd": "ps aux --sort=-%mem | head -5"},
+        {"name": "nginx 狀態", "cmd": "systemctl status nginx"},
+        {"name": "容器", "cmd": "docker ps"},
+        {"name": "系統資訊", "cmd": "neofetch"}
+      ]
+    },
     "ai_title": "AI",
     "user_q": "部署之後 nginx 一直回傳 502，是怎麼回事？",
     "tool_run": "執行命令",
@@ -54,8 +123,17 @@
     "a1": "部署後 php-fpm 沒有啟動：處理程序集區仍監聽 PHP 8.2 的 socket，而 nginx 現在連線的是 php8.3-fpm.sock。",
     "a2": "已將處理程序集區改為 8.3 的 socket 並重新啟動 php-fpm，nginx 恢復回傳 200。",
     "placeholder": "詢問這臺主機",
-    "mode": "自動審核",
-    "hosts": "4 臺主機"
+    "send": "傳送",
+    "replay": "重新播放",
+    "running": "正在執行…",
+    "rejected": "已拒絕",
+    "free_text": "這個示範只能回答下面的建議問題。在應用程式中，助理可以回答關於這臺主機的任何問題。",
+    "denied": "好的，我不會執行它。如果想換個方法，請告訴我。",
+    "suggestions": [
+      {"q": "磁碟還剩多少空間？", "cmd": "df -h /", "a": "/ 已使用 {pct}：共 {size}，已用 {used}，剩餘 {avail}。暫時不需要清理。"},
+      {"q": "什麼佔用記憶體最多？", "cmd": "ps -eo comm,rss --sort=-rss | head -4", "a": "佔用記憶體最多的是 {top}（{topmem}），其次是 {second}（{secondmem}）。對這臺主機來說屬於正常。"},
+      {"q": "有服務失敗嗎？", "cmd": "systemctl --failed --no-legend", "a": "{host} 上沒有失敗的 systemd 單元。"}
+    ]
   },
   "glance": {
     "title": "SSHYard 一覽",
@@ -149,7 +227,9 @@
       {"key": "sftp", "label": "SFTP", "caption": "在終端機旁瀏覽和編輯遠端檔案，傳輸在背景進行。", "alt": "SSHYard 的 SFTP 檔案管理器與終端機並排顯示"},
       {"key": "monitor", "label": "系統監視", "caption": "即時檢視已連線主機的 CPU、記憶體、磁碟和網路數據。", "alt": "SSHYard 系統監視，顯示 CPU、記憶體、磁碟和網路圖表"},
       {"key": "settings", "label": "AI 設定", "caption": "選擇 AI 服務和模型、審核模型，以及助理可以自主執行到什麼程度。", "alt": "SSHYard AI 助理設定，列出服務供應商與模型"}
-    ]
+    ],
+    "zoom": "放大截圖",
+    "close": "關閉"
   },
   "ai": {
     "title": "在主機上\u200b動手的 AI\u00a0助理，\u200b主導權\u200b始終在你",
@@ -167,7 +247,10 @@
       "deny": "拒絕",
       "reviewed": "審核模型已批准",
       "ran": "未詢問直接執行",
-      "full_bar": "完全允許 — 所有操作不再詢問"
+      "full_bar": "完全允許 — 所有操作不再詢問",
+      "denied": "已拒絕，沒有執行任何操作",
+      "reviewing": "審核模型正在檢查…",
+      "replay": "重新播放"
     },
     "providers_title": "使用你自己的模型",
     "providers_text": "可接入任何支援 OpenAI 相容 Chat Completions、OpenAI Responses 或 Anthropic Messages 介面的服務，包括你自行部署的模型。終端機輸出和檔案內容只會傳送給你選擇的服務，而且要先在該主機上取得你的同意。也可以直接使用本機自動偵測到的 Claude Code、Codex、Grok、Gemini CLI 等 ACP 代理程式，它們的操作只在遠端主機上進行。",
@@ -184,7 +267,16 @@
       {"icon": "shield-keyhole-line", "title": "密封備份", "text": "備份在本機完成壓縮和加密，金鑰由你的密碼透過 Argon2id 衍生，並使用 XChaCha20-Poly1305 加密。"},
       {"icon": "upload-cloud-2-line", "title": "你的儲存空間", "text": "WebDAV、S3 相容儲存和 GitHub Gist 只會收到加密後的檔案，備份密碼本身從不儲存。"}
     ],
-    "points": ["代理程式拿到的是權杖，而不是你儲存的憑證", "無需註冊任何帳號", "以 AGPL-3.0 開放原始碼，任何人都能審查程式碼"]
+    "points": ["代理程式拿到的是權杖，而不是你儲存的憑證", "無需註冊任何帳號", "以 AGPL-3.0 開放原始碼，任何人都能審查程式碼"],
+    "demo": {
+      "title": "看一條密鑰如何被加密",
+      "label": "輸入一個密碼",
+      "sample": "correct-horse-battery",
+      "plain": "明文",
+      "sealed": "密文",
+      "bytes": "{n} 位元組",
+      "note": "僅作示範：瀏覽器沒有內建 XChaCha20-Poly1305，因此這裡由你的瀏覽器以隨機金鑰用 AES-GCM 加密文字。不會傳送或儲存任何內容。"
+    }
   },
   "download": {
     "title": "下載 SSHYard",

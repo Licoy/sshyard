@@ -5,8 +5,20 @@ deployed to GitHub Pages by `.github/workflows/website.yml`.
 
 Every page is rendered at build time from Jinja templates and the language
 catalogs, so the HTML that crawlers and link previews receive is complete.
-JavaScript only adds interaction (theme switch, the demo window, the
-download button for the visitor's platform, the language redirect).
+JavaScript only adds interaction: the theme switch, the command palette
+(⌘K / Ctrl+K), the download button for the visitor's platform, the
+language redirect, the screenshot lightbox and the home page's demos.
+
+The demo window on the home page is a small working model of the app: a
+host list, tabs, split terminals over a pretend shell (`help` lists its
+commands, with pipes, `&&` and redirection) and an in-memory file system
+per host, and the right rail's system monitor, files, AI and snippets
+panes. The AI pane answers a few suggested questions through the same
+shell and follows the chosen permission mode. Nothing in it talks to a
+network: an "uploaded" file only has its name and size read. Without
+JavaScript the window shows the same story as static markup. The approval
+card in the AI section and the security section's encryption demo (AES-GCM
+in the browser, with a random key) are interactive as well.
 
 ## Layout
 
@@ -20,7 +32,8 @@ download button for the visitor's platform, the language redirect).
 | `icons/` | Extra Remix Icon v4.8.0 SVGs the app itself does not use |
 
 The site also reads from the repository: `internal/icons/svg` (Remix Icon),
-`internal/aibrands/png` (LobeHub AI brand icons), `docs/*.webp`
+`internal/aibrands/png` (LobeHub AI brand icons), `internal/fileicons/svg`
+(Material Icon Theme file and folder icons for the demo), `docs/*.webp`
 (screenshots), `resources/icon.png` and `mygo.json`.
 
 ## Build and preview

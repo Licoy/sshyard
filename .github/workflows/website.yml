@@ -24,6 +24,7 @@ on:
       - "mygo.json"
       - "internal/icons/svg/**"
       - "internal/aibrands/png/**"
+      - "internal/fileicons/svg/**"
       - ".github/workflows/website.yml"
   workflow_run:
     workflows: [Release]

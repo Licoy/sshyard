@@ -27,6 +27,15 @@
     "theme_dark": "深色",
     "skip": "跳到正文"
   },
+  "palette": {
+    "label": "命令面板",
+    "placeholder": "搜索页面、设置和操作",
+    "empty": "没有匹配项",
+    "go": "前往",
+    "demo": "演示窗口",
+    "connect": "连接到 {host}",
+    "open": "打开{name}"
+  },
   "hero": {
     "release": "版本 {version}",
     "release_link": "更新内容",
@@ -42,9 +51,69 @@
     "note": "免费开源 · 无需注册账号 · 支持 macOS、Windows 和 Linux"
   },
   "demo": {
-    "aria": "动画示例：在 SSHYard 中，AI 助手查明服务器返回 502 的原因并完成修复，终端始终保持打开。",
+    "aria": "一个可以操作的 SSHYard 窗口：在标签页中打开主机、在终端中输入命令，并从右侧打开系统监控、文件、AI 助手和快捷指令。",
+    "hint": "这个窗口可以直接操作：选择一台主机，在终端中输入命令（先试试 help），或从右侧打开一个窗格。",
     "search": "搜索主机",
     "group": "主机",
+    "hosts": "4 台主机",
+    "no_hosts": "没有匹配的主机",
+    "new_tab": "新建标签页",
+    "close_tab": "关闭标签页",
+    "split": "向右拆分",
+    "close_pane": "关闭窗格",
+    "connecting": "正在连接 {host}…",
+    "disconnected": "已断开。按回车键重新连接。",
+    "no_tabs": "没有打开的标签页。选择一台主机进行连接。",
+    "session_one": "1 个会话",
+    "session_many": "{n} 个会话",
+    "shell": {
+      "help": "在这个演示中可以试试这些命令：",
+      "keys": "Tab 补全，↑ 和 ↓ 浏览历史，Ctrl+C 中止，Ctrl+L 清屏。",
+      "editor": "这个演示无法运行 {cmd}，文件已在“文件”窗格中打开。",
+      "ssh": "要连接其他主机，请在侧边栏或 + 菜单中选择。"
+    },
+    "tools": {"monitor": "系统监控", "files": "文件", "ai": "AI", "snippets": "快捷指令", "close": "关闭"},
+    "monitor": {
+      "system": "系统",
+      "address": "地址",
+      "os": "操作系统",
+      "latency": "延迟",
+      "connected": "已连接",
+      "cores": "{n} 核",
+      "average": "平均使用率",
+      "load": "平均负载",
+      "memory": "内存",
+      "physical": "物理内存",
+      "swap": "交换分区",
+      "network": "网络",
+      "disk": "磁盘"
+    },
+    "files": {
+      "up": "上一级",
+      "refresh": "刷新",
+      "upload": "上传文件…",
+      "follow": "文件跟随终端目录",
+      "name": "名称",
+      "size": "大小",
+      "drop": "将文件拖放到这里即可上传",
+      "uploading": "正在上传 {name}",
+      "uploaded": "已上传 {name}",
+      "note": "文件不会离开你的浏览器：演示只读取文件名和大小。",
+      "empty": "此文件夹为空",
+      "back": "返回"
+    },
+    "snippets": {
+      "run": "运行命令",
+      "insert": "仅插入",
+      "items": [
+        {"name": "磁盘用量", "cmd": "df -h"},
+        {"name": "内存", "cmd": "free -h"},
+        {"name": "占用最高的进程", "cmd": "ps aux --sort=-%mem | head -5"},
+        {"name": "nginx 状态", "cmd": "systemctl status nginx"},
+        {"name": "容器", "cmd": "docker ps"},
+        {"name": "系统信息", "cmd": "neofetch"}
+      ]
+    },
     "ai_title": "AI",
     "user_q": "部署之后 nginx 一直返回 502，怎么回事？",
     "tool_run": "运行命令",
@@ -54,8 +123,17 @@
     "a1": "部署后 php-fpm 没有启动：进程池仍监听 PHP 8.2 的 socket，而 nginx 现在连接的是 php8.3-fpm.sock。",
     "a2": "已把进程池改为 8.3 的 socket 并重启 php-fpm，nginx 恢复返回 200。",
     "placeholder": "询问这台主机",
-    "mode": "自动审核",
-    "hosts": "4 台主机"
+    "send": "发送",
+    "replay": "重新播放",
+    "running": "正在运行…",
+    "rejected": "已拒绝",
+    "free_text": "这个演示只能回答下面的建议问题。在应用中，助手可以回答关于这台主机的任何问题。",
+    "denied": "好的，我不会运行它。如果想换个办法，请告诉我。",
+    "suggestions": [
+      {"q": "磁盘还剩多少空间？", "cmd": "df -h /", "a": "/ 已使用 {pct}：共 {size}，已用 {used}，剩余 {avail}。暂时不需要清理。"},
+      {"q": "什么占用内存最多？", "cmd": "ps -eo comm,rss --sort=-rss | head -4", "a": "占用内存最多的是 {top}（{topmem}），其次是 {second}（{secondmem}）。对这台主机来说属于正常。"},
+      {"q": "有服务失败吗？", "cmd": "systemctl --failed --no-legend", "a": "{host} 上没有失败的 systemd 单元。"}
+    ]
   },
   "glance": {
     "title": "SSHYard 一览",
@@ -149,7 +227,9 @@
       {"key": "sftp", "label": "SFTP", "caption": "在终端旁浏览和编辑远程文件，传输在后台进行。", "alt": "SSHYard 的 SFTP 文件管理器与终端并排显示"},
       {"key": "monitor", "label": "系统监控", "caption": "实时查看已连接主机的 CPU、内存、磁盘和网络数据。", "alt": "SSHYard 系统监控，显示 CPU、内存、磁盘和网络图表"},
       {"key": "settings", "label": "AI 设置", "caption": "选择 AI 服务和模型、审核模型，以及助手可以自主执行到什么程度。", "alt": "SSHYard AI 助手设置，列出服务商与模型"}
-    ]
+    ],
+    "zoom": "放大截图",
+    "close": "关闭"
   },
   "ai": {
     "title": "在主机上\u200b动手的 AI\u00a0助手，\u200b主动权\u200b始终在你",
@@ -167,7 +247,10 @@
       "deny": "拒绝",
       "reviewed": "审核模型已批准",
       "ran": "未询问直接执行",
-      "full_bar": "完全允许 — 所有操作不再询问"
+      "full_bar": "完全允许 — 所有操作不再询问",
+      "denied": "已拒绝，没有执行任何操作",
+      "reviewing": "审核模型正在检查…",
+      "replay": "重新播放"
     },
     "providers_title": "使用你自己的模型",
     "providers_text": "可接入任何支持 OpenAI 兼容 Chat Completions、OpenAI Responses 或 Anthropic Messages 接口的服务，包括你自己部署的模型。终端输出和文件内容只会发送给你选择的服务，而且要先在该主机上得到你的同意。也可以直接使用本机自动检测到的 Claude Code、Codex、Grok、Gemini CLI 等 ACP 智能体，它们的操作只在远程主机上进行。",
@@ -184,7 +267,16 @@
       {"icon": "shield-keyhole-line", "title": "密封备份", "text": "备份在本机完成压缩和加密，密钥由你的密码通过 Argon2id 派生，并使用 XChaCha20-Poly1305 加密。"},
       {"icon": "upload-cloud-2-line", "title": "你的存储", "text": "WebDAV、S3 兼容存储和 GitHub Gist 只会收到加密后的文件，备份密码本身从不保存。"}
     ],
-    "points": ["智能体拿到的是令牌，而不是你保存的凭据", "无需注册任何账号", "基于 AGPL-3.0 开源，任何人都可以审查代码"]
+    "points": ["智能体拿到的是令牌，而不是你保存的凭据", "无需注册任何账号", "基于 AGPL-3.0 开源，任何人都可以审查代码"],
+    "demo": {
+      "title": "看一条密钥如何被加密",
+      "label": "输入一个密码",
+      "sample": "correct-horse-battery",
+      "plain": "明文",
+      "sealed": "密文",
+      "bytes": "{n} 字节",
+      "note": "仅作演示：浏览器没有内置 XChaCha20-Poly1305，因此这里由你的浏览器用随机密钥以 AES-GCM 加密文本。不会发送或保存任何内容。"
+    }
   },
   "download": {
     "title": "下载 SSHYard",

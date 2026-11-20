@@ -27,6 +27,15 @@
     "theme_dark": "Dark",
     "skip": "Skip to content"
   },
+  "palette": {
+    "label": "Command Palette",
+    "placeholder": "Search pages, settings and actions",
+    "empty": "No matches",
+    "go": "Go to",
+    "demo": "Demo window",
+    "connect": "Connect to {host}",
+    "open": "Open {name}"
+  },
   "hero": {
     "release": "Version {version}",
     "release_link": "What's new",
@@ -42,9 +51,69 @@
     "note": "Free and open source · No account needed · macOS, Windows and Linux"
   },
   "demo": {
-    "aria": "Animated example: in SSHYard, the AI assistant finds why a server returns 502 and fixes it while the terminal stays open.",
+    "aria": "A working SSHYard window: open hosts in tabs, type in the terminal, and open the system monitor, files, AI assistant and snippets from the right edge.",
+    "hint": "This window works: pick a host, type in the terminal (start with help) or open a pane from the right edge.",
     "search": "Search hosts",
     "group": "Hosts",
+    "hosts": "4 hosts",
+    "no_hosts": "No matching hosts",
+    "new_tab": "New Tab",
+    "close_tab": "Close Tab",
+    "split": "Split Right",
+    "close_pane": "Close Pane",
+    "connecting": "Connecting to {host}…",
+    "disconnected": "Disconnected. Press Enter to reconnect.",
+    "no_tabs": "No open tabs. Pick a host to connect.",
+    "session_one": "1 session",
+    "session_many": "{n} sessions",
+    "shell": {
+      "help": "Commands to try in this demo:",
+      "keys": "Tab completes, ↑ and ↓ walk the history, Ctrl+C stops, Ctrl+L clears.",
+      "editor": "{cmd} doesn't run in this demo, so the file opens in the Files pane.",
+      "ssh": "To connect to another host, pick it in the sidebar or the + menu."
+    },
+    "tools": {"monitor": "System Monitor", "files": "Files", "ai": "AI", "snippets": "Snippets", "close": "Close"},
+    "monitor": {
+      "system": "System",
+      "address": "Address",
+      "os": "Operating system",
+      "latency": "Latency",
+      "connected": "Connected",
+      "cores": "{n} cores",
+      "average": "Average usage",
+      "load": "Load average",
+      "memory": "Memory",
+      "physical": "Physical memory",
+      "swap": "Swap",
+      "network": "Network",
+      "disk": "Disk"
+    },
+    "files": {
+      "up": "Up",
+      "refresh": "Refresh",
+      "upload": "Upload Files…",
+      "follow": "Files follow the terminal's directory",
+      "name": "Name",
+      "size": "Size",
+      "drop": "Drop files to upload them here",
+      "uploading": "Uploading {name}",
+      "uploaded": "Uploaded {name}",
+      "note": "Nothing leaves your browser: the demo only reads the file's name and size.",
+      "empty": "This folder is empty",
+      "back": "Back"
+    },
+    "snippets": {
+      "run": "Run",
+      "insert": "Insert only",
+      "items": [
+        {"name": "Disk usage", "cmd": "df -h"},
+        {"name": "Memory", "cmd": "free -h"},
+        {"name": "Top processes", "cmd": "ps aux --sort=-%mem | head -5"},
+        {"name": "nginx status", "cmd": "systemctl status nginx"},
+        {"name": "Containers", "cmd": "docker ps"},
+        {"name": "System info", "cmd": "neofetch"}
+      ]
+    },
     "ai_title": "AI",
     "user_q": "Since the deploy, nginx returns 502. What happened?",
     "tool_run": "Run command",
@@ -54,8 +123,17 @@
     "a1": "php-fpm stopped after the deploy: its pool still listens on the PHP 8.2 socket, while nginx now expects php8.3-fpm.sock.",
     "a2": "I pointed the pool at the 8.3 socket and restarted php-fpm. nginx answers 200 again.",
     "placeholder": "Ask about this host",
-    "mode": "Auto review",
-    "hosts": "4 hosts"
+    "send": "Send",
+    "replay": "Replay",
+    "running": "Running…",
+    "rejected": "Rejected",
+    "free_text": "This demo answers only the suggestions below. In the app, the assistant can answer anything about the host.",
+    "denied": "Okay, I won't run it. Tell me if you'd like to try another way.",
+    "suggestions": [
+      {"q": "How much disk space is left?", "cmd": "df -h /", "a": "/ is {pct} full: {used} of {size} used and {avail} free. Nothing needs cleaning up yet."},
+      {"q": "What is using the most memory?", "cmd": "ps -eo comm,rss --sort=-rss | head -4", "a": "{top} uses the most memory ({topmem}), followed by {second} ({secondmem}). That's normal for this host."},
+      {"q": "Has any service failed?", "cmd": "systemctl --failed --no-legend", "a": "No systemd unit has failed on {host}."}
+    ]
   },
   "glance": {
     "title": "SSHYard at a glance",
@@ -149,7 +227,9 @@
       {"key": "sftp", "label": "SFTP", "caption": "Browse and edit remote files next to the terminal while transfers run in the background.", "alt": "SSHYard SFTP file manager next to a terminal"},
       {"key": "monitor", "label": "System monitor", "caption": "Live CPU, memory, disk and network figures for the connected host.", "alt": "SSHYard system monitor showing CPU, memory, disk and network charts"},
       {"key": "settings", "label": "AI settings", "caption": "Pick providers and models, a review model, and how much the assistant may do.", "alt": "SSHYard AI assistant settings with providers and models"}
-    ]
+    ],
+    "zoom": "Enlarge screenshot",
+    "close": "Close"
   },
   "ai": {
     "title": "An assistant that works on the host, with you in control",
@@ -167,7 +247,10 @@
       "deny": "Deny",
       "reviewed": "Approved by the review model",
       "ran": "Ran without asking",
-      "full_bar": "Full access — every action runs without asking"
+      "full_bar": "Full access — every action runs without asking",
+      "denied": "Denied, nothing ran",
+      "reviewing": "The review model is checking…",
+      "replay": "Replay"
     },
     "providers_title": "Bring your own model",
     "providers_text": "Connect any provider that speaks the OpenAI-compatible Chat Completions, OpenAI Responses or Anthropic Messages API, including models you host yourself. Terminal output and file contents go only to the provider you pick, and only after you agree for that host. You can also use ACP agents detected on this computer, such as Claude Code, Codex, Grok and Gemini CLI; their work stays on the remote host.",
@@ -184,7 +267,16 @@
       {"icon": "shield-keyhole-line", "title": "Sealed backups", "text": "Backups are compressed and encrypted on your device with a key derived from your password, using Argon2id and XChaCha20-Poly1305."},
       {"icon": "upload-cloud-2-line", "title": "Your storage", "text": "WebDAV, S3-compatible storage and GitHub Gists only ever receive sealed files. The backup password itself is never stored."}
     ],
-    "points": ["Agents get a token, never your saved credentials", "No account to create", "Open source under AGPL-3.0, so anyone can audit it"]
+    "points": ["Agents get a token, never your saved credentials", "No account to create", "Open source under AGPL-3.0, so anyone can audit it"],
+    "demo": {
+      "title": "Watch a secret get sealed",
+      "label": "Type a password",
+      "sample": "correct-horse-battery",
+      "plain": "Plaintext",
+      "sealed": "Encrypted",
+      "bytes": "{n} bytes",
+      "note": "An illustration: your browser encrypts the text with a random key using AES-GCM, since XChaCha20-Poly1305 isn't built into browsers. Nothing is sent or stored."
+    }
   },
   "download": {
     "title": "Download SSHYard",

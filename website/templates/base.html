@@ -120,6 +120,7 @@
       <a href="{{ home }}#faq">{{ t.nav.faq }}</a>
     </nav>
     <div class="nav-tools">
+      <button type="button" class="icon-btn pal-btn" data-palette aria-label="{{ t.palette.label }}" title="{{ t.palette.label }}" aria-haspopup="dialog">{{ icon('command-line') }}<kbd data-pal-kbd>Ctrl K</kbd></button>
       {{ theme_switch() }}
       {{ lang_menu('lang-nav') }}
       <a class="icon-btn" href="{{ github }}" aria-label="{{ t.nav.github }}" title="{{ t.nav.github }}" rel="noopener">{{ icon('github-line') }}</a>
@@ -182,6 +183,29 @@
     <p class="mono">v{{ release.version }}</p>
   </div>
 </footer>
+{% macro pal_item(icon_name, label, attrs) %}<li role="option" aria-selected="false" {{ attrs | safe }}>{{ icon(icon_name) }}<span>{{ label }}</span></li>{% endmacro %}
+<dialog class="palette" data-pal aria-label="{{ t.palette.label }}">
+  <div class="pal-search">{{ icon('search-line') }}<input type="text" data-pal-input placeholder="{{ t.palette.placeholder }}" aria-label="{{ t.palette.placeholder }}" role="combobox" aria-expanded="true" aria-controls="pal-list" aria-autocomplete="list" autocomplete="off" spellcheck="false"><kbd>esc</kbd></div>
+  <ul class="pal-list" id="pal-list" role="listbox" aria-label="{{ t.palette.label }}" data-pal-list>
+    <li class="pal-group" role="presentation">{{ t.palette.go }}</li>
+    {{ pal_item('home-4-line', t.nav.home, 'data-href="' ~ home ~ '"') }}
+    {{ pal_item('apps-line', t.nav.features, 'data-href="' ~ home ~ '#features"') }}
+    {{ pal_item('robot-2-line', t.nav.ai, 'data-href="' ~ home ~ '#ai"') }}
+    {{ pal_item('shield-keyhole-line', t.nav.security, 'data-href="' ~ home ~ '#security"') }}
+    {{ pal_item('download-2-line', t.nav.download, 'data-href="' ~ url('download') ~ '"') }}
+    {{ pal_item('information-line', t.nav.faq, 'data-href="' ~ home ~ '#faq"') }}
+    {{ pal_item('github-line', 'GitHub', 'data-href="' ~ github ~ '"') }}
+    <li class="pal-group" role="presentation">{{ t.nav.theme }}</li>
+    {{ pal_item('computer-line', t.nav.theme_auto, 'data-pal-theme="auto"') }}
+    {{ pal_item('sun-line', t.nav.theme_light, 'data-pal-theme="light"') }}
+    {{ pal_item('moon-line', t.nav.theme_dark, 'data-pal-theme="dark"') }}
+    <li class="pal-group" role="presentation">{{ t.nav.language }}</li>
+    {% for l in langs %}
+    {{ pal_item('translate-2', cats[l.code].name, 'data-href="' ~ lang_url(l) ~ '" data-lang-pick="' ~ l.code ~ '" lang="' ~ l.code ~ '"') }}
+    {% endfor %}
+  </ul>
+  <p class="pal-empty" data-pal-empty hidden>{{ t.palette.empty }}</p>
+</dialog>
 <div class="langbanner" role="region" aria-live="polite" hidden>
   <span class="langbanner-text"></span>
   <a class="btn btn-primary btn-sm langbanner-go" href="#"></a>

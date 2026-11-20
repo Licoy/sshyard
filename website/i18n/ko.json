@@ -27,6 +27,15 @@
     "theme_dark": "다크",
     "skip": "본문으로 건너뛰기"
   },
+  "palette": {
+    "label": "명령 팔레트",
+    "placeholder": "페이지, 설정, 작업 검색",
+    "empty": "일치하는 항목이 없습니다",
+    "go": "이동",
+    "demo": "데모 창",
+    "connect": "{host}에 연결",
+    "open": "{name} 열기"
+  },
   "hero": {
     "release": "버전 {version}",
     "release_link": "새로운 기능",
@@ -42,9 +51,69 @@
     "note": "무료 오픈소스 · 계정 불필요 · macOS, Windows, Linux 지원"
   },
   "demo": {
-    "aria": "애니메이션 예시: SSHYard에서 AI 도우미가 서버가 502를 반환하는 원인을 찾아 고치는 동안 터미널은 계속 열려 있습니다.",
+    "aria": "직접 써 볼 수 있는 SSHYard 창: 호스트를 탭으로 열고, 터미널에 입력하고, 오른쪽 가장자리에서 시스템 모니터, 파일, AI 도우미와 스니펫을 엽니다.",
+    "hint": "이 창은 실제로 동작합니다. 호스트를 고르고 터미널에 입력하거나(help부터 시작해 보세요) 오른쪽 가장자리에서 패널을 열어 보세요.",
     "search": "호스트 검색",
     "group": "호스트",
+    "hosts": "호스트 4개",
+    "no_hosts": "일치하는 호스트가 없습니다",
+    "new_tab": "새 탭",
+    "close_tab": "탭 닫기",
+    "split": "오른쪽으로 분할",
+    "close_pane": "패널 닫기",
+    "connecting": "{host}에 연결 중…",
+    "disconnected": "연결 끊김. Enter 키를 눌러 다시 연결하세요.",
+    "no_tabs": "열린 탭이 없습니다. 연결할 호스트를 고르세요.",
+    "session_one": "세션 1개",
+    "session_many": "세션 {n}개",
+    "shell": {
+      "help": "이 데모에서 써 볼 수 있는 명령:",
+      "keys": "Tab으로 자동 완성, ↑와 ↓로 기록 탐색, Ctrl+C로 중지, Ctrl+L로 화면 지우기.",
+      "editor": "이 데모에서는 {cmd}을(를) 실행할 수 없어 파일을 파일 패널에서 열었습니다.",
+      "ssh": "다른 호스트에 연결하려면 사이드바나 + 메뉴에서 고르세요."
+    },
+    "tools": {"monitor": "시스템 모니터", "files": "파일", "ai": "AI", "snippets": "스니펫", "close": "닫기"},
+    "monitor": {
+      "system": "시스템",
+      "address": "주소",
+      "os": "운영 체제",
+      "latency": "지연 시간",
+      "connected": "연결됨",
+      "cores": "{n}코어",
+      "average": "평균 사용률",
+      "load": "평균 부하",
+      "memory": "메모리",
+      "physical": "물리 메모리",
+      "swap": "스왑",
+      "network": "네트워크",
+      "disk": "디스크"
+    },
+    "files": {
+      "up": "위로",
+      "refresh": "새로 고침",
+      "upload": "파일 업로드…",
+      "follow": "파일이 터미널 디렉터리를 따라감",
+      "name": "이름",
+      "size": "크기",
+      "drop": "여기에 파일을 놓으면 업로드됩니다",
+      "uploading": "{name} 업로드 중",
+      "uploaded": "{name} 업로드됨",
+      "note": "파일은 브라우저 밖으로 나가지 않습니다. 데모는 파일 이름과 크기만 읽습니다.",
+      "empty": "이 폴더는 비어 있습니다",
+      "back": "뒤로"
+    },
+    "snippets": {
+      "run": "명령 실행",
+      "insert": "삽입만",
+      "items": [
+        {"name": "디스크 사용량", "cmd": "df -h"},
+        {"name": "메모리", "cmd": "free -h"},
+        {"name": "상위 프로세스", "cmd": "ps aux --sort=-%mem | head -5"},
+        {"name": "nginx 상태", "cmd": "systemctl status nginx"},
+        {"name": "컨테이너", "cmd": "docker ps"},
+        {"name": "시스템 정보", "cmd": "neofetch"}
+      ]
+    },
     "ai_title": "AI",
     "user_q": "배포 이후 nginx가 502를 반환해요. 무슨 일이죠?",
     "tool_run": "명령 실행",
@@ -54,8 +123,17 @@
     "a1": "배포 후 php-fpm이 멈췄습니다. 풀은 아직 PHP 8.2 소켓에서 대기 중인데, nginx는 이제 php8.3-fpm.sock에 연결하려고 합니다.",
     "a2": "풀을 8.3 소켓으로 바꾸고 php-fpm을 다시 시작했습니다. nginx가 다시 200을 반환합니다.",
     "placeholder": "이 호스트에 대해 질문하세요",
-    "mode": "자동 검토",
-    "hosts": "호스트 4개"
+    "send": "보내기",
+    "replay": "다시 재생",
+    "running": "실행 중…",
+    "rejected": "거부됨",
+    "free_text": "이 데모는 아래 제안 질문에만 답합니다. 앱에서는 도우미가 호스트에 관한 어떤 질문에도 답합니다.",
+    "denied": "알겠습니다. 실행하지 않을게요. 다른 방법을 원하시면 말씀해 주세요.",
+    "suggestions": [
+      {"q": "디스크 공간이 얼마나 남았나요?", "cmd": "df -h /", "a": "/는 {pct} 사용 중입니다. {size} 중 {used} 사용, {avail} 남음. 아직 정리할 필요는 없습니다."},
+      {"q": "메모리를 가장 많이 쓰는 건 무엇인가요?", "cmd": "ps -eo comm,rss --sort=-rss | head -4", "a": "{top}이(가) 가장 많은 메모리({topmem})를 쓰고, 그다음은 {second}({secondmem})입니다. 이 호스트에서는 정상입니다."},
+      {"q": "실패한 서비스가 있나요?", "cmd": "systemctl --failed --no-legend", "a": "{host}에서 실패한 systemd 유닛이 없습니다."}
+    ]
   },
   "glance": {
     "title": "SSHYard 한눈에 보기",
@@ -149,7 +227,9 @@
       {"key": "sftp", "label": "SFTP", "caption": "터미널 옆에서 원격 파일을 탐색하고 편집하며, 전송은 백그라운드에서 진행됩니다.", "alt": "터미널 옆에 표시된 SSHYard SFTP 파일 관리자"},
       {"key": "monitor", "label": "시스템 모니터", "caption": "연결된 호스트의 CPU, 메모리, 디스크, 네트워크 수치를 실시간으로 보여 줍니다.", "alt": "CPU, 메모리, 디스크, 네트워크 차트를 보여 주는 SSHYard 시스템 모니터"},
       {"key": "settings", "label": "AI 설정", "caption": "제공자와 모델, 검토 모델, 도우미에게 맡길 범위를 고릅니다.", "alt": "제공자와 모델 목록이 있는 SSHYard AI 도우미 설정"}
-    ]
+    ],
+    "zoom": "스크린샷 확대",
+    "close": "닫기"
   },
   "ai": {
     "title": "호스트에서 일하는 AI 도우미, 주도권은 언제나 당신에게",
@@ -167,7 +247,10 @@
       "deny": "거부",
       "reviewed": "검토 모델이 승인함",
       "ran": "확인 없이 실행됨",
-      "full_bar": "전체 접근 — 모든 작업을 확인 없이 실행합니다"
+      "full_bar": "전체 접근 — 모든 작업을 확인 없이 실행합니다",
+      "denied": "거부됨, 아무것도 실행되지 않았습니다",
+      "reviewing": "검토 모델이 확인하는 중…",
+      "replay": "다시 재생"
     },
     "providers_title": "원하는 모델을 직접 연결",
     "providers_text": "OpenAI 호환 Chat Completions, OpenAI Responses, Anthropic Messages API 중 하나를 지원하는 서비스라면 직접 호스팅한 모델까지 연결할 수 있습니다. 터미널 출력과 파일 내용은 당신이 고른 제공자에게만, 해당 호스트에서 동의한 뒤에만 전송됩니다.이 컴퓨터에서 자동으로 찾은 Claude Code, Codex, Grok, Gemini CLI 등 ACP 에이전트를 바로 쓸 수도 있으며, 작업은 원격 호스트에서만 이루어집니다.",
@@ -184,7 +267,16 @@
       {"icon": "shield-keyhole-line", "title": "봉인된 백업", "text": "백업은 기기에서 압축과 암호화를 마칩니다. 키는 비밀번호에서 Argon2id로 파생하고, XChaCha20-Poly1305로 암호화합니다."},
       {"icon": "upload-cloud-2-line", "title": "당신의 스토리지", "text": "WebDAV, S3 호환 스토리지, GitHub Gist는 암호화된 파일만 받습니다. 백업 비밀번호 자체는 저장하지 않습니다."}
     ],
-    "points": ["에이전트는 토큰만 받고, 저장된 자격 증명은 받지 않음", "만들어야 할 계정 없음", "AGPL-3.0 오픈소스라 누구나 코드를 검증 가능"]
+    "points": ["에이전트는 토큰만 받고, 저장된 자격 증명은 받지 않음", "만들어야 할 계정 없음", "AGPL-3.0 오픈소스라 누구나 코드를 검증 가능"],
+    "demo": {
+      "title": "비밀이 암호화되는 과정 보기",
+      "label": "비밀번호 입력",
+      "sample": "correct-horse-battery",
+      "plain": "평문",
+      "sealed": "암호문",
+      "bytes": "{n}바이트",
+      "note": "설명용 예시입니다. 브라우저에는 XChaCha20-Poly1305가 내장되어 있지 않아, 브라우저가 무작위 키와 AES-GCM으로 텍스트를 암호화합니다. 아무것도 전송하거나 저장하지 않습니다."
+    }
   },
   "download": {
     "title": "SSHYard 다운로드",
