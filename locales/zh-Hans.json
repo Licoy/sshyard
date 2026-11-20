@@ -691,6 +691,7 @@
   "aiWorking": "正在处理…",
   "aiPaused": "{count, plural, other {已在 # 次工具调用后暂停。}}",
   "aiContinue": "继续",
+  "aiRetry": "重试",
   "aiNoKey": "没有为这个提供商保存 API 密钥。",
   "aiNoModel": "请先在「设置 → AI助理」中选择提供商。",
   "aiTabWarning": "已开启完全允许",

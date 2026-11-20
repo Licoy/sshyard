@@ -691,6 +691,7 @@
   "aiWorking": "処理中…",
   "aiPaused": "{count, plural, other {ツールを#回呼び出したため一時停止しました。}}",
   "aiContinue": "続行",
+  "aiRetry": "再試行",
   "aiNoKey": "このプロバイダーのAPIキーが保存されていません。",
   "aiNoModel": "質問する前に「設定 → AIアシスタント」でプロバイダーを選択してください。",
   "aiTabWarning": "フルアクセスが有効です",

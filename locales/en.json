@@ -691,6 +691,7 @@
   "aiWorking": "Working…",
   "aiPaused": "{count, plural, one {Paused after # tool call.} other {Paused after # tool calls.}}",
   "aiContinue": "Continue",
+  "aiRetry": "Retry",
   "aiNoKey": "No API key is saved for this provider.",
   "aiNoModel": "Choose a provider in Settings → AI Assistant before asking.",
   "aiTabWarning": "Full access is on",

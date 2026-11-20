@@ -1315,6 +1315,54 @@ func TestAIDismissError(t *testing.T) {
 	}
 }
 
+// flakyModel fails its first request as an overloaded provider does,
+// then echoes as echoModel does.
+type flakyModel struct{ calls atomic.Int32 }
+
+func (m *flakyModel) Stream(ctx context.Context, req llm.Request, emit func(llm.Event)) (llm.Message, error) {
+	if m.calls.Add(1) == 1 {
+		return llm.Message{}, &llm.APIError{Status: 529}
+	}
+	return echoModel{}.Stream(ctx, req, emit)
+}
+
+// TestAIRetryFailedTurn checks that a turn the provider failed is asked
+// again from its error, without sending the question twice, and that
+// only the last error of the built-in agent offers it.
+func TestAIRetryFailedTurn(t *testing.T) {
+	a, tt := newTestApp(t)
+	h := savedHost(t, a, "web", "10.0.0.8")
+	consentHost(t, a, h.ID)
+	model := &flakyModel{}
+	a.newModel = func(*conn) agent.Streamer { return model }
+	id := openAIPane(t, a, h.ID)
+	tt.Frame()
+	a.SendAI(id, "disk?")
+	c := a.conns[id]
+	waitFor(t, tt, "the failure", func() bool { return !c.ai.running && len(c.ai.items) == 2 })
+	if it := c.ai.items[1]; it.kind != "err" || !it.retry {
+		t.Fatalf("error %+v", it)
+	}
+	a.RetryAI(id, 0)
+	if model.calls.Load() != 1 {
+		t.Fatal("the question was retried from an item that is not the error")
+	}
+	a.RetryAI(id, 1)
+	waitFor(t, tt, "the answer", func() bool { return !c.ai.running && paneHas(a, id, "echo:disk?") })
+	if len(c.ai.items) != 2 || c.ai.items[0].kind != "user" || c.ai.items[1].text != "echo:disk?" {
+		t.Fatalf("items %+v", c.ai.items)
+	}
+	users := 0
+	for _, m := range c.ai.sess.History() {
+		if m.Role == "user" {
+			users++
+		}
+	}
+	if users != 1 || model.calls.Load() != 2 {
+		t.Fatalf("question sent %d times, %d requests", users, model.calls.Load())
+	}
+}
+
 // TestAIRequestTimeoutSetting checks that the request timeout set in the
 // settings is the one the model's client waits for.
 func TestAIRequestTimeoutSetting(t *testing.T) {

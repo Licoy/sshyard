@@ -123,6 +123,7 @@ type aiItem struct {
 	tool   agent.ToolCard
 	open   bool // thinking stays folded until the user opens it
 	hidden bool // late text and thinking held until the old turn's outcome is known
+	retry  bool // an error that ended the built-in agent's turn short of its reply
 }
 
 type aiPend struct {
@@ -597,6 +598,39 @@ func (a *App) ContinueAI(id int) {
 	})
 }
 
+// RetryAI asks the model again for the turn that failed with the pane's
+// error i, its last item, as when the provider was busy or out of reach:
+// the error goes and the conversation carries on where it stopped.
+func (a *App) RetryAI(id, i int) {
+	c := a.conns[id]
+	if c == nil || c.ai == nil || c.ai.running || c.ai.steer != nil || i != len(c.ai.items)-1 || !c.ai.items[i].retry {
+		return
+	}
+	if !a.unlocked() && a.aiNeedsSecrets(c) {
+		text := c.ai.items[i].text
+		a.withSecrets(func() {
+			if c := a.conns[id]; c != nil && c.ai != nil && i < len(c.ai.items) && c.ai.items[i].text == text {
+				a.RetryAI(id, i)
+			}
+		})
+		return
+	}
+	// The provider or model may have changed since: the session asks the
+	// one chosen now.
+	if err := a.ensureAI(c); err != nil {
+		c.ai.items = append(c.ai.items, aiItem{kind: "err", text: aiErrText(err)})
+		return
+	}
+	session := c.ai.sess
+	if !session.CanRetry() {
+		return
+	}
+	a.dropAIItem(c, i)
+	a.launch(c, func(ctx context.Context, emit func(agent.Event)) error {
+		return session.Retry(ctx, emit)
+	})
+}
+
 func (a *App) launch(c *conn, run func(context.Context, func(agent.Event)) error) {
 	if err := a.ensureAI(c); err != nil {
 		c.ai.items = append(c.ai.items, aiItem{kind: "err", text: aiErrText(err)})
@@ -705,7 +739,8 @@ func (a *App) onAIDone(id int, err error) {
 	}
 	s.paused = err == agent.ErrPaused || s.sess != nil && s.sess.Paused()
 	if err != nil && err != agent.ErrPaused && !(errors.Is(err, context.Canceled) && onlyAICancellation(err)) {
-		s.items = append(s.items, aiItem{kind: "err", text: a.scrubAI(c, err)})
+		retry := s.agent == "builtin" && s.sess != nil && s.sess.CanRetry()
+		s.items = append(s.items, aiItem{kind: "err", text: a.scrubAI(c, err), retry: retry})
 	}
 	if a.saveChat(c) == nil && steer.matches(c) {
 		a.SendAI(id, steer.input)

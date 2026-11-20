@@ -256,6 +256,43 @@ func (s *Session) Continue(ctx context.Context, emit func(Event)) error {
 	return s.loop(ctx, emit)
 }
 
+// CanRetry reports whether the last turn stopped short of the model's
+// reply, as when the provider failed or could not be reached: the
+// conversation ends with the question or a tool's result.
+func (s *Session) CanRetry() bool {
+	if s.paused {
+		return false
+	}
+	if len(s.pending) > 0 {
+		return true
+	}
+	for i := len(s.msgs) - 1; i >= 0; i-- {
+		switch s.msgs[i].Role {
+		case "system":
+			continue
+		case "user", "tool":
+			return true
+		}
+		return false
+	}
+	return false
+}
+
+// Retry carries on a turn that failed (CanRetry): the tool calls left
+// over run, then the model is asked again. It does nothing otherwise.
+func (s *Session) Retry(ctx context.Context, emit func(Event)) error {
+	if !s.CanRetry() {
+		return nil
+	}
+	if s.model == nil || s.gate == nil {
+		return errors.New("agent: not configured")
+	}
+	if err := s.drain(ctx, emit); err != nil {
+		return err
+	}
+	return s.loop(ctx, emit)
+}
+
 func (s *Session) loop(ctx context.Context, emit func(Event)) error {
 	for {
 		if err := ctx.Err(); err != nil {

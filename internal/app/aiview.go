@@ -816,7 +816,16 @@ func (a *App) aiCard(c *ui.Context, cn *conn, i int, tok theme.Tokens, m locales
 	case "interrupted":
 		ui.Text(key, m.AiInterrupted()).FontSize(theme.Footnote).TextColor(tok.TextMuted)
 	case "err":
-		aiBanner(key, tok.Danger, icons.Warning, aiErrLine(m, it.text), func() {
+		var retry func()
+		if it.retry && i == len(cn.ai.items)-1 {
+			retry = func() {
+				if (IconButton{Icon: icons.Refresh, Label: m.AiRetry(), Size: Tiny, Disabled: cn.ai.running}).Clicked(c, "retry") {
+					id := cn.id
+					a.post(func() { a.RetryAI(id, i) })
+				}
+			}
+		}
+		aiBannerWith(key, tok.Danger, icons.Warning, aiErrLine(m, it.text), retry, func() {
 			// After the frame, which is still going through the items.
 			id, text := cn.id, it.text
 			a.post(func() {

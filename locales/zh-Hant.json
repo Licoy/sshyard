@@ -691,6 +691,7 @@
   "aiWorking": "正在處理…",
   "aiPaused": "{count, plural, other {已在 # 次工具呼叫後暫停。}}",
   "aiContinue": "繼續",
+  "aiRetry": "重試",
   "aiNoKey": "沒有為這個供應商儲存 API 金鑰。",
   "aiNoModel": "請先在「設定 → AI 助理」中選擇供應商。",
   "aiTabWarning": "已開啟完全允許",

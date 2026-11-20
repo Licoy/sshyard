@@ -7017,6 +7017,16 @@ func (msgs Messages) AiContinue() string {
 	return Catalog.Format(msgs.locale, "aiContinue", nil)
 }
 
+// AiRetry says "Retry"
+// in the language the app shows.
+func AiRetry() string { return In(i18n.Locale()).AiRetry() }
+
+// AiRetry says "Retry"
+// in the language of msgs.
+func (msgs Messages) AiRetry() string {
+	return Catalog.Format(msgs.locale, "aiRetry", nil)
+}
+
 // AiNoKey says "No API key is saved for this provider."
 // in the language the app shows.
 func AiNoKey() string { return In(i18n.Locale()).AiNoKey() }

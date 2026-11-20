@@ -788,3 +788,60 @@ func TestConfigureUpdatesToolCallLimit(t *testing.T) {
 		t.Fatalf("after lifting the limit paused %v calls %d", s.Paused(), len(tools.calls))
 	}
 }
+
+// failingModel fails the requests numbered in fail, from 1, and answers
+// the others as scriptModel does.
+type failingModel struct {
+	*scriptModel
+	fail map[int]bool
+	n    int
+}
+
+func (m *failingModel) Stream(ctx context.Context, req llm.Request, emit func(llm.Event)) (llm.Message, error) {
+	if m.n++; m.fail[m.n] {
+		return llm.Message{}, errors.New("provider overloaded")
+	}
+	return m.scriptModel.Stream(ctx, req, emit)
+}
+
+// TestRetryAfterProviderFailure: a turn the provider failed, before or
+// after a tool ran, asks the model again with the same conversation: the
+// question is not sent twice and the tool does not run again.
+func TestRetryAfterProviderFailure(t *testing.T) {
+	model := &failingModel{scriptModel: &scriptModel{replies: []llm.Message{
+		{Role: "assistant", ToolCalls: []llm.ToolCall{{ID: "c1", Name: "run_command", Arguments: `{"command":"uptime"}`}}},
+		{Role: "assistant", Content: "Up 3 days."},
+	}}, fail: map[int]bool{1: true, 3: true}}
+	tools := &fakeTools{output: "up 3 days"}
+	s := New(Config{Model: model, Gate: &recordGate{allow: true}, Tools: tools})
+	if s.CanRetry() {
+		t.Fatal("a new session has nothing to retry")
+	}
+	if err := s.Turn(t.Context(), "uptime?", HostMeta{Name: "web"}, "", nil); err == nil || !s.CanRetry() {
+		t.Fatalf("failed question: %v, retry %v", err, s.CanRetry())
+	}
+	// The tool runs, then the provider fails again.
+	if err := s.Retry(t.Context(), nil); err == nil || !s.CanRetry() || len(tools.calls) != 1 {
+		t.Fatalf("failed after the tool: %v, retry %v, calls %v", err, s.CanRetry(), tools.calls)
+	}
+	var ev []Event
+	if err := s.Retry(t.Context(), collect(&ev)); err != nil {
+		t.Fatal(err)
+	}
+	if len(tools.calls) != 1 || !strings.Contains(joined(ev), "Up 3 days.") || s.CanRetry() {
+		t.Fatalf("calls %v events %q retry %v", tools.calls, joined(ev), s.CanRetry())
+	}
+	users := 0
+	for _, m := range s.History() {
+		if m.Role == "user" {
+			users++
+		}
+	}
+	if users != 1 {
+		t.Fatalf("question sent %d times", users)
+	}
+	before := model.n
+	if err := s.Retry(t.Context(), nil); err != nil || model.n != before {
+		t.Fatalf("a finished turn was asked again: %v, %d requests", err, model.n-before)
+	}
+}
