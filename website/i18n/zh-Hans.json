@@ -5,7 +5,10 @@
     "description": "SSHYard 是一款免费开源的原生 SSH / SFTP 客户端，支持 macOS、Windows 和 Linux，集多标签分屏终端、SFTP 文件管理与可执行命令的 AI 助手于一体。",
     "keywords": "SSH 客户端, SSH 工具, SSH 连接工具, SSH 远程连接工具, 免费 SSH 客户端, 开源 SSH 客户端, Mac SSH 客户端, Windows SSH 工具, Linux SSH 客户端, SFTP 客户端, AI SSH 客户端, AI 运维助手, 服务器监控, 跳板机, 端口转发, Telnet 客户端, 串口工具, tmux 会话管理, Docker 管理, MCP",
     "og_alt": "SSHYard：内置 AI 助手的原生 SSH / SFTP 客户端",
-    "og_title": ["SSH、SFTP 与 AI", "尽在一个原生应用"],
+    "og_title": [
+      "SSH、SFTP 与 AI",
+      "尽在一个原生应用"
+    ],
     "download_title": "下载 SSHYard：支持 macOS、Windows 和 Linux",
     "download_description": "下载 SSHYard {version}，免费的 SSH / SFTP 客户端：Apple 芯片与 Intel Mac 的 DMG、Windows 安装程序或绿色版 ZIP、Linux 的 .deb 与 .tar.gz。",
     "notfound_title": "页面不存在 — SSHYard"
@@ -25,7 +28,8 @@
     "theme_auto": "跟随系统",
     "theme_light": "浅色",
     "theme_dark": "深色",
-    "skip": "跳到正文"
+    "skip": "跳到正文",
+    "top": "回到顶部"
   },
   "palette": {
     "label": "命令面板",
@@ -34,12 +38,16 @@
     "go": "前往",
     "demo": "演示窗口",
     "connect": "连接到 {host}",
-    "open": "打开{name}"
+    "open": "打开{name}",
+    "hint": "↑↓ 切换 · ↵ 选择 · esc 关闭"
   },
   "hero": {
     "release": "版本 {version}",
     "release_link": "更新内容",
-    "title": ["SSH、SFTP 与 AI", "尽在一个原生应用"],
+    "title": [
+      "SSH、SFTP 与 AI",
+      "尽在一个原生应用"
+    ],
     "lead": "SSHYard 是一款免费开源的 SSH / SFTP 客户端，支持 macOS、Windows 和 Linux。在终端里操作、管理远程文件，再让 AI 助手直接在主机上执行命令，一个窗口全部搞定。",
     "cta": "免费下载",
     "cta_for": {
@@ -72,7 +80,17 @@
       "editor": "这个演示无法运行 {cmd}，文件已在“文件”窗格中打开。",
       "ssh": "要连接其他主机，请在侧边栏或 + 菜单中选择。"
     },
-    "tools": {"monitor": "系统监控", "files": "文件", "ai": "AI", "snippets": "快捷指令", "close": "关闭"},
+    "tools": {
+      "monitor": "系统监控",
+      "files": "文件",
+      "ai": "AI",
+      "snippets": "快捷指令",
+      "close": "关闭",
+      "usage": "进程占用",
+      "host": "主机详情",
+      "docker": "Docker 管理",
+      "broadcast": "广播指令"
+    },
     "monitor": {
       "system": "系统",
       "address": "地址",
@@ -86,7 +104,14 @@
       "physical": "物理内存",
       "swap": "交换分区",
       "network": "网络",
-      "disk": "磁盘"
+      "disk": "磁盘",
+      "cores_title": "CPU 各核",
+      "waiting": "正在等待第一次读数…",
+      "bar_cpu": "CPU",
+      "bar_mem": "内存",
+      "bar_swap": "交换",
+      "bar_disk": "磁盘",
+      "bar_load": "负载"
     },
     "files": {
       "up": "上一级",
@@ -100,18 +125,40 @@
       "uploaded": "已上传 {name}",
       "note": "文件不会离开你的浏览器：演示只读取文件名和大小。",
       "empty": "此文件夹为空",
-      "back": "返回"
+      "back": "返回",
+      "dual": "显示本地文件",
+      "local": "本地",
+      "remote": "远程",
+      "loading": "正在加载…"
     },
     "snippets": {
       "run": "运行命令",
       "insert": "仅插入",
       "items": [
-        {"name": "磁盘用量", "cmd": "df -h"},
-        {"name": "内存", "cmd": "free -h"},
-        {"name": "占用最高的进程", "cmd": "ps aux --sort=-%mem | head -5"},
-        {"name": "nginx 状态", "cmd": "systemctl status nginx"},
-        {"name": "容器", "cmd": "docker ps"},
-        {"name": "系统信息", "cmd": "neofetch"}
+        {
+          "name": "磁盘用量",
+          "cmd": "df -h"
+        },
+        {
+          "name": "内存",
+          "cmd": "free -h"
+        },
+        {
+          "name": "占用最高的进程",
+          "cmd": "ps aux --sort=-%mem | head -5"
+        },
+        {
+          "name": "nginx 状态",
+          "cmd": "systemctl status nginx"
+        },
+        {
+          "name": "容器",
+          "cmd": "docker ps"
+        },
+        {
+          "name": "系统信息",
+          "cmd": "neofetch"
+        }
       ]
     },
     "ai_title": "AI",
@@ -130,91 +177,365 @@
     "free_text": "这个演示只能回答下面的建议问题。在应用中，助手可以回答关于这台主机的任何问题。",
     "denied": "好的，我不会运行它。如果想换个办法，请告诉我。",
     "suggestions": [
-      {"q": "磁盘还剩多少空间？", "cmd": "df -h /", "a": "/ 已使用 {pct}：共 {size}，已用 {used}，剩余 {avail}。暂时不需要清理。"},
-      {"q": "什么占用内存最多？", "cmd": "ps -eo comm,rss --sort=-rss | head -4", "a": "占用内存最多的是 {top}（{topmem}），其次是 {second}（{secondmem}）。对这台主机来说属于正常。"},
-      {"q": "有服务失败吗？", "cmd": "systemctl --failed --no-legend", "a": "{host} 上没有失败的 systemd 单元。"}
-    ]
+      {
+        "q": "磁盘还剩多少空间？",
+        "cmd": "df -h /",
+        "a": "/ 已使用 {pct}：共 {size}，已用 {used}，剩余 {avail}。暂时不需要清理。"
+      },
+      {
+        "q": "什么占用内存最多？",
+        "cmd": "ps -eo comm,rss --sort=-rss | head -4",
+        "a": "占用内存最多的是 {top}（{topmem}），其次是 {second}（{secondmem}）。对这台主机来说属于正常。"
+      },
+      {
+        "q": "有服务失败吗？",
+        "cmd": "systemctl --failed --no-legend",
+        "a": "{host} 上没有失败的 systemd 单元。"
+      }
+    ],
+    "boot": {
+      "keychain": "正在解锁系统钥匙串…",
+      "hosts": "正在加载加密主机库…",
+      "connecting": "正在恢复工作区与会话…",
+      "skip": "跳过"
+    },
+    "groups": {
+      "fav": "收藏",
+      "prod": "生产环境",
+      "infra": "基础设施"
+    },
+    "connected_one": "1 个连接",
+    "connected_many": "{n} 个连接",
+    "sidebar_hide": "隐藏侧边栏",
+    "sidebar_show": "显示侧边栏",
+    "test_latency": "测速",
+    "testing_latency": "正在测速…",
+    "local_terminal": "本地终端",
+    "quick_connect": "快速连接",
+    "quick_placeholder": "user@host:port（例如 ops@edge-02）",
+    "quick_go": "连接",
+    "temporary": "临时",
+    "privacy": "隐私模式：隐藏 IP 地址",
+    "privacy_on": "隐私模式已开启 — 已隐藏 IP 地址",
+    "settings": "设置",
+    "back": "返回",
+    "updates": "检查更新",
+    "up_to_date": "SSHYard {version} 已是最新版本",
+    "split_down": "向下拆分",
+    "find": "查找",
+    "find_placeholder": "在终端中查找",
+    "find_none": "无匹配",
+    "reconnect": "重新连接",
+    "reboot": "重放启动过程",
+    "welcome_title": "欢迎使用 SSHYard",
+    "welcome_hint": "在左侧选择一台主机以打开会话。",
+    "presets": [
+      {
+        "key": "ai",
+        "label": "AI 排查 502",
+        "icon": "robot-2-line"
+      },
+      {
+        "key": "files",
+        "label": "双栏 SFTP",
+        "icon": "folder-3-line"
+      },
+      {
+        "key": "monitor",
+        "label": "系统监控",
+        "icon": "pulse-line"
+      },
+      {
+        "key": "docker",
+        "label": "Docker 容器",
+        "icon": "ship-2-line"
+      },
+      {
+        "key": "broadcast",
+        "label": "广播指令",
+        "icon": "broadcast-line"
+      },
+      {
+        "key": "schemes",
+        "label": "终端配色",
+        "icon": "palette-line"
+      },
+      {
+        "key": "privacy",
+        "label": "隐私模式",
+        "icon": "eye-off-line"
+      },
+      {
+        "key": "reboot",
+        "label": "启动载入",
+        "icon": "restart-line"
+      }
+    ],
+    "usage": {
+      "filter": "按名称、用户或 PID 筛选",
+      "proc": "进程",
+      "pid": "PID",
+      "cpu": "CPU",
+      "mem": "内存",
+      "disk": "磁盘",
+      "count": "{n} 个进程"
+    },
+    "host_info": {
+      "connect": "连接",
+      "connection": "连接",
+      "port": "端口",
+      "user": "用户名",
+      "group": "分组",
+      "proxy": "代理",
+      "proxy_none": "无（直连）",
+      "auth": "认证方式",
+      "auth_agent": "SSH Agent",
+      "jumps": "跳板机",
+      "panes": "已打开的面板",
+      "favorite": "收藏"
+    },
+    "docker": {
+      "containers": "容器（{n}）",
+      "images": "镜像（{n}）",
+      "start": "启动",
+      "stop": "停止",
+      "restart": "重启",
+      "logs": "日志",
+      "shell": "进入终端",
+      "running": "运行中",
+      "stopped": "已停止",
+      "empty": "这台主机未安装 Docker。",
+      "back": "返回",
+      "loading": "正在加载…"
+    },
+    "broadcast": {
+      "placeholder": "发送到所选终端的指令（Enter 发送）",
+      "send": "发送到所选终端",
+      "sent": "已发送到 {n} 个终端",
+      "sync": "同步键盘输入",
+      "sync_hint": "在任一所选终端中键入的内容，会同步到其他终端",
+      "targets": "已选 {n}/{total} 个终端",
+      "none": "没有可发送的终端"
+    },
+    "ai_ui": {
+      "builtin": "内置",
+      "new_chat": "新建对话",
+      "working": "正在处理…",
+      "stop": "停止",
+      "attach": "添加附件",
+      "in_term": "在终端中执行命令",
+      "effort_auto": "自动",
+      "effort_high": "高",
+      "thinking": "思考程度",
+      "expand": "展开详情",
+      "collapse": "收起详情",
+      "exit": "退出码 {code}",
+      "copy": "复制",
+      "insert": "插入到终端",
+      "interrupted": "已停止。",
+      "table_item": "项目",
+      "table_val": "数值",
+      "table_total": "总内存",
+      "table_used": "已使用",
+      "table_avail": "可用内存",
+      "table_swap": "Swap"
+    },
+    "settings_ui": {
+      "appearance": "外观",
+      "terminal": "终端",
+      "ai": "AI 助理",
+      "scheme": "配色方案",
+      "scheme_auto": "跟随外观",
+      "scheme_hint": "选择十套内置配色之一，立即预览终端变化。",
+      "privacy_title": "隐私模式",
+      "privacy_desc": "在侧边栏、标签页、窗格标题和状态栏中遮盖 IP 地址。",
+      "mode_title": "默认权限模式",
+      "mode_desc": "决定 AI 助手在无需询问时能执行到什么程度。"
+    }
   },
   "glance": {
     "title": "SSHYard 一览",
     "rows": [
-      ["价格", "免费"],
-      ["许可证", "开源，GNU AGPL-3.0"],
-      ["平台", "macOS 12 及以上（Apple 芯片与 Intel）、Windows 与 Linux（x64 与 Arm64）"],
-      ["界面", "原生绘制，不使用 WebView"],
-      ["连接方式", "SSH、SFTP / SCP、Telnet、串口与本地终端"],
-      ["安装包大小", "约 {size}"],
-      ["语言", "English、简体中文、繁體中文、日本語、한국어"],
-      ["账号", "无需注册"],
-      ["凭据", "加密保存在本机"],
-      ["迁移", "SSH 配置、十种常见客户端与文本批量导入"],
-      ["AI 服务", "任意 OpenAI 兼容、OpenAI Responses 或 Anthropic 接口，或本机 ACP 智能体"],
-      ["智能体接入", "开放 API、MCP 与 Skill，默认关闭"]
+      [
+        "价格",
+        "免费"
+      ],
+      [
+        "许可证",
+        "开源，GNU AGPL-3.0"
+      ],
+      [
+        "平台",
+        "macOS 12 及以上（Apple 芯片与 Intel）、Windows 与 Linux（x64 与 Arm64）"
+      ],
+      [
+        "界面",
+        "原生绘制，不使用 WebView"
+      ],
+      [
+        "连接方式",
+        "SSH、SFTP / SCP、Telnet、串口与本地终端"
+      ],
+      [
+        "安装包大小",
+        "约 {size}"
+      ],
+      [
+        "语言",
+        "English、简体中文、繁體中文、日本語、한국어"
+      ],
+      [
+        "账号",
+        "无需注册"
+      ],
+      [
+        "凭据",
+        "加密保存在本机"
+      ],
+      [
+        "迁移",
+        "SSH 配置、十种常见客户端与文本批量导入"
+      ],
+      [
+        "AI 服务",
+        "任意 OpenAI 兼容、OpenAI Responses 或 Anthropic 接口，或本机 ACP 智能体"
+      ],
+      [
+        "智能体接入",
+        "开放 API、MCP 与 Skill，默认关闭"
+      ]
     ]
   },
   "features": {
-    "title": "为一整天的\u200b服务器工作而设计",
+    "title": "为一整天的​服务器工作而设计",
     "lead": "终端、文件、网络与备份协同设计，从建立第一个连接到完成最后一次传输，都不必离开这个应用。",
     "items": [
       {
         "icon": "terminal-box-line",
         "title": "终端",
         "text": "多标签、分屏与搜索，支持真彩色、宽字符和输入法；除了 SSH，也能连接 Telnet、串口和本地终端。",
-        "points": ["十套内置配色，也可导入 .itermcolors", "关键字高亮、行号与时间戳", "多种输出编码，可按主机设置", "同一主机的多个面板共享一条连接，断线自动重连"]
+        "points": [
+          "十套内置配色，也可导入 .itermcolors",
+          "关键字高亮、行号与时间戳",
+          "多种输出编码，可按主机设置",
+          "同一主机的多个面板共享一条连接，断线自动重连"
+        ]
       },
       {
         "icon": "layout-column-line",
         "title": "工作区窗格",
         "text": "系统监控、Docker、tmux、快捷指令、广播指令和会话日志都是窗格，拖到哪里就停在哪里。",
-        "points": ["tmux 会话管理，重连后回到原会话", "查看 Docker 容器与镜像，直接启停容器", "广播指令与同步输入，一次操作多台主机", "命令面板与可自定义的快捷键"]
+        "points": [
+          "tmux 会话管理，重连后回到原会话",
+          "查看 Docker 容器与镜像，直接启停容器",
+          "广播指令与同步输入，一次操作多台主机",
+          "命令面板与可自定义的快捷键"
+        ]
       },
       {
         "icon": "folder-transfer-line",
         "title": "SFTP 文件管理",
         "text": "远程文件就在终端旁边，还能跟随终端的当前目录。",
-        "points": ["多标签编辑器，带目录树", "需要时通过 sudo 提权访问文件", "服务器没有 SFTP 时自动改用 SCP", "拖放整个文件夹，传输可暂停、续传和重试"]
+        "points": [
+          "多标签编辑器，带目录树",
+          "需要时通过 sudo 提权访问文件",
+          "服务器没有 SFTP 时自动改用 SCP",
+          "拖放整个文件夹，传输可暂停、续传和重试"
+        ]
       },
       {
         "icon": "robot-2-line",
         "title": "AI 助手",
         "text": "每台主机都有独立的助手，可以执行命令、编辑文件，对话按主机保存。",
-        "points": ["询问、自动审核、完全允许三种权限模式", "使用你选择的 AI 服务，或本机的 Claude Code、Codex 等智能体", "SSH、Telnet、串口和本地终端都能使用", "可粘贴图片和文件作为附件"]
+        "points": [
+          "询问、自动审核、完全允许三种权限模式",
+          "使用你选择的 AI 服务，或本机的 Claude Code、Codex 等智能体",
+          "SSH、Telnet、串口和本地终端都能使用",
+          "可粘贴图片和文件作为附件"
+        ]
       },
       {
         "icon": "plug-line",
         "title": "智能体接入",
         "text": "本机的 AI 智能体可通过开放 API、MCP 或 Skill 使用你的主机。",
-        "points": ["为 Claude Code、Codex 一键配置 Skill", "已保存的凭据绝不交给智能体", "默认关闭，由你决定是否开启"]
+        "points": [
+          "为 Claude Code、Codex 一键配置 Skill",
+          "已保存的凭据绝不交给智能体",
+          "默认关闭，由你决定是否开启"
+        ]
       },
       {
         "icon": "key-2-line",
         "title": "主机与凭据",
         "text": "从 SSH 配置导入，或输入 user@host:port 直接连接。",
-        "points": ["密码、OpenSSH / PEM / PuTTY 密钥、OpenSSH 证书与 SSH Agent", "不限层级的分组，支持拖动整理、多选和测速", "记录服务商与续费日期，续费前提醒", "主机密钥变化时先核对指纹再信任"]
+        "points": [
+          "密码、OpenSSH / PEM / PuTTY 密钥、OpenSSH 证书与 SSH Agent",
+          "不限层级的分组，支持拖动整理、多选和测速",
+          "记录服务商与续费日期，续费前提醒",
+          "主机密钥变化时先核对指纹再信任"
+        ]
       },
       {
         "icon": "import-line",
         "title": "从其他客户端迁移",
         "text": "带上你在其他 SSH 客户端里保存的会话。",
-        "points": ["支持 Xshell、MobaXterm、PuTTY 等十种客户端", "粘贴文本批量导入主机", "导入前在表格中逐项预览和修改"]
+        "points": [
+          "支持 Xshell、MobaXterm、PuTTY 等十种客户端",
+          "粘贴文本批量导入主机",
+          "导入前在表格中逐项预览和修改"
+        ]
       },
       {
         "icon": "upload-cloud-2-line",
         "title": "备份与恢复",
         "text": "用密码加密备份主机、凭据、快捷指令和设置。",
-        "points": ["保存到本地、WebDAV、S3 兼容存储或 GitHub 私密 Gist", "手动或定时备份，可设置保留份数", "在另一台设备上恢复"]
+        "points": [
+          "保存到本地、WebDAV、S3 兼容存储或 GitHub 私密 Gist",
+          "手动或定时备份，可设置保留份数",
+          "在另一台设备上恢复"
+        ]
       },
       {
         "icon": "route-line",
         "title": "网络连接",
         "text": "轻松连上藏在跳板机和代理后面的服务器。",
-        "points": ["多级跳板机", "HTTP 与 SOCKS5 代理，AI 服务和更新检查也能用", "本地、远程和动态端口转发"]
+        "points": [
+          "多级跳板机",
+          "HTTP 与 SOCKS5 代理，AI 服务和更新检查也能用",
+          "本地、远程和动态端口转发"
+        ]
       },
       {
         "icon": "dashboard-3-line",
         "title": "日常体验",
         "text": "每天都会用到的细节，一点点积累成顺手。",
-        "points": ["CPU、内存、磁盘、网络和延迟一目了然", "浅色与深色主题，支持背景图与界面缩放", "关闭到托盘，从托盘弹窗快速连接"]
+        "points": [
+          "CPU、内存、磁盘、网络和延迟一目了然",
+          "浅色与深色主题，支持背景图与界面缩放",
+          "关闭到托盘，从托盘弹窗快速连接"
+        ]
+      }
+    ],
+    "filters": [
+      {
+        "key": "all",
+        "label": "全部"
+      },
+      {
+        "key": "terminal",
+        "label": "终端与窗格"
+      },
+      {
+        "key": "files",
+        "label": "文件与网络"
+      },
+      {
+        "key": "ai",
+        "label": "AI 与智能体"
+      },
+      {
+        "key": "ops",
+        "label": "主机与备份"
       }
     ]
   },
@@ -223,22 +544,56 @@
     "lead": "以下为 SSHYard 深色模式截图。",
     "tabs": "截图",
     "items": [
-      {"key": "terminal", "label": "终端与 AI", "caption": "AI 助手检查主机的内存占用并用表格汇报，终端就在一旁。", "alt": "SSHYard 窗口：左侧是终端，右侧 AI 助手正在汇报内存使用情况"},
-      {"key": "sftp", "label": "SFTP", "caption": "在终端旁浏览和编辑远程文件，传输在后台进行。", "alt": "SSHYard 的 SFTP 文件管理器与终端并排显示"},
-      {"key": "monitor", "label": "系统监控", "caption": "实时查看已连接主机的 CPU、内存、磁盘和网络数据。", "alt": "SSHYard 系统监控，显示 CPU、内存、磁盘和网络图表"},
-      {"key": "settings", "label": "AI 设置", "caption": "选择 AI 服务和模型、审核模型，以及助手可以自主执行到什么程度。", "alt": "SSHYard AI 助手设置，列出服务商与模型"}
+      {
+        "key": "terminal",
+        "label": "终端与 AI",
+        "caption": "AI 助手检查主机的内存占用并用表格汇报，终端就在一旁。",
+        "alt": "SSHYard 窗口：左侧是终端，右侧 AI 助手正在汇报内存使用情况"
+      },
+      {
+        "key": "sftp",
+        "label": "SFTP",
+        "caption": "在终端旁浏览和编辑远程文件，传输在后台进行。",
+        "alt": "SSHYard 的 SFTP 文件管理器与终端并排显示"
+      },
+      {
+        "key": "monitor",
+        "label": "系统监控",
+        "caption": "实时查看已连接主机的 CPU、内存、磁盘和网络数据。",
+        "alt": "SSHYard 系统监控，显示 CPU、内存、磁盘和网络图表"
+      },
+      {
+        "key": "settings",
+        "label": "AI 设置",
+        "caption": "选择 AI 服务和模型、审核模型，以及助手可以自主执行到什么程度。",
+        "alt": "SSHYard AI 助手设置，列出服务商与模型"
+      }
     ],
     "zoom": "放大截图",
-    "close": "关闭"
+    "close": "关闭",
+    "prev": "上一张截图",
+    "next": "下一张截图"
   },
   "ai": {
-    "title": "在主机上\u200b动手的 AI\u00a0助手，\u200b主动权\u200b始终在你",
+    "title": "在主机上​动手的 AI 助手，​主动权​始终在你",
     "lead": "助手能看到所在主机的终端上下文，并通过同一条 SSH 连接执行命令、编辑文件。它能自主做多少，由你决定。",
     "modes_label": "权限模式",
     "modes": [
-      {"key": "ask", "label": "询问", "text": "助手在执行命令或修改文件之前，都会先征求你的同意。"},
-      {"key": "review", "label": "自动审核", "text": "只读操作直接执行，其余每一步都交给审核模型检查，它没有放行的交回给你确认；高危操作始终由你确认。"},
-      {"key": "full", "label": "完全允许", "text": "所有操作直接执行，不再询问。开启前需要确认，开启期间始终显示警示。"}
+      {
+        "key": "ask",
+        "label": "询问",
+        "text": "助手在执行命令或修改文件之前，都会先征求你的同意。"
+      },
+      {
+        "key": "review",
+        "label": "自动审核",
+        "text": "只读操作直接执行，其余每一步都交给审核模型检查，它没有放行的交回给你确认；高危操作始终由你确认。"
+      },
+      {
+        "key": "full",
+        "label": "完全允许",
+        "text": "所有操作直接执行，不再询问。开启前需要确认，开启期间始终显示警示。"
+      }
     ],
     "card": {
       "command": "sudo systemctl restart php8.3-fpm",
@@ -256,18 +611,73 @@
     "providers_text": "可接入任何支持 OpenAI 兼容 Chat Completions、OpenAI Responses 或 Anthropic Messages 接口的服务，包括你自己部署的模型。终端输出和文件内容只会发送给你选择的服务，而且要先在该主机上得到你的同意。也可以直接使用本机自动检测到的 Claude Code、Codex、Grok、Gemini CLI 等 ACP 智能体，它们的操作只在远程主机上进行。",
     "agents_title": "让本机智能体按你的规则接入",
     "agents_text": "开启智能体接入后，本机的 AI 智能体可以通过开放 API、MCP 或 SSHYard Skill 查看主机、建立 SSH 连接并执行命令。它们使用令牌认证，你保存的密码和密钥始终留在 SSHYard 内。",
-    "agents_points": ["为 Claude Code、Codex 一键配置 Skill", "每条命令都会记入 AI 审计日志", "重新生成令牌即可断开所有智能体"]
+    "agents_points": [
+      "为 Claude Code、Codex 一键配置 Skill",
+      "每条命令都会记入 AI 审计日志",
+      "重新生成令牌即可断开所有智能体"
+    ],
+    "risks": {
+      "readonly": "只读",
+      "medium": "中风险",
+      "critical": "高危"
+    },
+    "scenarios": [
+      {
+        "key": "df",
+        "label": "只读查询",
+        "risk": "readonly",
+        "cmd": "df -h /",
+        "out": "/dev/vda1       40G   13G   25G  33% /",
+        "auto": "自动放行 · 只读操作"
+      },
+      {
+        "key": "restart",
+        "label": "重启服务",
+        "risk": "medium",
+        "cmd": "sudo systemctl restart php8.3-fpm",
+        "out": "● php8.3-fpm.service — active (running)",
+        "auto": "审核模型已批准"
+      },
+      {
+        "key": "purge",
+        "label": "高危清理",
+        "risk": "critical",
+        "cmd": "sudo rm -rf /var/cache/nginx/*",
+        "out": "已清理 /var/cache/nginx 共 142 MB",
+        "auto": "高危操作 — 始终由你确认"
+      }
+    ]
   },
   "security": {
-    "title": "你的凭据，\u200b只留在\u200b你的设备上",
+    "title": "你的凭据，​只留在​你的设备上",
     "lead": "密码、密钥和令牌都在本地加密；即使需要离开设备，也是密封后才离开。",
     "steps": [
-      {"icon": "key-2-line", "title": "系统钥匙串", "text": "只为 SSHYard 保存一把随机生成的 256 位主密钥，别无他物。"},
-      {"icon": "safe-2-line", "title": "本地加密凭据库", "text": "密码、私钥、口令、快捷指令和 API 密钥都用这把主密钥加密，保存在一个本地文件里。"},
-      {"icon": "shield-keyhole-line", "title": "密封备份", "text": "备份在本机完成压缩和加密，密钥由你的密码通过 Argon2id 派生，并使用 XChaCha20-Poly1305 加密。"},
-      {"icon": "upload-cloud-2-line", "title": "你的存储", "text": "WebDAV、S3 兼容存储和 GitHub Gist 只会收到加密后的文件，备份密码本身从不保存。"}
+      {
+        "icon": "key-2-line",
+        "title": "系统钥匙串",
+        "text": "只为 SSHYard 保存一把随机生成的 256 位主密钥，别无他物。"
+      },
+      {
+        "icon": "safe-2-line",
+        "title": "本地加密凭据库",
+        "text": "密码、私钥、口令、快捷指令和 API 密钥都用这把主密钥加密，保存在一个本地文件里。"
+      },
+      {
+        "icon": "shield-keyhole-line",
+        "title": "密封备份",
+        "text": "备份在本机完成压缩和加密，密钥由你的密码通过 Argon2id 派生，并使用 XChaCha20-Poly1305 加密。"
+      },
+      {
+        "icon": "upload-cloud-2-line",
+        "title": "你的存储",
+        "text": "WebDAV、S3 兼容存储和 GitHub Gist 只会收到加密后的文件，备份密码本身从不保存。"
+      }
     ],
-    "points": ["智能体拿到的是令牌，而不是你保存的凭据", "无需注册任何账号", "基于 AGPL-3.0 开源，任何人都可以审查代码"],
+    "points": [
+      "智能体拿到的是令牌，而不是你保存的凭据",
+      "无需注册任何账号",
+      "基于 AGPL-3.0 开源，任何人都可以审查代码"
+    ],
     "demo": {
       "title": "看一条密钥如何被加密",
       "label": "输入一个密码",
@@ -275,7 +685,26 @@
       "plain": "明文",
       "sealed": "密文",
       "bytes": "{n} 字节",
-      "note": "仅作演示：浏览器没有内置 XChaCha20-Poly1305，因此这里由你的浏览器用随机密钥以 AES-GCM 加密文本。不会发送或保存任何内容。"
+      "note": "仅作演示：浏览器没有内置 XChaCha20-Poly1305，因此这里由你的浏览器用随机密钥以 AES-GCM 加密文本。不会发送或保存任何内容。",
+      "rekey": "轮换 256 位主密钥",
+      "key_label": "主密钥",
+      "iv": "12B 随机 IV",
+      "ciphertext": "加密密文",
+      "tag": "16B 认证标签",
+      "presets": [
+        {
+          "label": "密码",
+          "value": "correct-horse-battery"
+        },
+        {
+          "label": "API 密钥",
+          "value": "sk-proj-9fK2mQx8vL3pR7wZ"
+        },
+        {
+          "label": "私钥口令",
+          "value": "ed25519-prod-vault!2026"
+        }
+      ]
     }
   },
   "download": {
@@ -302,24 +731,46 @@
         "name": "macOS",
         "req": "macOS 12 及以上 · 已签名并通过公证",
         "description": "下载 macOS 版 SSHYard {version}：适用于 Apple 芯片和 Intel Mac 的已签名、已公证 DMG。内置 AI 助手的免费 SSH / SFTP 客户端。",
-        "files": {"mac_arm64": "Apple 芯片", "mac_amd64": "Intel"},
-        "steps": ["打开 DMG，把 SSHYard 拖进“应用程序”文件夹。", "之后的更新可以在应用内直接下载并安装。"],
+        "files": {
+          "mac_arm64": "Apple 芯片",
+          "mac_amd64": "Intel"
+        },
+        "steps": [
+          "打开 DMG，把 SSHYard 拖进“应用程序”文件夹。",
+          "之后的更新可以在应用内直接下载并安装。"
+        ],
         "verify": "shasum -a 256 sshyard-{version}-arm64.dmg"
       },
       "windows": {
         "name": "Windows",
         "req": "Windows x64 或 Arm64 · 无需管理员权限",
         "description": "下载 Windows x64 与 Arm64 版 SSHYard {version}：支持应用内更新的安装程序，或免安装的绿色版 ZIP。内置 AI 助手的免费 SSH / SFTP 客户端。",
-        "files": {"win_setup": "x64 安装程序", "win_portable": "x64 绿色版 ZIP", "win_setup_arm64": "Arm64 安装程序", "win_portable_arm64": "Arm64 绿色版 ZIP"},
-        "steps": ["安装程序为当前用户安装到 %LOCALAPPDATA%\\Programs，并支持应用内更新。", "绿色版请把 ZIP 解压到可写入的文件夹，运行 SSHYard.exe 即可；应用数据保存在 %APPDATA%\\SSHYard。"],
+        "files": {
+          "win_setup": "x64 安装程序",
+          "win_portable": "x64 绿色版 ZIP",
+          "win_setup_arm64": "Arm64 安装程序",
+          "win_portable_arm64": "Arm64 绿色版 ZIP"
+        },
+        "steps": [
+          "安装程序为当前用户安装到 %LOCALAPPDATA%\\Programs，并支持应用内更新。",
+          "绿色版请把 ZIP 解压到可写入的文件夹，运行 SSHYard.exe 即可；应用数据保存在 %APPDATA%\\SSHYard。"
+        ],
         "verify": "Get-FileHash .\\sshyard-setup-{version}-amd64.exe -Algorithm SHA256"
       },
       "linux": {
         "name": "Linux",
         "req": "x64（amd64）或 Arm64（aarch64）· .deb 安装包或 .tar.gz 压缩包",
         "description": "下载 Linux x64 与 Arm64 版 SSHYard {version}，提供 .deb 安装包和 .tar.gz 压缩包。内置 AI 助手的免费 SSH / SFTP 客户端。",
-        "files": {"linux_deb": "x64 .deb 安装包", "linux_tar": "x64 .tar.gz 压缩包", "linux_deb_arm64": "Arm64 .deb 安装包", "linux_tar_arm64": "Arm64 .tar.gz 压缩包"},
-        "steps": ["用系统的包管理器安装 .deb。", "或者把 install.sh 放在 .tar.gz 旁边并运行它，安装到 ~/.local。"],
+        "files": {
+          "linux_deb": "x64 .deb 安装包",
+          "linux_tar": "x64 .tar.gz 压缩包",
+          "linux_deb_arm64": "Arm64 .deb 安装包",
+          "linux_tar_arm64": "Arm64 .tar.gz 压缩包"
+        },
+        "steps": [
+          "用系统的包管理器安装 .deb。",
+          "或者把 install.sh 放在 .tar.gz 旁边并运行它，安装到 ~/.local。"
+        ],
         "verify": "sha256sum -c --ignore-missing SHA256SUMS"
       }
     }
@@ -327,23 +778,62 @@
   "faq": {
     "title": "常见问题",
     "items": [
-      {"q": "SSHYard 是什么？", "a": "SSHYard 是一款免费开源的原生桌面 SSH / SFTP 客户端，支持 macOS、Windows 和 Linux。它集多标签分屏终端、SFTP 文件管理、端口转发，以及能在主机上执行命令的 AI 助手于一体。"},
-      {"q": "SSHYard 免费吗？", "a": "免费。SSHYard 可以免费下载和使用，也不需要注册账号。源代码以 GNU AGPL-3.0 协议发布在 GitHub 上。"},
-      {"q": "SSHYard 支持哪些系统？", "a": "支持 macOS 12 及以上（Apple 芯片和 Intel Mac）、Windows x64 与 Arm64，以及 Linux x64 与 Arm64（提供 .deb 安装包和 .tar.gz 压缩包）。"},
-      {"q": "SSHYard 是用 Electron 或 WebView 做的吗？", "a": "不是。SSHYard 的整个界面都是原生绘制的，不依赖 WebView，也不内置浏览器，所以安装包只有约 {size}。"},
-      {"q": "我的密码和密钥保存在哪里？", "a": "加密保存在你自己的设备上。系统钥匙串里只存一把随机主密钥，密码、私钥、口令和 API 密钥都用它加密后存入本地文件。除非你主动备份，否则这些数据不会离开设备；备份也会先加密再离开。"},
-      {"q": "AI 助手是怎么工作的？我能控制它吗？", "a": "可以。每台主机都有独立的助手，它读取终端上下文，通过同一条连接执行命令、编辑文件。询问模式下每一步都等你同意；自动审核模式下只读操作直接执行，其余由审核模型检查；完全允许模式必须由你明确开启。助手使用你自己配置的 AI 服务和 API 密钥，也可以改用本机的 Claude Code、Codex 等 ACP 智能体。"},
-      {"q": "Claude Code 或 Codex 能使用我的 SSH 主机吗？", "a": "可以，开启智能体接入即可。之后本机的智能体就能通过 SSHYard 的开放 API、MCP 端点或 Skill 查看主机、建立连接并执行命令，SSHYard 还能为 Claude Code 和 Codex 一键安装 Skill。智能体使用令牌认证，永远拿不到你保存的凭据。"},
-      {"q": "SSHYard 支持跳板机、代理和端口转发吗？", "a": "支持。主机可以经由多级跳板机和 HTTP 或 SOCKS5 代理连接，也可以设置本地、远程和动态端口转发。"},
-      {"q": "除了 SSH，还能连接什么？", "a": "还支持 Telnet、串口（COM）和本地终端，Windows 上的本地终端可选 PowerShell、CMD、Git Bash 与 WSL。服务器没有 SFTP 时，文件面板会自动改用 SCP。"},
-      {"q": "能同时在多台服务器上执行命令吗？", "a": "能。广播指令可以把同一条命令发送到你选中的多个终端；开启同步输入后，在其中一个终端里键入的内容会同步到其他终端。会话日志可以把终端输出按文本或原始格式记录到本地文件。"},
-      {"q": "备份和恢复是怎么做的？", "a": "SSHYard 把主机、凭据、快捷指令和设置压缩成一个文件，并在本机用你的备份密码加密。你可以存在本地，或手动、定时上传到 WebDAV、S3 兼容存储或 GitHub 私密 Gist，在另一台设备上用同一个密码恢复。"},
-      {"q": "能从其他 SSH 客户端迁移过来吗？", "a": "能。SSHYard 可以从 SSH 配置文件导入主机，也能读取 Xshell、MobaXterm、PuTTY 等十种客户端的导出文件，或把粘贴的文本批量转为主机；导入前可以在表格中逐项预览和修改，凭据只写入本地加密存储。你也可以直接输入 user@host:port 快速连接。"},
-      {"q": "SSHYard 支持哪些语言？", "a": "支持英文、简体中文、繁体中文、日文和韩文，应用和本网站均如此。"}
+      {
+        "q": "SSHYard 是什么？",
+        "a": "SSHYard 是一款免费开源的原生桌面 SSH / SFTP 客户端，支持 macOS、Windows 和 Linux。它集多标签分屏终端、SFTP 文件管理、端口转发，以及能在主机上执行命令的 AI 助手于一体。"
+      },
+      {
+        "q": "SSHYard 免费吗？",
+        "a": "免费。SSHYard 可以免费下载和使用，也不需要注册账号。源代码以 GNU AGPL-3.0 协议发布在 GitHub 上。"
+      },
+      {
+        "q": "SSHYard 支持哪些系统？",
+        "a": "支持 macOS 12 及以上（Apple 芯片和 Intel Mac）、Windows x64 与 Arm64，以及 Linux x64 与 Arm64（提供 .deb 安装包和 .tar.gz 压缩包）。"
+      },
+      {
+        "q": "SSHYard 是用 Electron 或 WebView 做的吗？",
+        "a": "不是。SSHYard 的整个界面都是原生绘制的，不依赖 WebView，也不内置浏览器，所以安装包只有约 {size}。"
+      },
+      {
+        "q": "我的密码和密钥保存在哪里？",
+        "a": "加密保存在你自己的设备上。系统钥匙串里只存一把随机主密钥，密码、私钥、口令和 API 密钥都用它加密后存入本地文件。除非你主动备份，否则这些数据不会离开设备；备份也会先加密再离开。"
+      },
+      {
+        "q": "AI 助手是怎么工作的？我能控制它吗？",
+        "a": "可以。每台主机都有独立的助手，它读取终端上下文，通过同一条连接执行命令、编辑文件。询问模式下每一步都等你同意；自动审核模式下只读操作直接执行，其余由审核模型检查；完全允许模式必须由你明确开启。助手使用你自己配置的 AI 服务和 API 密钥，也可以改用本机的 Claude Code、Codex 等 ACP 智能体。"
+      },
+      {
+        "q": "Claude Code 或 Codex 能使用我的 SSH 主机吗？",
+        "a": "可以，开启智能体接入即可。之后本机的智能体就能通过 SSHYard 的开放 API、MCP 端点或 Skill 查看主机、建立连接并执行命令，SSHYard 还能为 Claude Code 和 Codex 一键安装 Skill。智能体使用令牌认证，永远拿不到你保存的凭据。"
+      },
+      {
+        "q": "SSHYard 支持跳板机、代理和端口转发吗？",
+        "a": "支持。主机可以经由多级跳板机和 HTTP 或 SOCKS5 代理连接，也可以设置本地、远程和动态端口转发。"
+      },
+      {
+        "q": "除了 SSH，还能连接什么？",
+        "a": "还支持 Telnet、串口（COM）和本地终端，Windows 上的本地终端可选 PowerShell、CMD、Git Bash 与 WSL。服务器没有 SFTP 时，文件面板会自动改用 SCP。"
+      },
+      {
+        "q": "能同时在多台服务器上执行命令吗？",
+        "a": "能。广播指令可以把同一条命令发送到你选中的多个终端；开启同步输入后，在其中一个终端里键入的内容会同步到其他终端。会话日志可以把终端输出按文本或原始格式记录到本地文件。"
+      },
+      {
+        "q": "备份和恢复是怎么做的？",
+        "a": "SSHYard 把主机、凭据、快捷指令和设置压缩成一个文件，并在本机用你的备份密码加密。你可以存在本地，或手动、定时上传到 WebDAV、S3 兼容存储或 GitHub 私密 Gist，在另一台设备上用同一个密码恢复。"
+      },
+      {
+        "q": "能从其他 SSH 客户端迁移过来吗？",
+        "a": "能。SSHYard 可以从 SSH 配置文件导入主机，也能读取 Xshell、MobaXterm、PuTTY 等十种客户端的导出文件，或把粘贴的文本批量转为主机；导入前可以在表格中逐项预览和修改，凭据只写入本地加密存储。你也可以直接输入 user@host:port 快速连接。"
+      },
+      {
+        "q": "SSHYard 支持哪些语言？",
+        "a": "支持英文、简体中文、繁体中文、日文和韩文，应用和本网站均如此。"
+      }
     ]
   },
   "cta": {
-    "title": "你的服务器，\u200b只隔\u200b一个窗口",
+    "title": "你的服务器，​只隔​一个窗口",
     "text": "SSHYard 免费提供 macOS、Windows 和 Linux 版本。"
   },
   "footer": {
@@ -372,5 +862,8 @@
   },
   "a11y": {
     "breadcrumb": "页面路径"
+  },
+  "boot": {
+    "label": "正在启动 SSHYard…"
   }
 }

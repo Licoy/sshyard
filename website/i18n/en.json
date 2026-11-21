@@ -5,7 +5,10 @@
     "description": "SSHYard is a free, open-source native SSH and SFTP client for macOS, Windows and Linux, with split terminals, a file manager and an AI assistant built in.",
     "keywords": "SSH client, SFTP client, free SSH client, open source SSH client, SSH client for Mac, SSH client for Windows, SSH client for Linux, AI SSH client, terminal, Telnet client, serial terminal, tmux, Docker, MCP, port forwarding, jump host",
     "og_alt": "SSHYard, a native SSH and SFTP client with an AI assistant",
-    "og_title": ["SSH, SFTP and AI,", "in one native app"],
+    "og_title": [
+      "SSH, SFTP and AI,",
+      "in one native app"
+    ],
     "download_title": "Download SSHYard for macOS, Windows and Linux",
     "download_description": "Download SSHYard {version}, the free SSH and SFTP client: DMG for Apple Silicon and Intel Macs, installer or portable ZIP for Windows, .deb or .tar.gz for Linux.",
     "notfound_title": "Page not found — SSHYard"
@@ -25,7 +28,8 @@
     "theme_auto": "Match system",
     "theme_light": "Light",
     "theme_dark": "Dark",
-    "skip": "Skip to content"
+    "skip": "Skip to content",
+    "top": "Back to top"
   },
   "palette": {
     "label": "Command Palette",
@@ -34,12 +38,16 @@
     "go": "Go to",
     "demo": "Demo window",
     "connect": "Connect to {host}",
-    "open": "Open {name}"
+    "open": "Open {name}",
+    "hint": "↑↓ Navigate · ↵ Select · esc Close"
   },
   "hero": {
     "release": "Version {version}",
     "release_link": "What's new",
-    "title": ["SSH, SFTP and AI,", "in one native app"],
+    "title": [
+      "SSH, SFTP and AI,",
+      "in one native app"
+    ],
     "lead": "SSHYard is a free, open-source SSH and SFTP client for macOS, Windows and Linux. Work in the terminal, move files and let an AI assistant run commands on the host, all in the same window.",
     "cta": "Download free",
     "cta_for": {
@@ -72,7 +80,17 @@
       "editor": "{cmd} doesn't run in this demo, so the file opens in the Files pane.",
       "ssh": "To connect to another host, pick it in the sidebar or the + menu."
     },
-    "tools": {"monitor": "System Monitor", "files": "Files", "ai": "AI", "snippets": "Snippets", "close": "Close"},
+    "tools": {
+      "monitor": "System Monitor",
+      "files": "Files",
+      "ai": "AI",
+      "snippets": "Snippets",
+      "close": "Close",
+      "usage": "Process Usage",
+      "host": "Host Details",
+      "docker": "Docker",
+      "broadcast": "Broadcast Commands"
+    },
     "monitor": {
       "system": "System",
       "address": "Address",
@@ -86,7 +104,14 @@
       "physical": "Physical memory",
       "swap": "Swap",
       "network": "Network",
-      "disk": "Disk"
+      "disk": "Disk",
+      "cores_title": "CPU cores",
+      "waiting": "Waiting for the first reading…",
+      "bar_cpu": "CPU",
+      "bar_mem": "Memory",
+      "bar_swap": "Swap",
+      "bar_disk": "Disk",
+      "bar_load": "Load"
     },
     "files": {
       "up": "Up",
@@ -100,18 +125,40 @@
       "uploaded": "Uploaded {name}",
       "note": "Nothing leaves your browser: the demo only reads the file's name and size.",
       "empty": "This folder is empty",
-      "back": "Back"
+      "back": "Back",
+      "dual": "Show Local Files",
+      "local": "Local",
+      "remote": "Remote",
+      "loading": "Loading…"
     },
     "snippets": {
       "run": "Run",
       "insert": "Insert only",
       "items": [
-        {"name": "Disk usage", "cmd": "df -h"},
-        {"name": "Memory", "cmd": "free -h"},
-        {"name": "Top processes", "cmd": "ps aux --sort=-%mem | head -5"},
-        {"name": "nginx status", "cmd": "systemctl status nginx"},
-        {"name": "Containers", "cmd": "docker ps"},
-        {"name": "System info", "cmd": "neofetch"}
+        {
+          "name": "Disk usage",
+          "cmd": "df -h"
+        },
+        {
+          "name": "Memory",
+          "cmd": "free -h"
+        },
+        {
+          "name": "Top processes",
+          "cmd": "ps aux --sort=-%mem | head -5"
+        },
+        {
+          "name": "nginx status",
+          "cmd": "systemctl status nginx"
+        },
+        {
+          "name": "Containers",
+          "cmd": "docker ps"
+        },
+        {
+          "name": "System info",
+          "cmd": "neofetch"
+        }
       ]
     },
     "ai_title": "AI",
@@ -130,26 +177,233 @@
     "free_text": "This demo answers only the suggestions below. In the app, the assistant can answer anything about the host.",
     "denied": "Okay, I won't run it. Tell me if you'd like to try another way.",
     "suggestions": [
-      {"q": "How much disk space is left?", "cmd": "df -h /", "a": "/ is {pct} full: {used} of {size} used and {avail} free. Nothing needs cleaning up yet."},
-      {"q": "What is using the most memory?", "cmd": "ps -eo comm,rss --sort=-rss | head -4", "a": "{top} uses the most memory ({topmem}), followed by {second} ({secondmem}). That's normal for this host."},
-      {"q": "Has any service failed?", "cmd": "systemctl --failed --no-legend", "a": "No systemd unit has failed on {host}."}
-    ]
+      {
+        "q": "How much disk space is left?",
+        "cmd": "df -h /",
+        "a": "/ is {pct} full: {used} of {size} used and {avail} free. Nothing needs cleaning up yet."
+      },
+      {
+        "q": "What is using the most memory?",
+        "cmd": "ps -eo comm,rss --sort=-rss | head -4",
+        "a": "{top} uses the most memory ({topmem}), followed by {second} ({secondmem}). That's normal for this host."
+      },
+      {
+        "q": "Has any service failed?",
+        "cmd": "systemctl --failed --no-legend",
+        "a": "No systemd unit has failed on {host}."
+      }
+    ],
+    "boot": {
+      "keychain": "Unlocking system keychain…",
+      "hosts": "Loading encrypted host store…",
+      "connecting": "Restoring workspace & sessions…",
+      "skip": "Skip"
+    },
+    "groups": {
+      "fav": "Favorites",
+      "prod": "Production",
+      "infra": "Infrastructure"
+    },
+    "connected_one": "1 connection",
+    "connected_many": "{n} connections",
+    "sidebar_hide": "Hide Sidebar",
+    "sidebar_show": "Show Sidebar",
+    "test_latency": "Test latency",
+    "testing_latency": "Testing latency…",
+    "local_terminal": "Local terminal",
+    "quick_connect": "Quick Connect",
+    "quick_placeholder": "user@host:port (e.g. ops@edge-02)",
+    "quick_go": "Connect",
+    "temporary": "Temporary",
+    "privacy": "Privacy mode: mask IP addresses",
+    "privacy_on": "Privacy mode on — IP addresses masked",
+    "settings": "Settings",
+    "back": "Back",
+    "updates": "Check for Updates",
+    "up_to_date": "SSHYard {version} is up to date",
+    "split_down": "Split Down",
+    "find": "Find",
+    "find_placeholder": "Find in terminal",
+    "find_none": "No matches",
+    "reconnect": "Reconnect",
+    "reboot": "Replay startup",
+    "welcome_title": "Welcome to SSHYard",
+    "welcome_hint": "Choose a host on the left to open a session.",
+    "presets": [
+      {
+        "key": "ai",
+        "label": "AI Auto-Fix",
+        "icon": "robot-2-line"
+      },
+      {
+        "key": "files",
+        "label": "Dual-Pane SFTP",
+        "icon": "folder-3-line"
+      },
+      {
+        "key": "monitor",
+        "label": "System Monitor",
+        "icon": "pulse-line"
+      },
+      {
+        "key": "docker",
+        "label": "Docker",
+        "icon": "ship-2-line"
+      },
+      {
+        "key": "broadcast",
+        "label": "Broadcast",
+        "icon": "broadcast-line"
+      },
+      {
+        "key": "schemes",
+        "label": "Color Schemes",
+        "icon": "palette-line"
+      },
+      {
+        "key": "privacy",
+        "label": "Privacy Mode",
+        "icon": "eye-off-line"
+      },
+      {
+        "key": "reboot",
+        "label": "Startup Flow",
+        "icon": "restart-line"
+      }
+    ],
+    "usage": {
+      "filter": "Filter by name, user or PID",
+      "proc": "Process",
+      "pid": "PID",
+      "cpu": "CPU",
+      "mem": "Memory",
+      "disk": "Disk",
+      "count": "{n} processes"
+    },
+    "host_info": {
+      "connect": "Connect",
+      "connection": "Connection",
+      "port": "Port",
+      "user": "Username",
+      "group": "Group",
+      "proxy": "Proxy",
+      "proxy_none": "None (direct)",
+      "auth": "Authentication",
+      "auth_agent": "SSH agent",
+      "jumps": "Jump hosts",
+      "panes": "Open panes",
+      "favorite": "Favorite"
+    },
+    "docker": {
+      "containers": "Containers ({n})",
+      "images": "Images ({n})",
+      "start": "Start",
+      "stop": "Stop",
+      "restart": "Restart",
+      "logs": "Logs",
+      "shell": "Open Shell",
+      "running": "Running",
+      "stopped": "Exited",
+      "empty": "Docker is not installed on this host.",
+      "back": "Back",
+      "loading": "Loading…"
+    },
+    "broadcast": {
+      "placeholder": "Command for selected terminals (Enter sends)",
+      "send": "Send to Selected",
+      "sent": "Sent to {n} terminals",
+      "sync": "Sync keyboard input",
+      "sync_hint": "Typing in one selected terminal mirrors to the others",
+      "targets": "{n} of {total} terminals selected",
+      "none": "No open terminals"
+    },
+    "ai_ui": {
+      "builtin": "Built-in",
+      "new_chat": "New Chat",
+      "working": "Working…",
+      "stop": "Stop",
+      "attach": "Attach Files",
+      "in_term": "Run Commands in Terminal",
+      "effort_auto": "Auto",
+      "effort_high": "High",
+      "thinking": "Thinking level",
+      "expand": "Show details",
+      "collapse": "Hide details",
+      "exit": "Exit {code}",
+      "copy": "Copy",
+      "insert": "Insert into terminal",
+      "interrupted": "Stopped.",
+      "table_item": "Metric",
+      "table_val": "Value",
+      "table_total": "Total RAM",
+      "table_used": "Used",
+      "table_avail": "Available",
+      "table_swap": "Swap"
+    },
+    "settings_ui": {
+      "appearance": "Appearance",
+      "terminal": "Terminal",
+      "ai": "AI Assistant",
+      "scheme": "Color Scheme",
+      "scheme_auto": "Follow Appearance",
+      "scheme_hint": "Pick one of the ten built-in palettes and see the terminal update live.",
+      "privacy_title": "Privacy mode",
+      "privacy_desc": "Mask IP addresses across the sidebar, tabs, pane headers and status bar.",
+      "mode_title": "Default permission mode",
+      "mode_desc": "Choose how much the AI assistant may run without asking."
+    }
   },
   "glance": {
     "title": "SSHYard at a glance",
     "rows": [
-      ["Price", "Free"],
-      ["License", "Open source, GNU AGPL-3.0"],
-      ["Platforms", "macOS 12 or later (Apple Silicon and Intel), Windows and Linux (x64 and Arm64)"],
-      ["Interface", "Native, drawn without a web view"],
-      ["Connections", "SSH, SFTP / SCP, Telnet, serial ports and local terminals"],
-      ["Download size", "About {size}"],
-      ["Languages", "English, 简体中文, 繁體中文, 日本語, 한국어"],
-      ["Account", "Not required"],
-      ["Credentials", "Encrypted and stored on your device"],
-      ["Migration", "SSH config, ten popular clients or a pasted list"],
-      ["AI providers", "Any OpenAI-compatible, OpenAI Responses or Anthropic API, or local ACP agents"],
-      ["Agent access", "Open API, MCP and Skill, off by default"]
+      [
+        "Price",
+        "Free"
+      ],
+      [
+        "License",
+        "Open source, GNU AGPL-3.0"
+      ],
+      [
+        "Platforms",
+        "macOS 12 or later (Apple Silicon and Intel), Windows and Linux (x64 and Arm64)"
+      ],
+      [
+        "Interface",
+        "Native, drawn without a web view"
+      ],
+      [
+        "Connections",
+        "SSH, SFTP / SCP, Telnet, serial ports and local terminals"
+      ],
+      [
+        "Download size",
+        "About {size}"
+      ],
+      [
+        "Languages",
+        "English, 简体中文, 繁體中文, 日本語, 한국어"
+      ],
+      [
+        "Account",
+        "Not required"
+      ],
+      [
+        "Credentials",
+        "Encrypted and stored on your device"
+      ],
+      [
+        "Migration",
+        "SSH config, ten popular clients or a pasted list"
+      ],
+      [
+        "AI providers",
+        "Any OpenAI-compatible, OpenAI Responses or Anthropic API, or local ACP agents"
+      ],
+      [
+        "Agent access",
+        "Open API, MCP and Skill, off by default"
+      ]
     ]
   },
   "features": {
@@ -160,61 +414,128 @@
         "icon": "terminal-box-line",
         "title": "Terminal",
         "text": "Tabs, split panes and search, with true colour, wide characters and input methods, over SSH, Telnet, serial or a local shell.",
-        "points": ["Ten built-in colour schemes, or import .itermcolors", "Keyword highlighting, line numbers and timestamps", "Many output encodings, set per host", "Panes on one host share a connection and reconnect on their own"]
+        "points": [
+          "Ten built-in colour schemes, or import .itermcolors",
+          "Keyword highlighting, line numbers and timestamps",
+          "Many output encodings, set per host",
+          "Panes on one host share a connection and reconnect on their own"
+        ]
       },
       {
         "icon": "layout-column-line",
         "title": "Workspace panes",
         "text": "System monitor, Docker, tmux, snippets, broadcast commands and session logs are panes you dock wherever you like.",
-        "points": ["tmux sessions that come back after a reconnect", "Docker containers and images, started and stopped in place", "Broadcast commands with synchronised typing across hosts", "Command palette and shortcuts you can rebind"]
+        "points": [
+          "tmux sessions that come back after a reconnect",
+          "Docker containers and images, started and stopped in place",
+          "Broadcast commands with synchronised typing across hosts",
+          "Command palette and shortcuts you can rebind"
+        ]
       },
       {
         "icon": "folder-transfer-line",
         "title": "SFTP file manager",
         "text": "Remote files open beside the terminal and can follow its working directory.",
-        "points": ["Tabbed editor with a folder tree", "File access through sudo when you need it", "Falls back to SCP when the server has no SFTP", "Drag in whole folders; pause, resume and retry transfers"]
+        "points": [
+          "Tabbed editor with a folder tree",
+          "File access through sudo when you need it",
+          "Falls back to SCP when the server has no SFTP",
+          "Drag in whole folders; pause, resume and retry transfers"
+        ]
       },
       {
         "icon": "robot-2-line",
         "title": "AI assistant",
         "text": "Every host has its own assistant that can run commands and edit files, with conversations kept per host.",
-        "points": ["Ask, Review and Full access modes", "Your AI provider, or local agents such as Claude Code and Codex", "Works over SSH, Telnet, serial and local terminals", "Paste images and files as attachments"]
+        "points": [
+          "Ask, Review and Full access modes",
+          "Your AI provider, or local agents such as Claude Code and Codex",
+          "Works over SSH, Telnet, serial and local terminals",
+          "Paste images and files as attachments"
+        ]
       },
       {
         "icon": "plug-line",
         "title": "Agent integrations",
         "text": "AI agents on your computer can use your hosts through an open API, MCP or a Skill.",
-        "points": ["One-click Skill setup for Claude Code and Codex", "Saved credentials are never handed to agents", "Off until you turn it on"]
+        "points": [
+          "One-click Skill setup for Claude Code and Codex",
+          "Saved credentials are never handed to agents",
+          "Off until you turn it on"
+        ]
       },
       {
         "icon": "key-2-line",
         "title": "Hosts and credentials",
         "text": "Import your SSH config, or connect straight away with user@host:port.",
-        "points": ["Passwords, OpenSSH, PEM and PuTTY keys, OpenSSH certificates, SSH agent", "Nested groups you drag to rearrange, with multi-select and latency tests", "Provider and renewal dates, with a reminder before renewal", "Changed host keys are checked by fingerprint before you trust them"]
+        "points": [
+          "Passwords, OpenSSH, PEM and PuTTY keys, OpenSSH certificates, SSH agent",
+          "Nested groups you drag to rearrange, with multi-select and latency tests",
+          "Provider and renewal dates, with a reminder before renewal",
+          "Changed host keys are checked by fingerprint before you trust them"
+        ]
       },
       {
         "icon": "import-line",
         "title": "Migrate from other clients",
         "text": "Bring along the sessions you saved in another SSH client.",
-        "points": ["Ten clients, including Xshell, MobaXterm and PuTTY", "Paste a list of hosts as text", "Preview and edit every entry in a table first"]
+        "points": [
+          "Ten clients, including Xshell, MobaXterm and PuTTY",
+          "Paste a list of hosts as text",
+          "Preview and edit every entry in a table first"
+        ]
       },
       {
         "icon": "upload-cloud-2-line",
         "title": "Backup and restore",
         "text": "Password-encrypted backups of hosts, credentials, snippets and settings.",
-        "points": ["Local file, WebDAV, S3-compatible storage or a private GitHub Gist", "By hand or on a schedule, with retention", "Restore on another device"]
+        "points": [
+          "Local file, WebDAV, S3-compatible storage or a private GitHub Gist",
+          "By hand or on a schedule, with retention",
+          "Restore on another device"
+        ]
       },
       {
         "icon": "route-line",
         "title": "Networking",
         "text": "Reach servers that sit behind bastions and proxies.",
-        "points": ["Multi-hop jump hosts", "HTTP and SOCKS5 proxies, also for AI providers and update checks", "Local, remote and dynamic port forwarding"]
+        "points": [
+          "Multi-hop jump hosts",
+          "HTTP and SOCKS5 proxies, also for AI providers and update checks",
+          "Local, remote and dynamic port forwarding"
+        ]
       },
       {
         "icon": "dashboard-3-line",
         "title": "Everyday comfort",
         "text": "Small things that add up over a working day.",
-        "points": ["CPU, memory, disk, network and latency at a glance", "Light and dark themes, background images and interface scaling", "Close to the tray and connect from its popover"]
+        "points": [
+          "CPU, memory, disk, network and latency at a glance",
+          "Light and dark themes, background images and interface scaling",
+          "Close to the tray and connect from its popover"
+        ]
+      }
+    ],
+    "filters": [
+      {
+        "key": "all",
+        "label": "All"
+      },
+      {
+        "key": "terminal",
+        "label": "Terminal & Panes"
+      },
+      {
+        "key": "files",
+        "label": "Files & Network"
+      },
+      {
+        "key": "ai",
+        "label": "AI & Agents"
+      },
+      {
+        "key": "ops",
+        "label": "Hosts & Backup"
       }
     ]
   },
@@ -223,22 +544,56 @@
     "lead": "Screenshots of SSHYard in dark mode.",
     "tabs": "Screenshots",
     "items": [
-      {"key": "terminal", "label": "Terminal and AI", "caption": "The assistant checks memory use on the host and reports back in a table, with the terminal right beside it.", "alt": "SSHYard window with a terminal on the left and the AI assistant on the right reporting memory use"},
-      {"key": "sftp", "label": "SFTP", "caption": "Browse and edit remote files next to the terminal while transfers run in the background.", "alt": "SSHYard SFTP file manager next to a terminal"},
-      {"key": "monitor", "label": "System monitor", "caption": "Live CPU, memory, disk and network figures for the connected host.", "alt": "SSHYard system monitor showing CPU, memory, disk and network charts"},
-      {"key": "settings", "label": "AI settings", "caption": "Pick providers and models, a review model, and how much the assistant may do.", "alt": "SSHYard AI assistant settings with providers and models"}
+      {
+        "key": "terminal",
+        "label": "Terminal and AI",
+        "caption": "The assistant checks memory use on the host and reports back in a table, with the terminal right beside it.",
+        "alt": "SSHYard window with a terminal on the left and the AI assistant on the right reporting memory use"
+      },
+      {
+        "key": "sftp",
+        "label": "SFTP",
+        "caption": "Browse and edit remote files next to the terminal while transfers run in the background.",
+        "alt": "SSHYard SFTP file manager next to a terminal"
+      },
+      {
+        "key": "monitor",
+        "label": "System monitor",
+        "caption": "Live CPU, memory, disk and network figures for the connected host.",
+        "alt": "SSHYard system monitor showing CPU, memory, disk and network charts"
+      },
+      {
+        "key": "settings",
+        "label": "AI settings",
+        "caption": "Pick providers and models, a review model, and how much the assistant may do.",
+        "alt": "SSHYard AI assistant settings with providers and models"
+      }
     ],
     "zoom": "Enlarge screenshot",
-    "close": "Close"
+    "close": "Close",
+    "prev": "Previous screenshot",
+    "next": "Next screenshot"
   },
   "ai": {
     "title": "An assistant that works on the host, with you in control",
     "lead": "The assistant sees the terminal context of its host and runs commands and edits files over the same SSH connection. You decide how much it may do on its own.",
     "modes_label": "Permission mode",
     "modes": [
-      {"key": "ask", "label": "Ask", "text": "The assistant asks you before it runs a command or changes a file."},
-      {"key": "review", "label": "Review", "text": "Read-only actions run straight away; a review model checks every other step, and anything it doesn't approve comes back to you. Critical actions always ask you."},
-      {"key": "full", "label": "Full access", "text": "Every action runs without asking. Turning it on takes a confirmation, and a warning stays visible while it is on."}
+      {
+        "key": "ask",
+        "label": "Ask",
+        "text": "The assistant asks you before it runs a command or changes a file."
+      },
+      {
+        "key": "review",
+        "label": "Review",
+        "text": "Read-only actions run straight away; a review model checks every other step, and anything it doesn't approve comes back to you. Critical actions always ask you."
+      },
+      {
+        "key": "full",
+        "label": "Full access",
+        "text": "Every action runs without asking. Turning it on takes a confirmation, and a warning stays visible while it is on."
+      }
     ],
     "card": {
       "command": "sudo systemctl restart php8.3-fpm",
@@ -256,18 +611,73 @@
     "providers_text": "Connect any provider that speaks the OpenAI-compatible Chat Completions, OpenAI Responses or Anthropic Messages API, including models you host yourself. Terminal output and file contents go only to the provider you pick, and only after you agree for that host. You can also use ACP agents detected on this computer, such as Claude Code, Codex, Grok and Gemini CLI; their work stays on the remote host.",
     "agents_title": "Let your local agents in, on your terms",
     "agents_text": "With agent access on, AI agents on this computer can list hosts, open SSH connections and run commands through the open API, MCP or the SSHYard Skill. They sign in with a token; your saved passwords and keys stay inside SSHYard.",
-    "agents_points": ["One-click Skill setup for Claude Code and Codex", "Every command lands in the AI audit log", "A new token disconnects every agent at once"]
+    "agents_points": [
+      "One-click Skill setup for Claude Code and Codex",
+      "Every command lands in the AI audit log",
+      "A new token disconnects every agent at once"
+    ],
+    "risks": {
+      "readonly": "Read-only",
+      "medium": "Medium risk",
+      "critical": "Critical risk"
+    },
+    "scenarios": [
+      {
+        "key": "df",
+        "label": "Read-only",
+        "risk": "readonly",
+        "cmd": "df -h /",
+        "out": "/dev/vda1       40G   13G   25G  33% /",
+        "auto": "Auto-approved · read-only"
+      },
+      {
+        "key": "restart",
+        "label": "Service restart",
+        "risk": "medium",
+        "cmd": "sudo systemctl restart php8.3-fpm",
+        "out": "● php8.3-fpm.service — active (running)",
+        "auto": "Approved by the review model"
+      },
+      {
+        "key": "purge",
+        "label": "Destructive",
+        "risk": "critical",
+        "cmd": "sudo rm -rf /var/cache/nginx/*",
+        "out": "cleared 142 MB from /var/cache/nginx",
+        "auto": "Critical — always asks you"
+      }
+    ]
   },
   "security": {
     "title": "Your credentials stay on your device",
     "lead": "Passwords, keys and tokens are encrypted locally. When they travel, they travel sealed.",
     "steps": [
-      {"icon": "key-2-line", "title": "System keychain", "text": "Holds one random 256-bit master key for SSHYard, and nothing else."},
-      {"icon": "safe-2-line", "title": "Encrypted local store", "text": "Passwords, private keys, passphrases, snippets and API keys are encrypted with that key in a single local file."},
-      {"icon": "shield-keyhole-line", "title": "Sealed backups", "text": "Backups are compressed and encrypted on your device with a key derived from your password, using Argon2id and XChaCha20-Poly1305."},
-      {"icon": "upload-cloud-2-line", "title": "Your storage", "text": "WebDAV, S3-compatible storage and GitHub Gists only ever receive sealed files. The backup password itself is never stored."}
+      {
+        "icon": "key-2-line",
+        "title": "System keychain",
+        "text": "Holds one random 256-bit master key for SSHYard, and nothing else."
+      },
+      {
+        "icon": "safe-2-line",
+        "title": "Encrypted local store",
+        "text": "Passwords, private keys, passphrases, snippets and API keys are encrypted with that key in a single local file."
+      },
+      {
+        "icon": "shield-keyhole-line",
+        "title": "Sealed backups",
+        "text": "Backups are compressed and encrypted on your device with a key derived from your password, using Argon2id and XChaCha20-Poly1305."
+      },
+      {
+        "icon": "upload-cloud-2-line",
+        "title": "Your storage",
+        "text": "WebDAV, S3-compatible storage and GitHub Gists only ever receive sealed files. The backup password itself is never stored."
+      }
     ],
-    "points": ["Agents get a token, never your saved credentials", "No account to create", "Open source under AGPL-3.0, so anyone can audit it"],
+    "points": [
+      "Agents get a token, never your saved credentials",
+      "No account to create",
+      "Open source under AGPL-3.0, so anyone can audit it"
+    ],
     "demo": {
       "title": "Watch a secret get sealed",
       "label": "Type a password",
@@ -275,7 +685,26 @@
       "plain": "Plaintext",
       "sealed": "Encrypted",
       "bytes": "{n} bytes",
-      "note": "An illustration: your browser encrypts the text with a random key using AES-GCM, since XChaCha20-Poly1305 isn't built into browsers. Nothing is sent or stored."
+      "note": "An illustration: your browser encrypts the text with a random key using AES-GCM, since XChaCha20-Poly1305 isn't built into browsers. Nothing is sent or stored.",
+      "rekey": "Rotate 256-bit key",
+      "key_label": "Master key",
+      "iv": "12B IV",
+      "ciphertext": "Ciphertext",
+      "tag": "16B Tag",
+      "presets": [
+        {
+          "label": "Password",
+          "value": "correct-horse-battery"
+        },
+        {
+          "label": "API Key",
+          "value": "sk-proj-9fK2mQx8vL3pR7wZ"
+        },
+        {
+          "label": "SSH Passphrase",
+          "value": "ed25519-prod-vault!2026"
+        }
+      ]
     }
   },
   "download": {
@@ -302,24 +731,46 @@
         "name": "macOS",
         "req": "macOS 12 or later · signed and notarized",
         "description": "Download SSHYard {version} for macOS: a signed and notarized DMG for Apple Silicon and Intel Macs. Free SSH and SFTP client with an AI assistant.",
-        "files": {"mac_arm64": "Apple Silicon", "mac_amd64": "Intel"},
-        "steps": ["Open the DMG and drag SSHYard into Applications.", "Updates download and install from inside the app."],
+        "files": {
+          "mac_arm64": "Apple Silicon",
+          "mac_amd64": "Intel"
+        },
+        "steps": [
+          "Open the DMG and drag SSHYard into Applications.",
+          "Updates download and install from inside the app."
+        ],
         "verify": "shasum -a 256 sshyard-{version}-arm64.dmg"
       },
       "windows": {
         "name": "Windows",
         "req": "Windows x64 or Arm64 · no administrator rights needed",
         "description": "Download SSHYard {version} for Windows x64 and Arm64: an installer with in-app updates or a portable ZIP. Free SSH and SFTP client with an AI assistant.",
-        "files": {"win_setup": "x64 installer", "win_portable": "x64 portable ZIP", "win_setup_arm64": "Arm64 installer", "win_portable_arm64": "Arm64 portable ZIP"},
-        "steps": ["The installer installs for the current user into %LOCALAPPDATA%\\Programs and updates from inside the app.", "For the portable version, extract the ZIP into a writable folder and run SSHYard.exe. App data is kept in %APPDATA%\\SSHYard."],
+        "files": {
+          "win_setup": "x64 installer",
+          "win_portable": "x64 portable ZIP",
+          "win_setup_arm64": "Arm64 installer",
+          "win_portable_arm64": "Arm64 portable ZIP"
+        },
+        "steps": [
+          "The installer installs for the current user into %LOCALAPPDATA%\\Programs and updates from inside the app.",
+          "For the portable version, extract the ZIP into a writable folder and run SSHYard.exe. App data is kept in %APPDATA%\\SSHYard."
+        ],
         "verify": "Get-FileHash .\\sshyard-setup-{version}-amd64.exe -Algorithm SHA256"
       },
       "linux": {
         "name": "Linux",
         "req": "x64 (amd64) or Arm64 (aarch64) · .deb package or .tar.gz archive",
         "description": "Download SSHYard {version} for Linux x64 and Arm64 as a .deb package or a .tar.gz archive. Free SSH and SFTP client with an AI assistant.",
-        "files": {"linux_deb": "x64 .deb package", "linux_tar": "x64 .tar.gz archive", "linux_deb_arm64": "Arm64 .deb package", "linux_tar_arm64": "Arm64 .tar.gz archive"},
-        "steps": ["Install the .deb with your package manager.", "Or put install.sh next to the .tar.gz and run it to install into ~/.local."],
+        "files": {
+          "linux_deb": "x64 .deb package",
+          "linux_tar": "x64 .tar.gz archive",
+          "linux_deb_arm64": "Arm64 .deb package",
+          "linux_tar_arm64": "Arm64 .tar.gz archive"
+        },
+        "steps": [
+          "Install the .deb with your package manager.",
+          "Or put install.sh next to the .tar.gz and run it to install into ~/.local."
+        ],
         "verify": "sha256sum -c --ignore-missing SHA256SUMS"
       }
     }
@@ -327,19 +778,58 @@
   "faq": {
     "title": "Frequently asked questions",
     "items": [
-      {"q": "What is SSHYard?", "a": "SSHYard is a free, open-source native desktop SSH and SFTP client for macOS, Windows and Linux. It combines tabbed and split terminals, an SFTP file manager, port forwarding and an AI assistant that can run commands on the host."},
-      {"q": "Is SSHYard free?", "a": "Yes. SSHYard is free to download and use, and it doesn't need an account. Its source code is on GitHub under the GNU AGPL-3.0 license."},
-      {"q": "Which systems does SSHYard run on?", "a": "macOS 12 or later on Apple Silicon and Intel Macs, Windows on x64 and Arm64, and Linux on x64 and Arm64 as a .deb package or a .tar.gz archive."},
-      {"q": "Is SSHYard built with Electron or a web view?", "a": "No. Its whole interface is drawn natively, without a web view or a bundled browser, which keeps the download at about {size}."},
-      {"q": "Where are my passwords and keys stored?", "a": "On your device, encrypted. The system keychain holds only a random master key, and passwords, private keys, passphrases and API keys are encrypted with it in a local file. Nothing leaves the device unless you make a backup, and backups are encrypted before they do."},
-      {"q": "How does the AI assistant work, and can I control it?", "a": "Each host has its own assistant that reads the terminal context, runs commands and edits files over the same connection. In Ask mode it waits for your approval; in Review mode read-only actions run and a review model checks the rest; Full access has to be turned on explicitly. It uses the AI provider and API key you set up, or a local ACP agent such as Claude Code or Codex."},
-      {"q": "Can Claude Code or Codex use my SSH hosts?", "a": "Yes, once you turn on agent access. Local agents can then list hosts, connect and run commands through SSHYard's open API, MCP endpoint or Skill, and SSHYard installs the Skill for Claude Code and Codex in one click. Agents sign in with a token and never receive your saved credentials."},
-      {"q": "Does SSHYard support jump hosts, proxies and port forwarding?", "a": "Yes. A host can connect through several jump hosts and an HTTP or SOCKS5 proxy, and you can set up local, remote and dynamic port forwards."},
-      {"q": "What can SSHYard connect to besides SSH?", "a": "Telnet, serial (COM) ports and local terminals; on Windows the local terminal can be PowerShell, CMD, Git Bash or WSL. When a server has no SFTP, the file pane falls back to SCP."},
-      {"q": "Can I run a command on several servers at once?", "a": "Yes. Broadcast commands sends the same command to the terminals you pick, and with synchronised typing on, what you type in one of them reaches the others too. Session logs record terminal output to a local file as text or raw output."},
-      {"q": "How do backup and restore work?", "a": "SSHYard compresses hosts, credentials, snippets and settings into one file and encrypts it with your backup password on your device. You can keep it locally or send it to WebDAV, S3-compatible storage or a private GitHub Gist, by hand or on a schedule, and restore it on another device with the same password."},
-      {"q": "Can I move over from another SSH client?", "a": "Yes. SSHYard imports hosts from your SSH config file, reads the exports of ten clients including Xshell, MobaXterm and PuTTY, and turns a pasted list into hosts. You can preview and edit every entry in a table before importing, and credentials go only into the local encrypted store. You can also connect straight away by typing user@host:port."},
-      {"q": "Which languages does SSHYard support?", "a": "English, Simplified Chinese, Traditional Chinese, Japanese and Korean, in the app and on this website."}
+      {
+        "q": "What is SSHYard?",
+        "a": "SSHYard is a free, open-source native desktop SSH and SFTP client for macOS, Windows and Linux. It combines tabbed and split terminals, an SFTP file manager, port forwarding and an AI assistant that can run commands on the host."
+      },
+      {
+        "q": "Is SSHYard free?",
+        "a": "Yes. SSHYard is free to download and use, and it doesn't need an account. Its source code is on GitHub under the GNU AGPL-3.0 license."
+      },
+      {
+        "q": "Which systems does SSHYard run on?",
+        "a": "macOS 12 or later on Apple Silicon and Intel Macs, Windows on x64 and Arm64, and Linux on x64 and Arm64 as a .deb package or a .tar.gz archive."
+      },
+      {
+        "q": "Is SSHYard built with Electron or a web view?",
+        "a": "No. Its whole interface is drawn natively, without a web view or a bundled browser, which keeps the download at about {size}."
+      },
+      {
+        "q": "Where are my passwords and keys stored?",
+        "a": "On your device, encrypted. The system keychain holds only a random master key, and passwords, private keys, passphrases and API keys are encrypted with it in a local file. Nothing leaves the device unless you make a backup, and backups are encrypted before they do."
+      },
+      {
+        "q": "How does the AI assistant work, and can I control it?",
+        "a": "Each host has its own assistant that reads the terminal context, runs commands and edits files over the same connection. In Ask mode it waits for your approval; in Review mode read-only actions run and a review model checks the rest; Full access has to be turned on explicitly. It uses the AI provider and API key you set up, or a local ACP agent such as Claude Code or Codex."
+      },
+      {
+        "q": "Can Claude Code or Codex use my SSH hosts?",
+        "a": "Yes, once you turn on agent access. Local agents can then list hosts, connect and run commands through SSHYard's open API, MCP endpoint or Skill, and SSHYard installs the Skill for Claude Code and Codex in one click. Agents sign in with a token and never receive your saved credentials."
+      },
+      {
+        "q": "Does SSHYard support jump hosts, proxies and port forwarding?",
+        "a": "Yes. A host can connect through several jump hosts and an HTTP or SOCKS5 proxy, and you can set up local, remote and dynamic port forwards."
+      },
+      {
+        "q": "What can SSHYard connect to besides SSH?",
+        "a": "Telnet, serial (COM) ports and local terminals; on Windows the local terminal can be PowerShell, CMD, Git Bash or WSL. When a server has no SFTP, the file pane falls back to SCP."
+      },
+      {
+        "q": "Can I run a command on several servers at once?",
+        "a": "Yes. Broadcast commands sends the same command to the terminals you pick, and with synchronised typing on, what you type in one of them reaches the others too. Session logs record terminal output to a local file as text or raw output."
+      },
+      {
+        "q": "How do backup and restore work?",
+        "a": "SSHYard compresses hosts, credentials, snippets and settings into one file and encrypts it with your backup password on your device. You can keep it locally or send it to WebDAV, S3-compatible storage or a private GitHub Gist, by hand or on a schedule, and restore it on another device with the same password."
+      },
+      {
+        "q": "Can I move over from another SSH client?",
+        "a": "Yes. SSHYard imports hosts from your SSH config file, reads the exports of ten clients including Xshell, MobaXterm and PuTTY, and turns a pasted list into hosts. You can preview and edit every entry in a table before importing, and credentials go only into the local encrypted store. You can also connect straight away by typing user@host:port."
+      },
+      {
+        "q": "Which languages does SSHYard support?",
+        "a": "English, Simplified Chinese, Traditional Chinese, Japanese and Korean, in the app and on this website."
+      }
     ]
   },
   "cta": {
@@ -372,5 +862,8 @@
   },
   "a11y": {
     "breadcrumb": "Breadcrumb"
+  },
+  "boot": {
+    "label": "Starting SSHYard…"
   }
 }

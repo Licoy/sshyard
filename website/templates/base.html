@@ -55,7 +55,7 @@
 <meta name="twitter:description" content="{{ description }}">
 <meta name="twitter:image" content="{{ og_image }}">
 <meta name="twitter:image:alt" content="{{ t.meta.og_alt }}">
-<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("sshyard-theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t)}catch(e){}})(document.documentElement)</script>
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("sshyard-theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t)}catch(e){}try{if(!sessionStorage.getItem("sshyard-booted")&&!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)){d.classList.add("booting")}}catch(e){}})(document.documentElement)</script>
 {# Before the stylesheet, so a redirected visit paints nothing. #}
 <script>
 (function (d) {
@@ -90,6 +90,20 @@
 {% endif %}
 </head>
 <body>
+<div class="boot-veil" data-boot aria-hidden="true">
+  <div class="boot-card">
+    <div class="boot-mark">
+      <svg class="boot-ring" viewBox="0 0 88 88" width="88" height="88" aria-hidden="true">
+        <circle class="boot-track" cx="44" cy="44" r="40" fill="none" stroke-width="2"></circle>
+        <circle class="boot-arc" cx="44" cy="44" r="40" fill="none" stroke-width="2.5" stroke-linecap="round"></circle>
+      </svg>
+      <img src="{{ file('icon-192.png') }}" width="56" height="56" alt="" decoding="async">
+    </div>
+    <span class="boot-name">SSHYard</span>
+    <div class="boot-bar"><i></i></div>
+    <span class="boot-status">{{ t.boot.label }}</span>
+  </div>
+</div>
 <a class="skip" href="#main">{{ t.nav.skip }}</a>
 {% set home = url('home') %}
 {% macro theme_switch() %}
@@ -113,11 +127,11 @@
   <div class="nav-in wrap">
     <a class="brand" href="{{ home }}"><img src="{{ file('logo-64.png') }}" width="28" height="28" alt="" decoding="async"><span>SSHYard</span></a>
     <nav class="nav-links" aria-label="{{ t.nav.main }}">
-      <a href="{{ home }}#features">{{ t.nav.features }}</a>
-      <a href="{{ home }}#ai">{{ t.nav.ai }}</a>
-      <a href="{{ home }}#security">{{ t.nav.security }}</a>
+      <a href="{{ home }}#features" data-spy="features">{{ t.nav.features }}</a>
+      <a href="{{ home }}#ai" data-spy="ai">{{ t.nav.ai }}</a>
+      <a href="{{ home }}#security" data-spy="security">{{ t.nav.security }}</a>
       <a href="{{ url('download') }}"{% if page.key.startswith('download') %} aria-current="page"{% endif %}>{{ t.nav.download }}</a>
-      <a href="{{ home }}#faq">{{ t.nav.faq }}</a>
+      <a href="{{ home }}#faq" data-spy="faq">{{ t.nav.faq }}</a>
     </nav>
     <div class="nav-tools">
       <button type="button" class="icon-btn pal-btn" data-palette aria-label="{{ t.palette.label }}" title="{{ t.palette.label }}" aria-haspopup="dialog">{{ icon('command-line') }}<kbd data-pal-kbd>Ctrl K</kbd></button>
@@ -148,6 +162,7 @@
       </details>
     </div>
   </div>
+  <div class="nav-progress" data-scroll-progress aria-hidden="true"></div>
 </header>
 <main id="main">
 {% block main %}{% endblock %}
@@ -205,7 +220,10 @@
     {% endfor %}
   </ul>
   <p class="pal-empty" data-pal-empty hidden>{{ t.palette.empty }}</p>
+  <div class="pal-foot" aria-hidden="true">{{ t.palette.hint }}</div>
 </dialog>
+<button type="button" class="back-top" data-back-top aria-label="{{ t.nav.top }}" title="{{ t.nav.top }}" hidden>{{ icon('arrow-up-s-line') }}</button>
+<div class="toast-stack" data-toasts aria-live="polite"></div>
 <div class="langbanner" role="region" aria-live="polite" hidden>
   <span class="langbanner-text"></span>
   <a class="btn btn-primary btn-sm langbanner-go" href="#"></a>

@@ -5,7 +5,10 @@
     "description": "SSHYard 是一款免費開源的原生 SSH / SFTP 用戶端，支援 macOS、Windows 和 Linux，集多分頁分割終端機、SFTP 檔案管理與可執行命令的 AI 助理於一體。",
     "keywords": "SSH 用戶端, SSH 連線工具, SSH 遠端連線, 免費 SSH 用戶端, 開源 SSH 用戶端, Mac SSH 用戶端, Windows SSH 工具, SSH 終端機, SFTP 用戶端, 檔案傳輸, 遠端伺服器管理, 伺服器監控, 跳板機, 連接埠轉發, AI 助理, Telnet 用戶端, 序列埠工具, tmux 工作階段管理, Docker 管理, MCP",
     "og_alt": "SSHYard：內建 AI 助理的原生 SSH / SFTP 用戶端",
-    "og_title": ["SSH、SFTP 與 AI", "盡在一個原生用戶端"],
+    "og_title": [
+      "SSH、SFTP 與 AI",
+      "盡在一個原生用戶端"
+    ],
     "download_title": "下載 SSHYard：支援 macOS、Windows 和 Linux",
     "download_description": "下載 SSHYard {version}，免費的 SSH / SFTP 用戶端：Apple 晶片與 Intel Mac 的 DMG、Windows 安裝程式或免安裝 ZIP、Linux 的 .deb 與 .tar.gz。",
     "notfound_title": "找不到頁面 — SSHYard"
@@ -25,7 +28,8 @@
     "theme_auto": "跟隨系統",
     "theme_light": "淺色",
     "theme_dark": "深色",
-    "skip": "跳至主要內容"
+    "skip": "跳至主要內容",
+    "top": "回到頂部"
   },
   "palette": {
     "label": "命令面板",
@@ -34,12 +38,16 @@
     "go": "前往",
     "demo": "示範視窗",
     "connect": "連線到 {host}",
-    "open": "開啟{name}"
+    "open": "開啟{name}",
+    "hint": "↑↓ 切換 · ↵ 選取 · esc 關閉"
   },
   "hero": {
     "release": "版本 {version}",
     "release_link": "更新內容",
-    "title": ["SSH、SFTP 與 AI", "盡在一個原生用戶端"],
+    "title": [
+      "SSH、SFTP 與 AI",
+      "盡在一個原生用戶端"
+    ],
     "lead": "SSHYard 是一款免費開源的 SSH / SFTP 用戶端，支援 macOS、Windows 和 Linux。在終端機裡操作、管理遠端檔案，再讓 AI 助理直接在主機上執行命令，一個視窗全部完成。",
     "cta": "免費下載",
     "cta_for": {
@@ -72,7 +80,17 @@
       "editor": "這個示範無法執行 {cmd}，檔案已在「檔案」窗格中開啟。",
       "ssh": "要連線其他主機，請在側邊欄或 + 選單中選擇。"
     },
-    "tools": {"monitor": "系統監視", "files": "檔案", "ai": "AI", "snippets": "快速指令", "close": "關閉"},
+    "tools": {
+      "monitor": "系統監視",
+      "files": "檔案",
+      "ai": "AI",
+      "snippets": "快速指令",
+      "close": "關閉",
+      "usage": "程序佔用",
+      "host": "主機詳情",
+      "docker": "Docker 管理",
+      "broadcast": "廣播指令"
+    },
     "monitor": {
       "system": "系統",
       "address": "位址",
@@ -86,7 +104,14 @@
       "physical": "實體記憶體",
       "swap": "交換分割槽",
       "network": "網路",
-      "disk": "磁碟"
+      "disk": "磁碟",
+      "cores_title": "CPU 各核心",
+      "waiting": "正在等待第一次讀數…",
+      "bar_cpu": "CPU",
+      "bar_mem": "記憶體",
+      "bar_swap": "交換",
+      "bar_disk": "磁碟",
+      "bar_load": "負載"
     },
     "files": {
       "up": "上一層",
@@ -100,18 +125,40 @@
       "uploaded": "已上傳 {name}",
       "note": "檔案不會離開你的瀏覽器：示範只讀取檔名和大小。",
       "empty": "此資料夾是空的",
-      "back": "返回"
+      "back": "返回",
+      "dual": "顯示本機檔案",
+      "local": "本機",
+      "remote": "遠端",
+      "loading": "正在載入…"
     },
     "snippets": {
       "run": "執行命令",
       "insert": "僅插入",
       "items": [
-        {"name": "磁碟用量", "cmd": "df -h"},
-        {"name": "記憶體", "cmd": "free -h"},
-        {"name": "佔用最高的處理程序", "cmd": "ps aux --sort=-%mem | head -5"},
-        {"name": "nginx 狀態", "cmd": "systemctl status nginx"},
-        {"name": "容器", "cmd": "docker ps"},
-        {"name": "系統資訊", "cmd": "neofetch"}
+        {
+          "name": "磁碟用量",
+          "cmd": "df -h"
+        },
+        {
+          "name": "記憶體",
+          "cmd": "free -h"
+        },
+        {
+          "name": "佔用最高的處理程序",
+          "cmd": "ps aux --sort=-%mem | head -5"
+        },
+        {
+          "name": "nginx 狀態",
+          "cmd": "systemctl status nginx"
+        },
+        {
+          "name": "容器",
+          "cmd": "docker ps"
+        },
+        {
+          "name": "系統資訊",
+          "cmd": "neofetch"
+        }
       ]
     },
     "ai_title": "AI",
@@ -130,91 +177,365 @@
     "free_text": "這個示範只能回答下面的建議問題。在應用程式中，助理可以回答關於這臺主機的任何問題。",
     "denied": "好的，我不會執行它。如果想換個方法，請告訴我。",
     "suggestions": [
-      {"q": "磁碟還剩多少空間？", "cmd": "df -h /", "a": "/ 已使用 {pct}：共 {size}，已用 {used}，剩餘 {avail}。暫時不需要清理。"},
-      {"q": "什麼佔用記憶體最多？", "cmd": "ps -eo comm,rss --sort=-rss | head -4", "a": "佔用記憶體最多的是 {top}（{topmem}），其次是 {second}（{secondmem}）。對這臺主機來說屬於正常。"},
-      {"q": "有服務失敗嗎？", "cmd": "systemctl --failed --no-legend", "a": "{host} 上沒有失敗的 systemd 單元。"}
-    ]
+      {
+        "q": "磁碟還剩多少空間？",
+        "cmd": "df -h /",
+        "a": "/ 已使用 {pct}：共 {size}，已用 {used}，剩餘 {avail}。暫時不需要清理。"
+      },
+      {
+        "q": "什麼佔用記憶體最多？",
+        "cmd": "ps -eo comm,rss --sort=-rss | head -4",
+        "a": "佔用記憶體最多的是 {top}（{topmem}），其次是 {second}（{secondmem}）。對這臺主機來說屬於正常。"
+      },
+      {
+        "q": "有服務失敗嗎？",
+        "cmd": "systemctl --failed --no-legend",
+        "a": "{host} 上沒有失敗的 systemd 單元。"
+      }
+    ],
+    "boot": {
+      "keychain": "正在解鎖系統鑰匙圈…",
+      "hosts": "正在載入加密主機庫…",
+      "connecting": "正在還原工作區與工作階段…",
+      "skip": "略過"
+    },
+    "groups": {
+      "fav": "收藏",
+      "prod": "正式環境",
+      "infra": "基礎設施"
+    },
+    "connected_one": "1 個連線",
+    "connected_many": "{n} 個連線",
+    "sidebar_hide": "隱藏側邊欄",
+    "sidebar_show": "顯示側邊欄",
+    "test_latency": "測速",
+    "testing_latency": "正在測速…",
+    "local_terminal": "本地終端機",
+    "quick_connect": "快速連線",
+    "quick_placeholder": "user@host:port（例如 ops@edge-02）",
+    "quick_go": "連線",
+    "temporary": "臨時",
+    "privacy": "隱私模式：隱藏 IP 位址",
+    "privacy_on": "隱私模式已開啟 — 已隱藏 IP 位址",
+    "settings": "設定",
+    "back": "返回",
+    "updates": "檢查更新",
+    "up_to_date": "SSHYard {version} 已是最新版本",
+    "split_down": "向下拆分",
+    "find": "查詢",
+    "find_placeholder": "在終端機中查詢",
+    "find_none": "無相符項",
+    "reconnect": "重新連線",
+    "reboot": "重播啟動流程",
+    "welcome_title": "歡迎使用 SSHYard",
+    "welcome_hint": "在左側選擇一臺主機以開啟工作階段。",
+    "presets": [
+      {
+        "key": "ai",
+        "label": "AI 排查 502",
+        "icon": "robot-2-line"
+      },
+      {
+        "key": "files",
+        "label": "雙欄 SFTP",
+        "icon": "folder-3-line"
+      },
+      {
+        "key": "monitor",
+        "label": "系統監視",
+        "icon": "pulse-line"
+      },
+      {
+        "key": "docker",
+        "label": "Docker 容器",
+        "icon": "ship-2-line"
+      },
+      {
+        "key": "broadcast",
+        "label": "廣播指令",
+        "icon": "broadcast-line"
+      },
+      {
+        "key": "schemes",
+        "label": "終端機配色",
+        "icon": "palette-line"
+      },
+      {
+        "key": "privacy",
+        "label": "隱私模式",
+        "icon": "eye-off-line"
+      },
+      {
+        "key": "reboot",
+        "label": "啟動載入",
+        "icon": "restart-line"
+      }
+    ],
+    "usage": {
+      "filter": "按名稱、使用者或 PID 篩選",
+      "proc": "程序",
+      "pid": "PID",
+      "cpu": "CPU",
+      "mem": "記憶體",
+      "disk": "磁碟",
+      "count": "{n} 個程序"
+    },
+    "host_info": {
+      "connect": "連線",
+      "connection": "連線",
+      "port": "連接埠",
+      "user": "使用者名稱",
+      "group": "群組",
+      "proxy": "代理",
+      "proxy_none": "無（直連）",
+      "auth": "驗證方式",
+      "auth_agent": "SSH Agent",
+      "jumps": "跳板機",
+      "panes": "已開啟的面板",
+      "favorite": "收藏"
+    },
+    "docker": {
+      "containers": "容器（{n}）",
+      "images": "映象（{n}）",
+      "start": "啟動",
+      "stop": "停止",
+      "restart": "重新啟動",
+      "logs": "日誌",
+      "shell": "開啟 Shell",
+      "running": "執行中",
+      "stopped": "已停止",
+      "empty": "這臺主機未安裝 Docker。",
+      "back": "返回",
+      "loading": "正在載入…"
+    },
+    "broadcast": {
+      "placeholder": "傳送到所選終端機的指令（Enter 傳送）",
+      "send": "傳送到所選終端機",
+      "sent": "已傳送到 {n} 個終端機",
+      "sync": "同步鍵盤輸入",
+      "sync_hint": "在任一所選終端機中鍵入的內容，會同步到其他終端機",
+      "targets": "已選 {n}/{total} 個終端機",
+      "none": "沒有可傳送的終端機"
+    },
+    "ai_ui": {
+      "builtin": "內建",
+      "new_chat": "新建對話",
+      "working": "正在處理…",
+      "stop": "停止",
+      "attach": "新增附件",
+      "in_term": "在終端機中執行命令",
+      "effort_auto": "自動",
+      "effort_high": "高",
+      "thinking": "思考程度",
+      "expand": "展開詳情",
+      "collapse": "收合詳情",
+      "exit": "結束碼 {code}",
+      "copy": "複製",
+      "insert": "插入到終端機",
+      "interrupted": "已停止。",
+      "table_item": "項目",
+      "table_val": "數值",
+      "table_total": "總記憶體",
+      "table_used": "已使用",
+      "table_avail": "可用記憶體",
+      "table_swap": "Swap"
+    },
+    "settings_ui": {
+      "appearance": "外觀",
+      "terminal": "終端機",
+      "ai": "AI 助理",
+      "scheme": "配色方案",
+      "scheme_auto": "跟隨外觀",
+      "scheme_hint": "選擇十套內建配色之一，立即預覽終端機變化。",
+      "privacy_title": "隱私模式",
+      "privacy_desc": "在側邊欄、分頁、窗格標題和狀態列中遮蔽 IP 位址。",
+      "mode_title": "預設權限模式",
+      "mode_desc": "決定 AI 助理在無需詢問時能執行到什麼程度。"
+    }
   },
   "glance": {
     "title": "SSHYard 一覽",
     "rows": [
-      ["價格", "免費"],
-      ["授權條款", "開放原始碼，GNU AGPL-3.0"],
-      ["平台", "macOS 12 以上（Apple 晶片與 Intel）、Windows 與 Linux（x64 與 Arm64）"],
-      ["介面", "原生繪製，不使用 WebView"],
-      ["連線方式", "SSH、SFTP / SCP、Telnet、序列埠與本機終端機"],
-      ["下載大小", "約 {size}"],
-      ["語言", "English、简体中文、繁體中文、日本語、한국어"],
-      ["帳號", "無需註冊"],
-      ["憑證", "加密儲存在本機"],
-      ["遷移", "SSH 設定、十種常見用戶端與文字批次匯入"],
-      ["AI 服務", "任何 OpenAI 相容、OpenAI Responses 或 Anthropic 介面，或本機 ACP 代理程式"],
-      ["代理程式接入", "開放 API、MCP 與 Skill，預設關閉"]
+      [
+        "價格",
+        "免費"
+      ],
+      [
+        "授權條款",
+        "開放原始碼，GNU AGPL-3.0"
+      ],
+      [
+        "平台",
+        "macOS 12 以上（Apple 晶片與 Intel）、Windows 與 Linux（x64 與 Arm64）"
+      ],
+      [
+        "介面",
+        "原生繪製，不使用 WebView"
+      ],
+      [
+        "連線方式",
+        "SSH、SFTP / SCP、Telnet、序列埠與本機終端機"
+      ],
+      [
+        "下載大小",
+        "約 {size}"
+      ],
+      [
+        "語言",
+        "English、简体中文、繁體中文、日本語、한국어"
+      ],
+      [
+        "帳號",
+        "無需註冊"
+      ],
+      [
+        "憑證",
+        "加密儲存在本機"
+      ],
+      [
+        "遷移",
+        "SSH 設定、十種常見用戶端與文字批次匯入"
+      ],
+      [
+        "AI 服務",
+        "任何 OpenAI 相容、OpenAI Responses 或 Anthropic 介面，或本機 ACP 代理程式"
+      ],
+      [
+        "代理程式接入",
+        "開放 API、MCP 與 Skill，預設關閉"
+      ]
     ]
   },
   "features": {
-    "title": "為一整天的\u200b伺服器工作而設計",
+    "title": "為一整天的​伺服器工作而設計",
     "lead": "終端機、檔案、網路與備份協同設計，從建立第一個連線到完成最後一次傳輸，都不必離開這個應用程式。",
     "items": [
       {
         "icon": "terminal-box-line",
         "title": "終端機",
         "text": "多分頁、分割窗格與搜尋，支援真彩色、寬字元和輸入法；除了 SSH，也能連接 Telnet、序列埠和本機終端機。",
-        "points": ["十套內建配色，也可匯入 .itermcolors", "關鍵字醒目提示、行號與時間戳記", "多種輸出編碼，可依主機設定", "同一主機的多個窗格共用一條連線，斷線自動重新連線"]
+        "points": [
+          "十套內建配色，也可匯入 .itermcolors",
+          "關鍵字醒目提示、行號與時間戳記",
+          "多種輸出編碼，可依主機設定",
+          "同一主機的多個窗格共用一條連線，斷線自動重新連線"
+        ]
       },
       {
         "icon": "layout-column-line",
         "title": "工作區窗格",
         "text": "系統監視、Docker、tmux、快速指令、廣播指令和工作階段記錄都是窗格，拖到哪裡就停在哪裡。",
-        "points": ["tmux 工作階段管理，重新連線後回到原工作階段", "檢視 Docker 容器與映像檔，直接啟動或停止容器", "廣播指令與同步輸入，一次操作多臺主機", "命令面板與可自訂的快速鍵"]
+        "points": [
+          "tmux 工作階段管理，重新連線後回到原工作階段",
+          "檢視 Docker 容器與映像檔，直接啟動或停止容器",
+          "廣播指令與同步輸入，一次操作多臺主機",
+          "命令面板與可自訂的快速鍵"
+        ]
       },
       {
         "icon": "folder-transfer-line",
         "title": "SFTP 檔案管理",
         "text": "遠端檔案就在終端機旁邊，還能跟隨終端機的目前目錄。",
-        "points": ["多分頁編輯器，附目錄樹", "需要時透過 sudo 提權存取檔案", "伺服器沒有 SFTP 時自動改用 SCP", "拖放整個資料夾，傳輸可暫停、續傳和重試"]
+        "points": [
+          "多分頁編輯器，附目錄樹",
+          "需要時透過 sudo 提權存取檔案",
+          "伺服器沒有 SFTP 時自動改用 SCP",
+          "拖放整個資料夾，傳輸可暫停、續傳和重試"
+        ]
       },
       {
         "icon": "robot-2-line",
         "title": "AI 助理",
         "text": "每臺主機都有獨立的助理，可以執行命令、編輯檔案，對話依主機儲存。",
-        "points": ["詢問、自動審核、完全允許三種權限模式", "使用你選擇的 AI 服務，或本機的 Claude Code、Codex 等代理程式", "SSH、Telnet、序列埠和本機終端機都能使用", "可貼上圖片和檔案作為附件"]
+        "points": [
+          "詢問、自動審核、完全允許三種權限模式",
+          "使用你選擇的 AI 服務，或本機的 Claude Code、Codex 等代理程式",
+          "SSH、Telnet、序列埠和本機終端機都能使用",
+          "可貼上圖片和檔案作為附件"
+        ]
       },
       {
         "icon": "plug-line",
         "title": "代理程式接入",
         "text": "本機的 AI 代理程式可透過開放 API、MCP 或 Skill 使用你的主機。",
-        "points": ["為 Claude Code、Codex 一鍵設定 Skill", "已儲存的憑證絕不交給代理程式", "預設關閉，由你決定是否開啟"]
+        "points": [
+          "為 Claude Code、Codex 一鍵設定 Skill",
+          "已儲存的憑證絕不交給代理程式",
+          "預設關閉，由你決定是否開啟"
+        ]
       },
       {
         "icon": "key-2-line",
         "title": "主機與憑證",
         "text": "從 SSH 設定匯入，或輸入 user@host:port 直接連線。",
-        "points": ["密碼、OpenSSH / PEM / PuTTY 金鑰、OpenSSH 憑證與 SSH Agent", "不限層級的群組，支援拖動整理、多選和測速", "記錄服務商與續費日期，續費前提醒", "主機金鑰變更時先核對指紋再信任"]
+        "points": [
+          "密碼、OpenSSH / PEM / PuTTY 金鑰、OpenSSH 憑證與 SSH Agent",
+          "不限層級的群組，支援拖動整理、多選和測速",
+          "記錄服務商與續費日期，續費前提醒",
+          "主機金鑰變更時先核對指紋再信任"
+        ]
       },
       {
         "icon": "import-line",
         "title": "從其他用戶端遷移",
         "text": "帶上你在其他 SSH 用戶端裡儲存的工作階段。",
-        "points": ["支援 Xshell、MobaXterm、PuTTY 等十種用戶端", "貼上文字批次匯入主機", "匯入前在表格中逐項預覽和修改"]
+        "points": [
+          "支援 Xshell、MobaXterm、PuTTY 等十種用戶端",
+          "貼上文字批次匯入主機",
+          "匯入前在表格中逐項預覽和修改"
+        ]
       },
       {
         "icon": "upload-cloud-2-line",
         "title": "備份與還原",
         "text": "以密碼加密備份主機、憑證、快速指令和設定。",
-        "points": ["儲存到本機、WebDAV、S3 相容儲存或 GitHub 私密 Gist", "手動或定時備份，可設定保留份數", "在另一臺裝置上還原"]
+        "points": [
+          "儲存到本機、WebDAV、S3 相容儲存或 GitHub 私密 Gist",
+          "手動或定時備份，可設定保留份數",
+          "在另一臺裝置上還原"
+        ]
       },
       {
         "icon": "route-line",
         "title": "網路連線",
         "text": "輕鬆連上藏在跳板機和代理後面的伺服器。",
-        "points": ["多級跳板機", "HTTP 與 SOCKS5 代理，AI 服務和更新檢查也能使用", "本機、遠端和動態連接埠轉發"]
+        "points": [
+          "多級跳板機",
+          "HTTP 與 SOCKS5 代理，AI 服務和更新檢查也能使用",
+          "本機、遠端和動態連接埠轉發"
+        ]
       },
       {
         "icon": "dashboard-3-line",
         "title": "日常體驗",
         "text": "每天都會用到的細節，一點一滴累積成順手。",
-        "points": ["CPU、記憶體、磁碟、網路和延遲一目了然", "淺色與深色主題，支援背景圖片與介面縮放", "關閉到系統匣，從系統匣彈出視窗快速連線"]
+        "points": [
+          "CPU、記憶體、磁碟、網路和延遲一目了然",
+          "淺色與深色主題，支援背景圖片與介面縮放",
+          "關閉到系統匣，從系統匣彈出視窗快速連線"
+        ]
+      }
+    ],
+    "filters": [
+      {
+        "key": "all",
+        "label": "全部"
+      },
+      {
+        "key": "terminal",
+        "label": "終端機與窗格"
+      },
+      {
+        "key": "files",
+        "label": "檔案與網路"
+      },
+      {
+        "key": "ai",
+        "label": "AI 與代理"
+      },
+      {
+        "key": "ops",
+        "label": "主機與備份"
       }
     ]
   },
@@ -223,22 +544,56 @@
     "lead": "以下為 SSHYard 深色模式截圖。",
     "tabs": "截圖",
     "items": [
-      {"key": "terminal", "label": "終端機與 AI", "caption": "AI 助理檢查主機的記憶體使用量並以表格回報，終端機就在一旁。", "alt": "SSHYard 視窗：左側是終端機，右側 AI 助理正在回報記憶體使用情況"},
-      {"key": "sftp", "label": "SFTP", "caption": "在終端機旁瀏覽和編輯遠端檔案，傳輸在背景進行。", "alt": "SSHYard 的 SFTP 檔案管理器與終端機並排顯示"},
-      {"key": "monitor", "label": "系統監視", "caption": "即時檢視已連線主機的 CPU、記憶體、磁碟和網路數據。", "alt": "SSHYard 系統監視，顯示 CPU、記憶體、磁碟和網路圖表"},
-      {"key": "settings", "label": "AI 設定", "caption": "選擇 AI 服務和模型、審核模型，以及助理可以自主執行到什麼程度。", "alt": "SSHYard AI 助理設定，列出服務供應商與模型"}
+      {
+        "key": "terminal",
+        "label": "終端機與 AI",
+        "caption": "AI 助理檢查主機的記憶體使用量並以表格回報，終端機就在一旁。",
+        "alt": "SSHYard 視窗：左側是終端機，右側 AI 助理正在回報記憶體使用情況"
+      },
+      {
+        "key": "sftp",
+        "label": "SFTP",
+        "caption": "在終端機旁瀏覽和編輯遠端檔案，傳輸在背景進行。",
+        "alt": "SSHYard 的 SFTP 檔案管理器與終端機並排顯示"
+      },
+      {
+        "key": "monitor",
+        "label": "系統監視",
+        "caption": "即時檢視已連線主機的 CPU、記憶體、磁碟和網路數據。",
+        "alt": "SSHYard 系統監視，顯示 CPU、記憶體、磁碟和網路圖表"
+      },
+      {
+        "key": "settings",
+        "label": "AI 設定",
+        "caption": "選擇 AI 服務和模型、審核模型，以及助理可以自主執行到什麼程度。",
+        "alt": "SSHYard AI 助理設定，列出服務供應商與模型"
+      }
     ],
     "zoom": "放大截圖",
-    "close": "關閉"
+    "close": "關閉",
+    "prev": "上一張截圖",
+    "next": "下一張截圖"
   },
   "ai": {
-    "title": "在主機上\u200b動手的 AI\u00a0助理，\u200b主導權\u200b始終在你",
+    "title": "在主機上​動手的 AI 助理，​主導權​始終在你",
     "lead": "助理能看到所在主機的終端機上下文，並透過同一條 SSH 連線執行命令、編輯檔案。它能自主做多少，由你決定。",
     "modes_label": "權限模式",
     "modes": [
-      {"key": "ask", "label": "詢問", "text": "助理在執行命令或修改檔案之前，都會先徵求你的同意。"},
-      {"key": "review", "label": "自動審核", "text": "唯讀操作直接執行，其餘每一步都交給審核模型檢查，它沒有放行的交回給你確認；高風險操作始終由你確認。"},
-      {"key": "full", "label": "完全允許", "text": "所有操作直接執行，不再詢問。開啟前需要確認，開啟期間始終顯示警示。"}
+      {
+        "key": "ask",
+        "label": "詢問",
+        "text": "助理在執行命令或修改檔案之前，都會先徵求你的同意。"
+      },
+      {
+        "key": "review",
+        "label": "自動審核",
+        "text": "唯讀操作直接執行，其餘每一步都交給審核模型檢查，它沒有放行的交回給你確認；高風險操作始終由你確認。"
+      },
+      {
+        "key": "full",
+        "label": "完全允許",
+        "text": "所有操作直接執行，不再詢問。開啟前需要確認，開啟期間始終顯示警示。"
+      }
     ],
     "card": {
       "command": "sudo systemctl restart php8.3-fpm",
@@ -256,18 +611,73 @@
     "providers_text": "可接入任何支援 OpenAI 相容 Chat Completions、OpenAI Responses 或 Anthropic Messages 介面的服務，包括你自行部署的模型。終端機輸出和檔案內容只會傳送給你選擇的服務，而且要先在該主機上取得你的同意。也可以直接使用本機自動偵測到的 Claude Code、Codex、Grok、Gemini CLI 等 ACP 代理程式，它們的操作只在遠端主機上進行。",
     "agents_title": "讓本機代理程式依你的規則接入",
     "agents_text": "開啟代理程式接入後，本機的 AI 代理程式可以透過開放 API、MCP 或 SSHYard Skill 檢視主機、建立 SSH 連線並執行命令。它們使用權杖驗證，你儲存的密碼和金鑰始終留在 SSHYard 內。",
-    "agents_points": ["為 Claude Code、Codex 一鍵設定 Skill", "每條命令都會記入 AI 稽核日誌", "重新產生權杖即可中斷所有代理程式"]
+    "agents_points": [
+      "為 Claude Code、Codex 一鍵設定 Skill",
+      "每條命令都會記入 AI 稽核日誌",
+      "重新產生權杖即可中斷所有代理程式"
+    ],
+    "risks": {
+      "readonly": "唯讀",
+      "medium": "中風險",
+      "critical": "高風險"
+    },
+    "scenarios": [
+      {
+        "key": "df",
+        "label": "唯讀查詢",
+        "risk": "readonly",
+        "cmd": "df -h /",
+        "out": "/dev/vda1       40G   13G   25G  33% /",
+        "auto": "自動放行 · 唯讀操作"
+      },
+      {
+        "key": "restart",
+        "label": "重啟服務",
+        "risk": "medium",
+        "cmd": "sudo systemctl restart php8.3-fpm",
+        "out": "● php8.3-fpm.service — active (running)",
+        "auto": "審核模型已批准"
+      },
+      {
+        "key": "purge",
+        "label": "高風險清理",
+        "risk": "critical",
+        "cmd": "sudo rm -rf /var/cache/nginx/*",
+        "out": "已清理 /var/cache/nginx 共 142 MB",
+        "auto": "高風險操作 — 始終由你確認"
+      }
+    ]
   },
   "security": {
-    "title": "你的憑證，\u200b只留在\u200b你的裝置上",
+    "title": "你的憑證，​只留在​你的裝置上",
     "lead": "密碼、金鑰和權杖都在本機加密；即使需要離開裝置，也是密封後才離開。",
     "steps": [
-      {"icon": "key-2-line", "title": "系統鑰匙圈", "text": "只為 SSHYard 儲存一把隨機產生的 256 位元主金鑰，別無他物。"},
-      {"icon": "safe-2-line", "title": "本機加密憑證庫", "text": "密碼、私鑰、密語、快速指令和 API 金鑰都以這把主金鑰加密，儲存在一個本機檔案裡。"},
-      {"icon": "shield-keyhole-line", "title": "密封備份", "text": "備份在本機完成壓縮和加密，金鑰由你的密碼透過 Argon2id 衍生，並使用 XChaCha20-Poly1305 加密。"},
-      {"icon": "upload-cloud-2-line", "title": "你的儲存空間", "text": "WebDAV、S3 相容儲存和 GitHub Gist 只會收到加密後的檔案，備份密碼本身從不儲存。"}
+      {
+        "icon": "key-2-line",
+        "title": "系統鑰匙圈",
+        "text": "只為 SSHYard 儲存一把隨機產生的 256 位元主金鑰，別無他物。"
+      },
+      {
+        "icon": "safe-2-line",
+        "title": "本機加密憑證庫",
+        "text": "密碼、私鑰、密語、快速指令和 API 金鑰都以這把主金鑰加密，儲存在一個本機檔案裡。"
+      },
+      {
+        "icon": "shield-keyhole-line",
+        "title": "密封備份",
+        "text": "備份在本機完成壓縮和加密，金鑰由你的密碼透過 Argon2id 衍生，並使用 XChaCha20-Poly1305 加密。"
+      },
+      {
+        "icon": "upload-cloud-2-line",
+        "title": "你的儲存空間",
+        "text": "WebDAV、S3 相容儲存和 GitHub Gist 只會收到加密後的檔案，備份密碼本身從不儲存。"
+      }
     ],
-    "points": ["代理程式拿到的是權杖，而不是你儲存的憑證", "無需註冊任何帳號", "以 AGPL-3.0 開放原始碼，任何人都能審查程式碼"],
+    "points": [
+      "代理程式拿到的是權杖，而不是你儲存的憑證",
+      "無需註冊任何帳號",
+      "以 AGPL-3.0 開放原始碼，任何人都能審查程式碼"
+    ],
     "demo": {
       "title": "看一條密鑰如何被加密",
       "label": "輸入一個密碼",
@@ -275,7 +685,26 @@
       "plain": "明文",
       "sealed": "密文",
       "bytes": "{n} 位元組",
-      "note": "僅作示範：瀏覽器沒有內建 XChaCha20-Poly1305，因此這裡由你的瀏覽器以隨機金鑰用 AES-GCM 加密文字。不會傳送或儲存任何內容。"
+      "note": "僅作示範：瀏覽器沒有內建 XChaCha20-Poly1305，因此這裡由你的瀏覽器以隨機金鑰用 AES-GCM 加密文字。不會傳送或儲存任何內容。",
+      "rekey": "輪換 256 位元主金鑰",
+      "key_label": "主金鑰",
+      "iv": "12B 隨機 IV",
+      "ciphertext": "加密密文",
+      "tag": "16B 驗證標籤",
+      "presets": [
+        {
+          "label": "密碼",
+          "value": "correct-horse-battery"
+        },
+        {
+          "label": "API 金鑰",
+          "value": "sk-proj-9fK2mQx8vL3pR7wZ"
+        },
+        {
+          "label": "私鑰密語",
+          "value": "ed25519-prod-vault!2026"
+        }
+      ]
     }
   },
   "download": {
@@ -302,24 +731,46 @@
         "name": "macOS",
         "req": "macOS 12 以上 · 已簽署並通過公證",
         "description": "下載 macOS 版 SSHYard {version}：適用於 Apple 晶片和 Intel Mac 的已簽署、已公證 DMG。內建 AI 助理的免費 SSH / SFTP 用戶端。",
-        "files": {"mac_arm64": "Apple 晶片", "mac_amd64": "Intel"},
-        "steps": ["開啟 DMG，將 SSHYard 拖進「應用程式」檔案夾。", "之後的更新可以在應用程式內直接下載並安裝。"],
+        "files": {
+          "mac_arm64": "Apple 晶片",
+          "mac_amd64": "Intel"
+        },
+        "steps": [
+          "開啟 DMG，將 SSHYard 拖進「應用程式」檔案夾。",
+          "之後的更新可以在應用程式內直接下載並安裝。"
+        ],
         "verify": "shasum -a 256 sshyard-{version}-arm64.dmg"
       },
       "windows": {
         "name": "Windows",
         "req": "Windows x64 或 Arm64 · 無需系統管理員權限",
         "description": "下載 Windows x64 與 Arm64 版 SSHYard {version}：支援應用程式內更新的安裝程式，或免安裝的 ZIP。內建 AI 助理的免費 SSH / SFTP 用戶端。",
-        "files": {"win_setup": "x64 安裝程式", "win_portable": "x64 免安裝 ZIP", "win_setup_arm64": "Arm64 安裝程式", "win_portable_arm64": "Arm64 免安裝 ZIP"},
-        "steps": ["安裝程式會為目前使用者安裝到 %LOCALAPPDATA%\\Programs，並支援應用程式內更新。", "免安裝版請將 ZIP 解壓縮到可寫入的資料夾，執行 SSHYard.exe 即可；應用程式資料儲存在 %APPDATA%\\SSHYard。"],
+        "files": {
+          "win_setup": "x64 安裝程式",
+          "win_portable": "x64 免安裝 ZIP",
+          "win_setup_arm64": "Arm64 安裝程式",
+          "win_portable_arm64": "Arm64 免安裝 ZIP"
+        },
+        "steps": [
+          "安裝程式會為目前使用者安裝到 %LOCALAPPDATA%\\Programs，並支援應用程式內更新。",
+          "免安裝版請將 ZIP 解壓縮到可寫入的資料夾，執行 SSHYard.exe 即可；應用程式資料儲存在 %APPDATA%\\SSHYard。"
+        ],
         "verify": "Get-FileHash .\\sshyard-setup-{version}-amd64.exe -Algorithm SHA256"
       },
       "linux": {
         "name": "Linux",
         "req": "x64（amd64）或 Arm64（aarch64）· .deb 套件或 .tar.gz 壓縮檔",
         "description": "下載 Linux x64 與 Arm64 版 SSHYard {version}，提供 .deb 套件和 .tar.gz 壓縮檔。內建 AI 助理的免費 SSH / SFTP 用戶端。",
-        "files": {"linux_deb": "x64 .deb 套件", "linux_tar": "x64 .tar.gz 壓縮檔", "linux_deb_arm64": "Arm64 .deb 套件", "linux_tar_arm64": "Arm64 .tar.gz 壓縮檔"},
-        "steps": ["使用系統的套件管理器安裝 .deb。", "或將 install.sh 放在 .tar.gz 旁邊並執行它，安裝到 ~/.local。"],
+        "files": {
+          "linux_deb": "x64 .deb 套件",
+          "linux_tar": "x64 .tar.gz 壓縮檔",
+          "linux_deb_arm64": "Arm64 .deb 套件",
+          "linux_tar_arm64": "Arm64 .tar.gz 壓縮檔"
+        },
+        "steps": [
+          "使用系統的套件管理器安裝 .deb。",
+          "或將 install.sh 放在 .tar.gz 旁邊並執行它，安裝到 ~/.local。"
+        ],
         "verify": "sha256sum -c --ignore-missing SHA256SUMS"
       }
     }
@@ -327,23 +778,62 @@
   "faq": {
     "title": "常見問題",
     "items": [
-      {"q": "SSHYard 是什麼？", "a": "SSHYard 是一款免費開源的原生桌面 SSH / SFTP 用戶端，支援 macOS、Windows 和 Linux。它集多分頁分割終端機、SFTP 檔案管理、連接埠轉發，以及能在主機上執行命令的 AI 助理於一體。"},
-      {"q": "SSHYard 免費嗎？", "a": "免費。SSHYard 可以免費下載和使用，也不需要註冊帳號。原始碼以 GNU AGPL-3.0 授權條款發布在 GitHub 上。"},
-      {"q": "SSHYard 支援哪些系統？", "a": "支援 macOS 12 以上（Apple 晶片和 Intel Mac）、Windows x64 與 Arm64，以及 Linux x64 與 Arm64（提供 .deb 套件和 .tar.gz 壓縮檔）。"},
-      {"q": "SSHYard 是用 Electron 或 WebView 做的嗎？", "a": "不是。SSHYard 的整個介面都是原生繪製的，不依賴 WebView，也不內建瀏覽器，所以下載檔只有約 {size}。"},
-      {"q": "我的密碼和金鑰儲存在哪裡？", "a": "加密儲存在你自己的裝置上。系統鑰匙圈裡只存一把隨機主金鑰，密碼、私鑰、密語和 API 金鑰都以它加密後存入本機檔案。除非你主動備份，否則這些資料不會離開裝置；備份也會先加密再離開。"},
-      {"q": "AI 助理是怎麼運作的？我能控制它嗎？", "a": "可以。每臺主機都有獨立的助理，它讀取終端機上下文，透過同一條連線執行命令、編輯檔案。詢問模式下每一步都等你同意；自動審核模式下唯讀操作直接執行，其餘由審核模型檢查；完全允許模式必須由你明確開啟。助理使用你自己設定的 AI 服務和 API 金鑰，也可以改用本機的 Claude Code、Codex 等 ACP 代理程式。"},
-      {"q": "Claude Code 或 Codex 能使用我的 SSH 主機嗎？", "a": "可以，開啟代理程式接入即可。之後本機的代理程式就能透過 SSHYard 的開放 API、MCP 端點或 Skill 檢視主機、建立連線並執行命令，SSHYard 還能為 Claude Code 和 Codex 一鍵安裝 Skill。代理程式使用權杖驗證，永遠拿不到你儲存的憑證。"},
-      {"q": "SSHYard 支援跳板機、代理和連接埠轉發嗎？", "a": "支援。主機可以經由多級跳板機和 HTTP 或 SOCKS5 代理連線，也可以設定本機、遠端和動態連接埠轉發。"},
-      {"q": "除了 SSH，還能連接什麼？", "a": "還支援 Telnet、序列埠（COM）和本機終端機，Windows 上的本機終端機可選 PowerShell、CMD、Git Bash 與 WSL。伺服器沒有 SFTP 時，檔案面板會自動改用 SCP。"},
-      {"q": "能同時在多臺伺服器上執行命令嗎？", "a": "能。廣播指令可以把同一條命令傳送到你選取的多個終端機；開啟同步輸入後，在其中一個終端機裡鍵入的內容會同步到其他終端機。工作階段記錄可以把終端機輸出依文字或原始格式記錄到本機檔案。"},
-      {"q": "備份和還原是怎麼做的？", "a": "SSHYard 將主機、憑證、快速指令和設定壓縮成一個檔案，並在本機以你的備份密碼加密。你可以存在本機，或手動、定時上傳到 WebDAV、S3 相容儲存或 GitHub 私密 Gist，在另一臺裝置上用同一個密碼還原。"},
-      {"q": "能從其他 SSH 用戶端遷移過來嗎？", "a": "能。SSHYard 可以從 SSH 設定檔匯入主機，也能讀取 Xshell、MobaXterm、PuTTY 等十種用戶端的匯出檔案，或把貼上的文字批次轉為主機；匯入前可以在表格中逐項預覽和修改，憑證只寫入本機加密儲存。你也可以直接輸入 user@host:port 快速連線。"},
-      {"q": "SSHYard 支援哪些語言？", "a": "支援英文、簡體中文、繁體中文、日文和韓文，應用程式和本網站皆是如此。"}
+      {
+        "q": "SSHYard 是什麼？",
+        "a": "SSHYard 是一款免費開源的原生桌面 SSH / SFTP 用戶端，支援 macOS、Windows 和 Linux。它集多分頁分割終端機、SFTP 檔案管理、連接埠轉發，以及能在主機上執行命令的 AI 助理於一體。"
+      },
+      {
+        "q": "SSHYard 免費嗎？",
+        "a": "免費。SSHYard 可以免費下載和使用，也不需要註冊帳號。原始碼以 GNU AGPL-3.0 授權條款發布在 GitHub 上。"
+      },
+      {
+        "q": "SSHYard 支援哪些系統？",
+        "a": "支援 macOS 12 以上（Apple 晶片和 Intel Mac）、Windows x64 與 Arm64，以及 Linux x64 與 Arm64（提供 .deb 套件和 .tar.gz 壓縮檔）。"
+      },
+      {
+        "q": "SSHYard 是用 Electron 或 WebView 做的嗎？",
+        "a": "不是。SSHYard 的整個介面都是原生繪製的，不依賴 WebView，也不內建瀏覽器，所以下載檔只有約 {size}。"
+      },
+      {
+        "q": "我的密碼和金鑰儲存在哪裡？",
+        "a": "加密儲存在你自己的裝置上。系統鑰匙圈裡只存一把隨機主金鑰，密碼、私鑰、密語和 API 金鑰都以它加密後存入本機檔案。除非你主動備份，否則這些資料不會離開裝置；備份也會先加密再離開。"
+      },
+      {
+        "q": "AI 助理是怎麼運作的？我能控制它嗎？",
+        "a": "可以。每臺主機都有獨立的助理，它讀取終端機上下文，透過同一條連線執行命令、編輯檔案。詢問模式下每一步都等你同意；自動審核模式下唯讀操作直接執行，其餘由審核模型檢查；完全允許模式必須由你明確開啟。助理使用你自己設定的 AI 服務和 API 金鑰，也可以改用本機的 Claude Code、Codex 等 ACP 代理程式。"
+      },
+      {
+        "q": "Claude Code 或 Codex 能使用我的 SSH 主機嗎？",
+        "a": "可以，開啟代理程式接入即可。之後本機的代理程式就能透過 SSHYard 的開放 API、MCP 端點或 Skill 檢視主機、建立連線並執行命令，SSHYard 還能為 Claude Code 和 Codex 一鍵安裝 Skill。代理程式使用權杖驗證，永遠拿不到你儲存的憑證。"
+      },
+      {
+        "q": "SSHYard 支援跳板機、代理和連接埠轉發嗎？",
+        "a": "支援。主機可以經由多級跳板機和 HTTP 或 SOCKS5 代理連線，也可以設定本機、遠端和動態連接埠轉發。"
+      },
+      {
+        "q": "除了 SSH，還能連接什麼？",
+        "a": "還支援 Telnet、序列埠（COM）和本機終端機，Windows 上的本機終端機可選 PowerShell、CMD、Git Bash 與 WSL。伺服器沒有 SFTP 時，檔案面板會自動改用 SCP。"
+      },
+      {
+        "q": "能同時在多臺伺服器上執行命令嗎？",
+        "a": "能。廣播指令可以把同一條命令傳送到你選取的多個終端機；開啟同步輸入後，在其中一個終端機裡鍵入的內容會同步到其他終端機。工作階段記錄可以把終端機輸出依文字或原始格式記錄到本機檔案。"
+      },
+      {
+        "q": "備份和還原是怎麼做的？",
+        "a": "SSHYard 將主機、憑證、快速指令和設定壓縮成一個檔案，並在本機以你的備份密碼加密。你可以存在本機，或手動、定時上傳到 WebDAV、S3 相容儲存或 GitHub 私密 Gist，在另一臺裝置上用同一個密碼還原。"
+      },
+      {
+        "q": "能從其他 SSH 用戶端遷移過來嗎？",
+        "a": "能。SSHYard 可以從 SSH 設定檔匯入主機，也能讀取 Xshell、MobaXterm、PuTTY 等十種用戶端的匯出檔案，或把貼上的文字批次轉為主機；匯入前可以在表格中逐項預覽和修改，憑證只寫入本機加密儲存。你也可以直接輸入 user@host:port 快速連線。"
+      },
+      {
+        "q": "SSHYard 支援哪些語言？",
+        "a": "支援英文、簡體中文、繁體中文、日文和韓文，應用程式和本網站皆是如此。"
+      }
     ]
   },
   "cta": {
-    "title": "你的伺服器，\u200b只隔\u200b一個視窗",
+    "title": "你的伺服器，​只隔​一個視窗",
     "text": "SSHYard 免費提供 macOS、Windows 和 Linux 版本。"
   },
   "footer": {
@@ -372,5 +862,8 @@
   },
   "a11y": {
     "breadcrumb": "頁面路徑"
+  },
+  "boot": {
+    "label": "正在啟動 SSHYard…"
   }
 }

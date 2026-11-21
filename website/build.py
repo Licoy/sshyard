@@ -457,6 +457,7 @@ class Site:
         data = {
             "lang": lang.code,
             "base": self.base_path,
+            "version": self.release["version"],
             "copy": t["copy"],
             "banner": {l.code: {**self.cats[l.code]["banner"], "name": self.cats[l.code]["name"]} for l in LANGS},
             "downloads": dl,
@@ -469,7 +470,12 @@ class Site:
         }
         if page.key == "home":
             # The demo window's strings; its hosts, files and shell are in site.js.
-            data["demo"] = {**t["demo"], "modes": t["ai"]["modes"], "card": t["ai"]["card"]}
+            brands = {b["name"].lower(): {"light": self.file(b["light"]), "dark": self.file(b["dark"])}
+                      for b in self.ai_brands}
+            data["demo"] = {**t["demo"], "modes": t["ai"]["modes"], "card": t["ai"]["card"],
+                            "brands": brands, "logo": self.file("logo-64.png"), "github": GITHUB}
+            data["aiDemo"] = {"scenarios": t["ai"]["scenarios"], "risks": t["ai"]["risks"], "card": t["ai"]["card"]}
+            data["seal"] = t["security"]["demo"]
         return Markup(script_json(data))
 
     def render_page(self, lang: Lang, page: Page) -> None:
