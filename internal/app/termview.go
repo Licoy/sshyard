@@ -990,6 +990,15 @@ type clipboard interface {
 	WriteClipboard(string)
 }
 
+// appKey sees a key down before the window's shortcuts take it, which
+// they do before input gets it: the text that follows an app shortcut
+// with Alt, as ⌥1 types ¡ on macOS, goes nowhere.
+func (v *termView) appKey(ev ui.InputEvent) {
+	if ev.Kind == ui.InputKeyDown && ev.Mods&ui.Alt != 0 && typesText(ev.Key) && isAppShortcut(v.shortcuts, ev.Key, ev.Mods) {
+		v.swallow = true
+	}
+}
+
 // input handles an event; it reports whether it took it.
 func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 	t := v.target.Terminal()
@@ -998,6 +1007,7 @@ func (v *termView) input(ev ui.InputEvent, cb clipboard) bool {
 		v.swallow = false
 		mods := ev.Mods
 		if isAppShortcut(v.shortcuts, ev.Key, mods) {
+			v.appKey(ev)
 			return false
 		}
 		// Windows also uses Ctrl+V to paste and Ctrl+C to copy a selection.

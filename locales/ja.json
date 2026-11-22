@@ -1568,6 +1568,7 @@
   "shortcutsResetAll": "すべて既定に戻す",
   "shortcutKeyInvalid": "英字、数字、記号またはファンクションキーを使ってください。",
   "shortcutNeedsMods": "ほかのキーをシェルに送れるよう、ショートカットには {mods} を含めてください。",
+  "shortcutNeedsModsOrAlt": "ほかのキーをシェルに送れるよう、ショートカットには {mods} を含めるか、{alt} と数字にしてください。",
   "shortcutReserved": "{keys} はシステムまたはテキスト編集で使われています。",
   "shortcutTaken": "{keys} はすでに「{action}」のショートカットです。",
   "mygo.previousMonth": "前の月",

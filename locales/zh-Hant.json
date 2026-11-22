@@ -1568,6 +1568,7 @@
   "shortcutsResetAll": "全部還原為預設",
   "shortcutKeyInvalid": "請使用字母、數字、標點或功能鍵。",
   "shortcutNeedsMods": "快速鍵須包含 {mods}，其餘按鍵才能傳送給 Shell。",
+  "shortcutNeedsModsOrAlt": "快速鍵須包含 {mods}，或為 {alt} 加數字，其餘按鍵才能傳送給 Shell。",
   "shortcutReserved": "{keys} 已被系統或文字編輯佔用。",
   "shortcutTaken": "{keys} 已是「{action}」的快速鍵。",
   "mygo.previousMonth": "上個月",

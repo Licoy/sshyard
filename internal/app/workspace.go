@@ -657,6 +657,10 @@ func (a *App) termElement(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn
 	svc := c.Services()
 	tb := term.Bounds()
 	entries := func() []menuEntry { return a.termEntries(t, n, cn, tv, svc, m) }
+	term.ObserveInput(func(ev ui.InputEvent) {
+		tv.shortcuts = a.settings.Shortcuts
+		tv.appKey(ev)
+	})
 	term.HandleInput(func(ev ui.InputEvent) bool {
 		// A left click gives the terminal the keyboard back. A right click
 		// must not: focusing here inserts the find bar and the tab dot

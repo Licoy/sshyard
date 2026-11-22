@@ -1568,6 +1568,7 @@
   "shortcutsResetAll": "全部恢复默认",
   "shortcutKeyInvalid": "请使用字母、数字、标点或功能键。",
   "shortcutNeedsMods": "快捷键须包含 {mods}，其余按键才能发送给 Shell。",
+  "shortcutNeedsModsOrAlt": "快捷键须包含 {mods}，或为 {alt} 加数字，其余按键才能发送给 Shell。",
   "shortcutReserved": "{keys} 已被系统或文本编辑占用。",
   "shortcutTaken": "{keys} 已是“{action}”的快捷键。",
   "mygo.previousMonth": "上个月",

@@ -1568,6 +1568,7 @@
   "shortcutsResetAll": "Restore All Defaults",
   "shortcutKeyInvalid": "Use a letter, digit, punctuation or function key.",
   "shortcutNeedsMods": "The shortcut must hold {mods}, so other keys reach the shell.",
+  "shortcutNeedsModsOrAlt": "The shortcut must hold {mods}, or be {alt} and a number, so other keys reach the shell.",
   "shortcutReserved": "{keys} belongs to the system or to editing text.",
   "shortcutTaken": "{keys} is already the shortcut of “{action}”.",
   "mygo.previousMonth": "Previous month",

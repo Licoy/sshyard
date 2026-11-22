@@ -202,6 +202,14 @@ func shortcutMods(goos string, editor bool) ui.Modifiers {
 	return ui.Ctrl | ui.Shift
 }
 
+// altDigit reports a shortcut of a tab action that may go without the
+// window's modifiers: Alt (⌥ on macOS) and a digit alone, as other
+// terminals switch tabs. Recording it gives the shell's Alt and that digit
+// (readline's digit argument, the ⌥ character on macOS) to the app.
+func altDigit(ac action, k keymap.Combo) bool {
+	return tabNumber(ac.id) > 0 && k.Mods == ui.Alt && k.Key >= ui.Key0 && k.Key <= ui.Key9
+}
+
 // reserved are the shortcuts no action may take on goos: editing text
 // (Select All, Copy, Paste, Cut, Undo, Redo), the system's and the menu
 // bar's (Close Window), and the terminal's copy and paste; for the editor,
@@ -234,6 +242,8 @@ func shortcutRule(goos string, ac action, k keymap.Combo) rule {
 		return ruleOK
 	case !keymap.Bindable(k.Key):
 		return ruleKey
+	case altDigit(ac, k):
+		return ruleOK
 	case k.Mods&shortcutMods(goos, ac.editor) != shortcutMods(goos, ac.editor):
 		return ruleMods
 	case slices.Contains(reserved(goos, ac.editor), k):
@@ -249,7 +259,11 @@ func (a *App) shortcutProblem(m locales.Messages, id string, k keymap.Combo) str
 	case ruleKey:
 		return m.ShortcutKeyInvalid()
 	case ruleMods:
-		return m.ShortcutNeedsMods(shortcutText(runtime.GOOS, shortcutMods(runtime.GOOS, ac.editor), 0))
+		mods := shortcutText(runtime.GOOS, shortcutMods(runtime.GOOS, ac.editor), 0)
+		if tabNumber(id) > 0 {
+			return m.ShortcutNeedsModsOrAlt(mods, shortcutText(runtime.GOOS, ui.Alt, 0))
+		}
+		return m.ShortcutNeedsMods(mods)
 	case ruleReserved:
 		return m.ShortcutReserved(shortcutText(runtime.GOOS, k.Mods, k.Key))
 	}

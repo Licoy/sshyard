@@ -1568,6 +1568,7 @@
   "shortcutsResetAll": "모두 기본값으로 복원",
   "shortcutKeyInvalid": "문자, 숫자, 문장 부호 또는 기능 키를 사용하세요.",
   "shortcutNeedsMods": "다른 키가 셸로 전달되도록 단축키에는 {mods}가 포함되어야 합니다.",
+  "shortcutNeedsModsOrAlt": "다른 키가 셸로 전달되도록 단축키에는 {mods}가 포함되거나 {alt}와 숫자여야 합니다.",
   "shortcutReserved": "{keys}은(는) 시스템 또는 텍스트 편집에서 사용합니다.",
   "shortcutTaken": "{keys}은(는) 이미 ‘{action}’의 단축키입니다.",
   "mygo.previousMonth": "이전 달",

@@ -58,7 +58,7 @@ Global rules for anyone (human or agent) changing SSHYard. Read this before you 
 - App-wide shortcuts use `appMods` (⌘ on macOS, Ctrl+Shift elsewhere) so the terminal can handle plain Ctrl+letter. A new app shortcut must go through `isAppShortcut` so the terminal yields it.
 - On Windows, the terminal uses Ctrl+V to paste and Ctrl+C to copy a selection. With no selection, Ctrl+C reaches the shell.
 - Do not take a platform's standard editing shortcuts (⌘A, ⌘C, ⌘V and their equivalents).
-- Users can record their own shortcuts (`settings.Shortcuts`). A new app shortcut is an entry in `actions` (`internal/app/keymap.go`), which the dispatcher, `isAppShortcut`, the menus, the Shortcuts page and the command palette all read; never claim its key with a hard-coded `c.Shortcut`.
+- Users can record their own shortcuts (`settings.Shortcuts`). A new app shortcut is an entry in `actions` (`internal/app/keymap.go`), which the dispatcher, `isAppShortcut`, the menus, the Shortcuts page and the command palette all read; never claim its key with a hard-coded `c.Shortcut`. Recorded shortcuts must hold `shortcutMods`, with one exception: the tab actions (`selectTab1`–`selectTab9`) may be recorded as Alt (⌥ on macOS) and a digit alone (`altDigit`), giving that key to the app instead of the shell; the terminal drops the character the key types after it. Their defaults stay on `appMods`.
 
 ## Tests and checks
 

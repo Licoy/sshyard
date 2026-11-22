@@ -8,6 +8,7 @@ import (
 
 	"github.com/Licoy/sshyard/internal/keymap"
 	"github.com/Licoy/sshyard/internal/layout"
+	"github.com/Licoy/sshyard/internal/vt"
 	"github.com/Licoy/sshyard/locales"
 	"github.com/egoist/mygo/ui"
 )
@@ -16,6 +17,7 @@ func TestShortcutRule(t *testing.T) {
 	quick, _ := actionOf(actQuickConnect)
 	save, _ := actionOf(actSaveFile)
 	stop, _ := actionOf(actStopAI)
+	tab1, _ := actionOf(actTab + "1")
 	k := func(m ui.Modifiers, key ui.Key) keymap.Combo { return keymap.Combo{Mods: m, Key: key} }
 	for _, tc := range []struct {
 		goos string
@@ -40,6 +42,15 @@ func TestShortcutRule(t *testing.T) {
 		{"windows", save, k(ui.Ctrl, ui.KeyV), ruleReserved},
 		// Its own default always may, as Ctrl+. stops the AI elsewhere.
 		{runtime.GOOS, stop, stop.def, ruleOK},
+		// A tab's may be Alt and a digit alone, as other terminals have it.
+		{"darwin", tab1, k(ui.Alt, ui.Key1), ruleOK},
+		{"linux", tab1, k(ui.Alt, ui.Key1), ruleOK},
+		{"windows", tab1, k(ui.Alt, ui.Key9), ruleOK},
+		{"windows", tab1, k(ui.Alt|ui.Shift, ui.Key1), ruleMods},
+		{"windows", tab1, k(ui.Alt, ui.KeyA), ruleMods},
+		{"darwin", tab1, k(ui.Ctrl, ui.Key1), ruleMods},
+		{"linux", quick, k(ui.Alt, ui.Key1), ruleMods},
+		{"darwin", quick, k(ui.Alt, ui.Key1), ruleMods},
 	} {
 		if got := shortcutRule(tc.goos, tc.ac, tc.k); got != tc.want {
 			t.Errorf("%s %s %s: %v, want %v", tc.goos, tc.ac.id, tc.k, got, tc.want)
@@ -67,6 +78,49 @@ func TestRecordedAppShortcut(t *testing.T) {
 	bad := map[string]string{actQuickConnect: "ctrl+j"}
 	if shortcutOf(bad, actQuickConnect) != (keymap.Combo{Mods: appMods, Key: ui.KeyK}) || isAppShortcut(bad, ui.KeyJ, ui.Ctrl) {
 		t.Error("a shortcut without the app's modifiers must fall back to the default")
+	}
+}
+
+// TestAltDigitTab leaves a tab's recorded Alt and digit to the app, and
+// drops the text the key types after it (⌥1 is ¡ on macOS), while the
+// shell keeps Alt and the other digits.
+func TestAltDigitTab(t *testing.T) {
+	custom := map[string]string{actTab + "1": "alt+1"}
+	if shortcutOf(custom, actTab+"1") != (keymap.Combo{Mods: ui.Alt, Key: ui.Key1}) || !isAppShortcut(custom, ui.Key1, ui.Alt) {
+		t.Fatal("the recorded Alt+1 must switch the tab")
+	}
+	if isAppShortcut(custom, ui.Key2, ui.Alt) {
+		t.Error("an unrecorded Alt+2 must reach the shell")
+	}
+	if bad := map[string]string{actQuickConnect: "alt+1"}; isAppShortcut(bad, ui.Key1, ui.Alt) {
+		t.Error("only a tab's shortcut may be Alt and a digit alone")
+	}
+
+	var sent []byte
+	tv := newTermView(recordTarget{term: vt.New(20, 4), out: &sent}, 13)
+	tv.shortcuts = custom
+	down := ui.InputEvent{Kind: ui.InputKeyDown, Key: ui.Key1, Mods: ui.Alt}
+	// The window's shortcut takes the key before the terminal gets it;
+	// the terminal sees it go by.
+	tv.appKey(down)
+	tv.input(ui.InputEvent{Kind: ui.InputText, Text: "¡"}, nil)
+	tv.input(ui.InputEvent{Kind: ui.InputKeyUp, Key: ui.Key1, Mods: ui.Alt}, nil)
+	// Delivered to the terminal, it gives the key back to the app.
+	if tv.input(down, nil) {
+		t.Error("the terminal must leave the shortcut to the app")
+	}
+	tv.input(ui.InputEvent{Kind: ui.InputText, Text: "¡"}, nil)
+	tv.input(ui.InputEvent{Kind: ui.InputKeyUp, Key: ui.Key1, Mods: ui.Alt}, nil)
+	if len(sent) != 0 {
+		t.Errorf("sent %q, want nothing", sent)
+	}
+	// Where no text follows, the key's release ends it: the next text
+	// is typed.
+	tv.appKey(down)
+	tv.input(ui.InputEvent{Kind: ui.InputKeyUp, Key: ui.Key1, Mods: ui.Alt}, nil)
+	tv.input(ui.InputEvent{Kind: ui.InputText, Text: "x"}, nil)
+	if string(sent) != "x" {
+		t.Errorf("sent %q, want %q", sent, "x")
 	}
 }
 

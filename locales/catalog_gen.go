@@ -15841,6 +15841,18 @@ func (msgs Messages) ShortcutNeedsMods(mods string) string {
 	return Catalog.Format(msgs.locale, "shortcutNeedsMods", map[string]any{"mods": mods})
 }
 
+// ShortcutNeedsModsOrAlt says "The shortcut must hold {mods}, or be {alt} and a number, so other keys reach the shell."
+// in the language the app shows.
+func ShortcutNeedsModsOrAlt(mods string, alt string) string {
+	return In(i18n.Locale()).ShortcutNeedsModsOrAlt(mods, alt)
+}
+
+// ShortcutNeedsModsOrAlt says "The shortcut must hold {mods}, or be {alt} and a number, so other keys reach the shell."
+// in the language of msgs.
+func (msgs Messages) ShortcutNeedsModsOrAlt(mods string, alt string) string {
+	return Catalog.Format(msgs.locale, "shortcutNeedsModsOrAlt", map[string]any{"mods": mods, "alt": alt})
+}
+
 // ShortcutReserved says "{keys} belongs to the system or to editing text."
 // in the language the app shows.
 func ShortcutReserved(keys string) string { return In(i18n.Locale()).ShortcutReserved(keys) }
