@@ -3,9 +3,12 @@ package app
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/Licoy/sshyard/internal/assets"
+	"github.com/Licoy/sshyard/internal/keychain"
 	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/locales"
@@ -15,9 +18,10 @@ import (
 
 // What an SSH terminal's shell is given each time it starts
 // (session.Options.Start): the command the terminal was opened for, once
-// (the shell in a container); else the tmux session the terminal is in,
-// attached again after a reconnect; else its host's (Host.Tmux), created
-// when there is none. Which session a terminal is in is read again every
+// (the shell in a container); else its host's startup commands
+// (Host.Startup), then the tmux session the terminal is in, attached
+// again after a reconnect, else its host's (Host.Tmux), created when
+// there is none. Which session a terminal is in is read again every
 // tmuxWatchEvery, and by the tmux panel, so that the user's own attach,
 // switch, detach and exit are followed.
 
@@ -71,6 +75,9 @@ type shellStart struct {
 	// dir is the folder the shell is taken to as it starts
 	// (Host.TerminalDir), "" for its home
 	dir string
+	// startup is set when the host's startup commands are typed
+	// (Host.Startup); cleared for a terminal opened without them
+	startup bool
 	// ran is set once a command given once was typed: the folders the
 	// terminal then reports are not the server's
 	ran bool
@@ -125,7 +132,7 @@ func (a *App) shellStartCmd(c *conn) func(context.Context, *ssh.Client) string {
 	return func(ctx context.Context, client *ssh.Client) string {
 		connects := c.s.Status().Connects
 		st.mu.Lock()
-		once, mark, host := st.once, st.mark, st.host
+		once, mark, host, startup := st.once, st.mark, st.host, st.startup
 		st.once = ""
 		if once != "" {
 			st.ran = true
@@ -135,15 +142,58 @@ func (a *App) shellStartCmd(c *conn) func(context.Context, *ssh.Client) string {
 		if once != "" {
 			return once
 		}
-		cmd := ""
+		tmux, cd := "", ""
 		if mark != nil || host != "" {
-			cmd = a.tmuxStart(ctx, c, client, mark, host)
+			tmux = a.tmuxStart(ctx, c, client, mark, host)
 		}
-		if returnDirWanted(a.returnDirOn.Load(), connects, back, cmd, ran) {
-			cmd = returnDirOn(ctx, client, back, dir)
+		if returnDirWanted(a.returnDirOn.Load(), connects, back, tmux, ran) {
+			cd = returnDirOn(ctx, client, back, dir)
 		}
-		return cmd
+		var lines []string
+		if startup {
+			lines = a.startupLines(c)
+		}
+		return startLine(cd, lines, tmux)
 	}
+}
+
+// startLine is what a starting shell is typed after the cd to its
+// folder: the cd back to where it was, its host's startup commands, then
+// the tmux attach, each on its own line, all but the first led by the
+// space enterShell leads that with, to keep them out of the history.
+// The startup commands run in the shell outside tmux: typed after an
+// attach, they would reach whatever runs in the session.
+func startLine(cd string, startup []string, tmux string) string {
+	var parts []string
+	for _, p := range append(append([]string{cd}, startup...), tmux) {
+		if p != "" {
+			parts = append(parts, p)
+		}
+	}
+	return strings.Join(parts, "\r ")
+}
+
+// startupLines are the startup commands of c's host, read from the
+// encrypted store as its shell starts, so that an edit takes effect at
+// the next one; none when they cannot be read, which a toast tells.
+func (a *App) startupLines(c *conn) []string {
+	text, err := a.kc.Get(keychain.HostStartup(c.host.ID))
+	if errors.Is(err, keychain.ErrNotFound) {
+		return nil
+	}
+	if err == nil {
+		err = assets.ValidateStartup(string(text))
+	}
+	if err != nil {
+		host := c.host.Label()
+		a.post(func() {
+			a.toasts = append(a.toasts, func(m locales.Messages) ui.Toast {
+				return ui.Toast{Title: m.StartupReadFailed(a.pv(host)), Type: "error"}
+			})
+		})
+		return nil
+	}
+	return assets.StartupLines(string(text))
 }
 
 // tmuxStart is the tmux command c's starting shell is given on client:
@@ -275,6 +325,17 @@ func (a *App) openTerminal(hostID string, prep func(*conn)) (int, error) {
 	}
 	a.place(c, openAt{})
 	return c.id, nil
+}
+
+// ConnectWithoutStartup opens a terminal to a saved host that does not
+// type the host's startup commands: a way in should they keep its shell
+// from starting.
+func (a *App) ConnectWithoutStartup(hostID string) (int, error) {
+	return a.openTerminal(hostID, func(c *conn) {
+		if c.start != nil {
+			c.start.startup = false
+		}
+	})
 }
 
 // ConnectWithoutTmux opens a terminal to a saved host that does not

@@ -10575,6 +10575,76 @@ func (msgs Messages) ConnectWithoutTmux() string {
 	return Catalog.Format(msgs.locale, "connectWithoutTmux", nil)
 }
 
+// StartupCommands says "Startup commands"
+// in the language the app shows.
+func StartupCommands() string { return In(i18n.Locale()).StartupCommands() }
+
+// StartupCommands says "Startup commands"
+// in the language of msgs.
+func (msgs Messages) StartupCommands() string {
+	return Catalog.Format(msgs.locale, "startupCommands", nil)
+}
+
+// StartupCommandsHint says "Typed line by line each time a terminal's shell starts, reconnects included: after the cd to the terminal folder and …"
+// in the language the app shows.
+func StartupCommandsHint() string { return In(i18n.Locale()).StartupCommandsHint() }
+
+// StartupCommandsHint says "Typed line by line each time a terminal's shell starts, reconnects included: after the cd to the terminal folder and …"
+// in the language of msgs.
+func (msgs Messages) StartupCommandsHint() string {
+	return Catalog.Format(msgs.locale, "startupCommandsHint", nil)
+}
+
+// StartupFromSnippet says "Add from snippet…"
+// in the language the app shows.
+func StartupFromSnippet() string { return In(i18n.Locale()).StartupFromSnippet() }
+
+// StartupFromSnippet says "Add from snippet…"
+// in the language of msgs.
+func (msgs Messages) StartupFromSnippet() string {
+	return Catalog.Format(msgs.locale, "startupFromSnippet", nil)
+}
+
+// StartupSnippetUnreadable says "Couldn't read that snippet."
+// in the language the app shows.
+func StartupSnippetUnreadable() string { return In(i18n.Locale()).StartupSnippetUnreadable() }
+
+// StartupSnippetUnreadable says "Couldn't read that snippet."
+// in the language of msgs.
+func (msgs Messages) StartupSnippetUnreadable() string {
+	return Catalog.Format(msgs.locale, "startupSnippetUnreadable", nil)
+}
+
+// StartupInvalid says "Startup commands can have at most 32 lines and 4 KB, and no tabs or other control characters."
+// in the language the app shows.
+func StartupInvalid() string { return In(i18n.Locale()).StartupInvalid() }
+
+// StartupInvalid says "Startup commands can have at most 32 lines and 4 KB, and no tabs or other control characters."
+// in the language of msgs.
+func (msgs Messages) StartupInvalid() string {
+	return Catalog.Format(msgs.locale, "startupInvalid", nil)
+}
+
+// StartupReadFailed says "Couldn't read the startup commands of {host}, so its terminal started without them."
+// in the language the app shows.
+func StartupReadFailed(host string) string { return In(i18n.Locale()).StartupReadFailed(host) }
+
+// StartupReadFailed says "Couldn't read the startup commands of {host}, so its terminal started without them."
+// in the language of msgs.
+func (msgs Messages) StartupReadFailed(host string) string {
+	return Catalog.Format(msgs.locale, "startupReadFailed", map[string]any{"host": host})
+}
+
+// ConnectWithoutStartup says "Connect Without Startup Commands"
+// in the language the app shows.
+func ConnectWithoutStartup() string { return In(i18n.Locale()).ConnectWithoutStartup() }
+
+// ConnectWithoutStartup says "Connect Without Startup Commands"
+// in the language of msgs.
+func (msgs Messages) ConnectWithoutStartup() string {
+	return Catalog.Format(msgs.locale, "connectWithoutStartup", nil)
+}
+
 // TmuxStartMissing says "tmux is not installed on {host}, so its terminals start without a tmux session."
 // in the language the app shows.
 func TmuxStartMissing(host string) string { return In(i18n.Locale()).TmuxStartMissing(host) }

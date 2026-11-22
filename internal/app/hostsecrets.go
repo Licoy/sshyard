@@ -42,6 +42,12 @@ func (a *App) hostSecretFields(c *ui.Context, m locales.Messages, tok theme.Toke
 }
 
 func hostFormNeedsSecrets(f *hostForm, h assets.Host) bool {
+	return startupChanges(f, h) != nil || hostAuthNeedsSecrets(f, h)
+}
+
+// hostAuthNeedsSecrets reports whether saving h changes or copies the
+// secrets it logs in with.
+func hostAuthNeedsSecrets(f *hostForm, h assets.Host) bool {
 	if f.from != "" && (h.Auth == assets.AuthPassword || h.Auth == assets.AuthKey) {
 		return true // copies the secrets it keeps
 	}
@@ -59,7 +65,7 @@ func hostFormNeedsSecrets(f *hostForm, h assets.Host) bool {
 
 // hostSecretChanges validates new input and preserves existing, blank fields.
 func (a *App) hostSecretChanges(m locales.Messages, f *hostForm, h assets.Host) (assets.Host, []keychain.Change, error) {
-	if !hostFormNeedsSecrets(f, h) && (!a.unlocked() || (h.Auth != assets.AuthPassword && h.Auth != assets.AuthKey)) {
+	if !hostAuthNeedsSecrets(f, h) && (!a.unlocked() || (h.Auth != assets.AuthPassword && h.Auth != assets.AuthKey)) {
 		return h, nil, nil
 	}
 	s := &f.secret
@@ -172,7 +178,7 @@ func (a *App) saveHostForm(m locales.Messages, f *hostForm, h assets.Host) (asse
 	if err != nil {
 		return assets.Host{}, err
 	}
-	return a.saveHostSecrets(h, f.isNew, changes)
+	return a.saveHostSecrets(h, f.isNew, append(changes, startupChanges(f, h)...))
 }
 
 // saveHostSecrets compensates secret changes if metadata cannot be saved.
@@ -200,7 +206,7 @@ func (a *App) saveHostSecrets(h assets.Host, fresh bool, changes []keychain.Chan
 }
 
 func (a *App) deleteHostSecrets(id string) error {
-	if h, ok := a.store.Get(id); !ok || (h.Auth != assets.AuthPassword && h.Auth != assets.AuthKey) {
+	if h, ok := a.store.Get(id); !ok || (h.Auth != assets.AuthPassword && h.Auth != assets.AuthKey && !h.Startup) {
 		return a.store.Delete(id)
 	}
 	tx := &secretTx{kc: a.kc}
@@ -273,7 +279,7 @@ func hostSecretDeletes(id string) []keychain.Change {
 	for _, kind := range keychain.Kinds {
 		changes = append(changes, keychain.Change{Key: keychain.Host(id, kind), Delete: true})
 	}
-	return changes
+	return append(changes, keychain.Change{Key: keychain.HostStartup(id), Delete: true})
 }
 
 func (a *App) forgetHostSecrets(id string) {

@@ -1,9 +1,9 @@
 // Package assets is SSHYard's asset store: the hosts the user saved, with
 // their groups and favorites, and the credentials, proxies and port
 // forwards they use, kept as JSON in the user's data directory.
-// Secrets are never stored here; they live in the system keychain
-// (package keychain), under the ID of the credential, proxy or forward
-// they belong to.
+// Secrets are never stored here; they live in the encrypted store
+// (package keychain), under the ID of the host, credential, proxy or
+// forward they belong to.
 package assets
 
 import (
@@ -111,6 +111,11 @@ type Host struct {
 	// time their shell starts, created when there is none; empty is
 	// none.
 	Tmux string `json:"tmux,omitempty"`
+	// Startup is set when an SSH host's terminals type commands each
+	// time their shell starts, after the cd to TerminalDir and before
+	// the tmux attach; the commands are a host-owned secret
+	// (keychain.HostStartup).
+	Startup bool `json:"startup,omitempty"`
 	// OSC52 overrides the global OSC 52 write policy (allow, ask or
 	// deny). Empty follows the global setting.
 	OSC52 string `json:"osc52,omitempty"`

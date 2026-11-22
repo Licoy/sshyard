@@ -110,6 +110,7 @@ func (h *Host) normalizeStream() {
 	h.JumpChain = nil
 	h.CwdFollow = false
 	h.TerminalDir, h.RemoteDir, h.LocalDir, h.Tmux = "", "", "", ""
+	h.Startup = false
 	h.SFTPSudo = false
 	h.Metrics = MetricsFollow
 	h.AIPolicy = AIPolicy{}

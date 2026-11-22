@@ -370,6 +370,10 @@ func (a *App) hostEntries(m locales.Messages, h assets.Host) []menuEntry {
 		// A way in should the host's tmux session not start.
 		connect = append(connect, menuEntry{Icon: icons.Terminal, Label: m.ConnectWithoutTmux(), Do: func() { a.ConnectWithoutTmux(h.ID) }})
 	}
+	if h.SSH() && h.Startup {
+		// A way in should the host's startup commands keep its shell from starting.
+		connect = append(connect, menuEntry{Icon: icons.Terminal, Label: m.ConnectWithoutStartup(), Do: func() { a.ConnectWithoutStartup(h.ID) }})
+	}
 	return append(connect, []menuEntry{
 		{Icon: icons.SplitRight, Label: m.SplitRight(), Disabled: noTab, Do: beside(func(at openAt) { a.Connect(h.ID, at) })},
 		{Icon: icons.Folder, Label: m.OpenFiles(), Disabled: noSSH, Do: func() { a.OpenFiles(h.ID, openAt{}, nil) }},

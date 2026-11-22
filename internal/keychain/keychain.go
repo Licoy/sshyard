@@ -20,7 +20,7 @@ const (
 var Kinds = []Kind{Password, PrivateKey, Passphrase}
 
 // The keys of the entries SSHYard keeps; there are no others:
-// host/<id>/<kind>, cred/<id>/<kind>, proxy/<id>/password, forward/<id>/password,
+// host/<id>/<kind>, host/<id>/startup, cred/<id>/<kind>, proxy/<id>/password, forward/<id>/password,
 // snippet/<id>/content, ai/<profileID>/apikey, ai/<agentID>/env/<NAME>,
 // backup/<id>/secret, backup/<id>/key, localkey/<keyID>/passphrase,
 // mcp/token, applock/config and applock/totp.
@@ -30,6 +30,10 @@ var Kinds = []Kind{Password, PrivateKey, Passphrase}
 func Host(id string, kind Kind) string { return "host/" + id + "/" + string(kind) }
 
 func Cred(id string, kind Kind) string { return "cred/" + id + "/" + string(kind) }
+
+// HostStartup is the entry of the commands a host's terminals type as
+// their shell starts: host/<id>/startup.
+func HostStartup(id string) string { return "host/" + id + "/startup" }
 
 // ProxyPassword is the entry of a proxy's password: proxy/<id>/password.
 func ProxyPassword(id string) string { return "proxy/" + id + "/password" }

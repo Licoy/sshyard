@@ -144,6 +144,9 @@ func backupSecretKeys(snap assets.Snapshot, provs []settings.AIProvider) []strin
 		if h.Auth == assets.AuthKey {
 			out = append(out, keychain.Host(h.ID, keychain.PrivateKey), keychain.Host(h.ID, keychain.Passphrase))
 		}
+		if h.Startup {
+			out = append(out, keychain.HostStartup(h.ID))
+		}
 	}
 	for _, c := range snap.Credentials {
 		for _, k := range keychain.Kinds {
@@ -219,6 +222,13 @@ func (a *App) restoreBackup(m locales.Messages, p backupPayload) error {
 			}
 		}
 	}
+	for _, h := range snap.Hosts {
+		if v, ok := p.Secrets[keychain.HostStartup(h.ID)]; ok && h.Startup {
+			if err := assets.ValidateStartup(string(v)); err != nil {
+				return errBadBackup
+			}
+		}
+	}
 	tx := &secretTx{kc: a.kc}
 	var changes []keychain.Change
 	for _, key := range backupSecretKeys(snap, p.Settings.AIProviders) {
@@ -238,6 +248,14 @@ func (a *App) restoreBackup(m locales.Messages, p backupPayload) error {
 			if !slices.Contains(allowed, key) || len(p.Secrets[key]) == 0 {
 				changes = append(changes, keychain.Change{Key: key, Delete: true})
 			}
+		}
+	}
+	// A host's startup commands are replaced too: a host restored without
+	// them types none of those it had here.
+	for _, h := range snap.Hosts {
+		key := keychain.HostStartup(h.ID)
+		if previous, exists := a.store.Get(h.ID); exists && previous.Startup && (!h.Startup || len(p.Secrets[key]) == 0) {
+			changes = append(changes, keychain.Change{Key: key, Delete: true})
 		}
 	}
 	// Restoring metadata without its body clears any existing same-ID body;

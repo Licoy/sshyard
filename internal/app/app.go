@@ -1138,7 +1138,7 @@ func (a *App) makeConn(hostID string, kind layout.Kind, link int) (*conn, error)
 	if kind == layout.Terminal {
 		opts.Dir = h.TerminalDir
 		if !opts.Local && !isStream(h) {
-			c.start = &shellStart{host: h.Tmux, dir: h.TerminalDir}
+			c.start = &shellStart{host: h.Tmux, dir: h.TerminalDir, startup: h.Startup}
 			opts.Start = a.shellStartCmd(c)
 		}
 	}
@@ -1214,6 +1214,9 @@ func (a *App) startConn(c *conn) {
 func (a *App) connectionNeedsSecrets(h assets.Host) bool {
 	if a.unlocked() || !a.unlock.stored || isLocal(h.ID) {
 		return false
+	}
+	if h.SSH() && h.Startup {
+		return true // its startup commands are typed once the shell starts
 	}
 	path, _ := a.store.JumpPath(h.ID)
 	path = append(path, h)
