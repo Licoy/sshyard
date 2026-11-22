@@ -71,6 +71,9 @@ type hostForm struct {
 	sessionLog bool
 	// sftpSudo runs the host's SFTP through sudo (Host.SFTPSudo)
 	sftpSudo bool
+	// fileProtoIdx is the host's files protocol (Host.FileProtocol), in
+	// fileProtocols
+	fileProtoIdx int
 	// transfers lets the host's terminals take ZMODEM and trzsz
 	// transfers (not Host.TransfersOff)
 	transfers bool
@@ -174,6 +177,7 @@ func (a *App) openEditor(h *assets.Host) {
 		}
 		f.sessionLog = h.SessionLog
 		f.sftpSudo = h.SFTPSudo
+		f.fileProtoIdx = max(slices.Index(fileProtocols, h.FileProtocol), 0)
 		if e := vt.OutputEncoding(h.Encoding); slices.Contains(vt.OutputEncodings(), e) {
 			f.encoding = e
 		}
@@ -329,6 +333,7 @@ func (a *App) SaveForm(m locales.Messages) bool {
 	h.Term = f.term
 	h.SessionLog = f.sessionLog
 	h.SFTPSudo = f.sftpSudo
+	h.FileProtocol = fileProtocols[f.fileProtoIdx]
 	h.TransfersOff = !f.transfers
 	if h.SSH() && h.Tmux != "" && !session.TmuxNameOK(h.Tmux) {
 		f.err = m.TmuxNameInvalid()
@@ -529,7 +534,10 @@ func (a *App) editorView(c *ui.Context, m locales.Messages) {
 									a.dirFields(c, m, tok, f)
 								})
 							})
-							sftpSudoField(c, m, tok, f)
+							fileProtocolField(c, m, tok, f)
+							if fileProtocols[f.fileProtoIdx] != assets.FileSCP {
+								sftpSudoField(c, m, tok, f)
+							}
 							ui.Field(c, m.TmuxAutoAttach(), func() {
 								ui.Column(c).Gap(4).FillWidth().Children(func() {
 									formTextInput(c.Key("f:tmux"), &f.tmux).Placeholder(m.TmuxAutoAttachPlaceholder()).Label(m.TmuxAutoAttach()).FillWidth()
@@ -791,6 +799,20 @@ func encodingField(c *ui.Context, m locales.Messages, tok theme.Tokens, f *hostF
 				}
 			}
 			ui.Text(c, m.TerminalEncodingHint()).FontSize(theme.Caption).TextColor(tok.TextMuted)
+		})
+	})
+}
+
+// fileProtocols are the choices of fileProtocolField, in order.
+var fileProtocols = []assets.FileProtocol{assets.FileAuto, assets.FileSFTP, assets.FileSCP}
+
+// fileProtocolField is how the host's files panes reach its files.
+func fileProtocolField(c *ui.Context, m locales.Messages, tok theme.Tokens, f *hostForm) {
+	ui.Field(c, m.FileProtocol(), func() {
+		ui.Column(c).Gap(4).FillWidth().Children(func() {
+			formSegmented(c.Key("f:fproto"), &f.fileProtoIdx, false, m.FileProtocolAuto(), "SFTP", "SCP").Label(m.FileProtocol())
+			hint := []string{m.FileProtocolAutoHint(), m.FileProtocolSftpHint(), m.FileProtocolScpHint()}[f.fileProtoIdx]
+			ui.Text(c, hint).FontSize(theme.Caption).TextColor(tok.TextMuted)
 		})
 	})
 }

@@ -107,6 +107,9 @@ type Host struct {
 	// SFTPSudo runs the SFTP server of an SSH host's Files panes as root
 	// through sudo, which the login password, or one typed, answers.
 	SFTPSudo bool `json:"sftpSudo,omitempty"`
+	// FileProtocol is how an SSH host's Files panes reach its files;
+	// with scp, SFTPSudo is off.
+	FileProtocol FileProtocol `json:"fileProtocol,omitempty"`
 	// Tmux is the tmux session an SSH host's terminals attach to each
 	// time their shell starts, created when there is none; empty is
 	// none.
@@ -233,6 +236,7 @@ func (h *Host) Normalize() {
 	}
 	h.NewLine = NewLine(strings.TrimSpace(string(h.NewLine)))
 	h.Backspace = Backspace(strings.TrimSpace(string(h.Backspace)))
+	h.FileProtocol = FileProtocol(strings.TrimSpace(string(h.FileProtocol)))
 	if h.Port == 0 {
 		h.Port = h.Protocol.DefaultPort()
 	}
@@ -241,6 +245,9 @@ func (h *Host) Normalize() {
 	} else {
 		h.Serial, h.NewLine, h.LocalEcho, h.Backspace = nil, "", false, ""
 		h.TerminalDir, h.RemoteDir, h.LocalDir = cleanDir(h.TerminalDir), cleanDir(h.RemoteDir), cleanDir(h.LocalDir)
+		if h.FileProtocol == FileSCP {
+			h.SFTPSudo = false
+		}
 	}
 	if h.Auth == "" {
 		h.Auth = AuthAsk
@@ -340,6 +347,8 @@ func (h Host) Validate() error {
 		return &FieldError{"auth", "unknown method"}
 	case h.Auth == AuthCredential && h.CredentialID == "":
 		return &FieldError{"credential", "required"}
+	case h.FileProtocol != FileAuto && h.FileProtocol != FileSFTP && h.FileProtocol != FileSCP:
+		return &FieldError{"fileProtocol", "unknown"}
 	}
 	return nil
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/Licoy/sshyard/internal/scpfs"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/internal/sshtest"
+	"golang.org/x/crypto/ssh"
 )
 
 // connectNoSFTP connects to a server that refuses SFTP and runs commands
@@ -28,6 +29,18 @@ func connectNoSFTP(t *testing.T) (*Client, string) {
 // connectWithout connects to a server set up by without to have no SFTP
 // and runs commands with this computer's shell, in a folder of its own.
 func connectWithout(t *testing.T, without func(*sshtest.Server)) (*Client, string) {
+	t.Helper()
+	conn, root := dialWithout(t, without)
+	c, err := New(conn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { c.Close() })
+	return c, root
+}
+
+// dialWithout is the connection of connectWithout, before SFTP.
+func dialWithout(t *testing.T, without func(*sshtest.Server)) (*ssh.Client, string) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
 		t.Skip("the test server runs commands with /bin/sh")
@@ -56,12 +69,7 @@ func connectWithout(t *testing.T, without func(*sshtest.Server)) (*Client, strin
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { conn.Close() })
-	c, err := New(conn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { c.Close() })
-	return c, root
+	return conn, root
 }
 
 func TestSCPFallback(t *testing.T) {
@@ -214,5 +222,58 @@ func TestMissingServerWithoutShell(t *testing.T) {
 	}
 	if withoutSFTP(conn) {
 		t.Error("the connection is marked without SFTP though scp could not stand in")
+	}
+}
+
+// SCPOnly moves files with scp on a server that has SFTP too.
+func TestSCPOnly(t *testing.T) {
+	conn, root := dialWithout(t, func(*sshtest.Server) {})
+	os.WriteFile(filepath.Join(root, "a.txt"), []byte("aye"), 0o644)
+	c, err := NewProtocol(context.Background(), conn, SCPOnly)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	if !c.SCP() || c.Protocol() != SCPOnly {
+		t.Fatalf("scp %v protocol %v", c.SCP(), c.Protocol())
+	}
+	es, err := c.ListContext(context.Background(), root)
+	if err != nil || len(es) != 1 || es[0].Name != "a.txt" {
+		t.Fatalf("listed %+v %v", es, err)
+	}
+	if withoutSFTP(conn) {
+		t.Error("a server with SFTP is marked without it")
+	}
+	auto, err := New(conn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer auto.Close()
+	if auto.SCP() {
+		t.Error("a client of the same connection left SFTP for scp")
+	}
+}
+
+// SFTPOnly does not fall back to scp, whether the server refuses SFTP
+// or ends it unanswered.
+func TestSFTPOnly(t *testing.T) {
+	for name, without := range map[string]func(*sshtest.Server){
+		"refused": func(srv *sshtest.Server) { srv.NoSFTP = true },
+		"missing": func(srv *sshtest.Server) { srv.SFTPExit = 127 },
+	} {
+		t.Run(name, func(t *testing.T) {
+			conn, _ := dialWithout(t, without)
+			c, err := NewProtocol(context.Background(), conn, SFTPOnly)
+			if err == nil {
+				c.Close()
+				t.Fatal("a server without SFTP gave an SFTP-only client")
+			}
+			if name == "refused" && !errors.Is(err, ErrNoSFTP) {
+				t.Errorf("error %v, want ErrNoSFTP", err)
+			}
+			if withoutSFTP(conn) {
+				t.Error("the connection is marked without SFTP")
+			}
+		})
 	}
 }

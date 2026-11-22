@@ -62,6 +62,20 @@ const (
 	BackspaceBS Backspace = "bs"
 )
 
+// FileProtocol is how an SSH host's Files panes reach its files.
+type FileProtocol string
+
+const (
+	// FileAuto speaks SFTP, and the shell and scp where the server has
+	// no SFTP.
+	FileAuto FileProtocol = ""
+	// FileSFTP speaks SFTP only.
+	FileSFTP FileProtocol = "sftp"
+	// FileSCP moves files with the shell and scp, whether or not the
+	// server has SFTP.
+	FileSCP FileProtocol = "scp"
+)
+
 // SerialLine is a serial host's port and its settings.
 type SerialLine struct {
 	Device   string `json:"device"`
@@ -122,7 +136,7 @@ func (h *Host) normalizeStream() {
 	h.CwdFollow = false
 	h.TerminalDir, h.RemoteDir, h.LocalDir, h.Tmux = "", "", "", ""
 	h.Startup = false
-	h.SFTPSudo = false
+	h.SFTPSudo, h.FileProtocol = false, FileAuto
 	h.Metrics = MetricsFollow
 	h.AIPolicy = AIPolicy{}
 	if h.Protocol == ProtoSerial {

@@ -66,6 +66,8 @@ type Client struct {
 	// scp is set when the server has no SFTP and its shell and scp
 	// stand in (scpfs).
 	scp bool
+	// protocol is how the Client's channels reach the files.
+	protocol Protocol
 	// sudo is set when each channel runs the SFTP server through sudo.
 	sudo *sudoAuth
 	// closed ends when the Client closes, and with it the channels of
@@ -86,6 +88,25 @@ func opened(c *Client) *Client {
 // SCP reports a server without SFTP, whose files move with scp.
 func (c *Client) SCP() bool { return c.scp }
 
+// Protocol is how a Client reaches the server's files.
+type Protocol int
+
+const (
+	// Auto speaks SFTP, and scp (scpfs) where the server has none.
+	Auto Protocol = iota
+	// SFTPOnly speaks SFTP; a server without it is an error (ErrNoSFTP).
+	SFTPOnly
+	// SCPOnly moves files with the server's shell and scp, whether or
+	// not it has SFTP.
+	SCPOnly
+)
+
+// ErrNoSFTP is a server without SFTP, to a client that speaks only SFTP.
+var ErrNoSFTP = errors.New("sftp: the server has no SFTP")
+
+// Protocol is how c was asked to reach the files.
+func (c *Client) Protocol() Protocol { return c.protocol }
+
 // New opens SFTP on an SSH connection; closing the Client does not close
 // the connection.
 func New(conn *ssh.Client) (*Client, error) {
@@ -95,7 +116,12 @@ func New(conn *ssh.Client) (*Client, error) {
 // NewContext negotiates only a dedicated channel and shares a pending-channel
 // quota with every SFTP client on the same pooled SSH connection.
 func NewContext(ctx context.Context, conn *ssh.Client) (*Client, error) {
-	c := &Client{conn: conn, operations: operationSlots(conn)}
+	return NewProtocol(ctx, conn, Auto)
+}
+
+// NewProtocol is NewContext reaching the files as p says.
+func NewProtocol(ctx context.Context, conn *ssh.Client, p Protocol) (*Client, error) {
+	c := &Client{conn: conn, operations: operationSlots(conn), protocol: p}
 	sub, err := c.newOperation(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("sftp: %w", err)

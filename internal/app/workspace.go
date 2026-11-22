@@ -9,6 +9,7 @@ import (
 	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/internal/settings"
+	"github.com/Licoy/sshyard/internal/sftpsvc"
 	"github.com/Licoy/sshyard/internal/theme"
 	"github.com/Licoy/sshyard/internal/vt"
 	"github.com/Licoy/sshyard/locales"
@@ -216,11 +217,15 @@ func tempBadge(c *ui.Context, m locales.Messages, tok theme.Tokens) {
 	})
 }
 
-// scpBadge marks a files pane on a server without SFTP, whose files move
-// with scp and its shell.
-func scpBadge(c *ui.Context, m locales.Messages, tok theme.Tokens) {
+// scpBadge marks a files pane whose files move with scp and the server's
+// shell: the server has no SFTP, or chosen when the host was set to scp.
+func scpBadge(c *ui.Context, m locales.Messages, tok theme.Tokens, chosen bool) {
+	note := m.ScpFallbackNote()
+	if chosen {
+		note = m.ScpChosenNote()
+	}
 	ui.Box(c.Key("scp")).Shrink(0).Padding(1, 6).Radius(theme.Capsule).Background(tok.Warning.Alpha(0.14)).
-		Label(m.ScpFallbackNote()).Tooltip(m.ScpFallbackNote()).Children(func() {
+		Label(note).Tooltip(note).Children(func() {
 		ui.Text(c, "SCP").FontSize(theme.Caption).FontWeight(500).TextColor(tok.Warning).SingleLine()
 	})
 }
@@ -474,7 +479,7 @@ func (a *App) paneView(c *ui.Context, t *layout.Tab, n *layout.Node, tok theme.T
 						tempBadge(c, m, tok)
 					}
 					if cn.fs != nil && cn.fs.remote.client != nil && cn.fs.remote.client.SCP() {
-						scpBadge(c, m, tok)
+						scpBadge(c, m, tok, cn.fs.remote.client.Protocol() == sftpsvc.SCPOnly)
 					}
 					if cn.kind == layout.Terminal {
 						a.paneForwards(c, m, tok, cn.host.ID)

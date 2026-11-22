@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/icons"
 	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/session"
@@ -473,6 +474,17 @@ func (a *App) transferClient(cn *conn) func(context.Context) (*sftpsvc.Client, e
 	}
 }
 
+// filesProtocol is how a host's files panes reach its files.
+func filesProtocol(p assets.FileProtocol) sftpsvc.Protocol {
+	switch p {
+	case assets.FileSFTP:
+		return sftpsvc.SFTPOnly
+	case assets.FileSCP:
+		return sftpsvc.SCPOnly
+	}
+	return sftpsvc.Auto
+}
+
 // ensureSFTP opens SFTP on the pane's connection, again after it
 // reconnected.
 func (a *App) ensureSFTP(cn *conn) {
@@ -480,7 +492,8 @@ func (a *App) ensureSFTP(cn *conn) {
 	st := cn.s.Status()
 	h := a.liveHost(cn.host)
 	sudo := h.SFTPSudo && h.SSH()
-	if st.State != session.Connected || s.opening || (s.client != nil && s.connects == st.Connects && s.client.Sudo() == sudo) {
+	proto := filesProtocol(h.FileProtocol)
+	if st.State != session.Connected || s.opening || (s.client != nil && s.connects == st.Connects && s.client.Sudo() == sudo && (sudo || s.client.Protocol() == proto)) {
 		return
 	}
 	if sudo && s.sudoHeld && s.client == nil && s.connects == st.Connects {
@@ -509,7 +522,7 @@ func (a *App) ensureSFTP(cn *conn) {
 			pass, typed = a.sudoPassword(h)
 			c, err = sftpsvc.NewSudo(context.Background(), client, pass)
 		} else {
-			c, err = sftpsvc.New(client)
+			c, err = sftpsvc.NewProtocol(context.Background(), client, proto)
 		}
 		var home string
 		var es []sftpsvc.Entry

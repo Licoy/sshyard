@@ -15581,6 +15581,16 @@ func (msgs Messages) ScpFallbackNote() string {
 	return Catalog.Format(msgs.locale, "scpFallbackNote", nil)
 }
 
+// ScpChosenNote says "This host is set to move files with scp and shell commands. An upload is sent once it is complete."
+// in the language the app shows.
+func ScpChosenNote() string { return In(i18n.Locale()).ScpChosenNote() }
+
+// ScpChosenNote says "This host is set to move files with scp and shell commands. An upload is sent once it is complete."
+// in the language of msgs.
+func (msgs Messages) ScpChosenNote() string {
+	return Catalog.Format(msgs.locale, "scpChosenNote", nil)
+}
+
 // ColorScheme says "Color Scheme"
 // in the language the app shows.
 func ColorScheme() string { return In(i18n.Locale()).ColorScheme() }
@@ -19231,6 +19241,56 @@ func SftpSudoHint() string { return In(i18n.Locale()).SftpSudoHint() }
 // in the language of msgs.
 func (msgs Messages) SftpSudoHint() string {
 	return Catalog.Format(msgs.locale, "sftpSudoHint", nil)
+}
+
+// FileProtocol says "File protocol"
+// in the language the app shows.
+func FileProtocol() string { return In(i18n.Locale()).FileProtocol() }
+
+// FileProtocol says "File protocol"
+// in the language of msgs.
+func (msgs Messages) FileProtocol() string {
+	return Catalog.Format(msgs.locale, "fileProtocol", nil)
+}
+
+// FileProtocolAuto says "Automatic"
+// in the language the app shows.
+func FileProtocolAuto() string { return In(i18n.Locale()).FileProtocolAuto() }
+
+// FileProtocolAuto says "Automatic"
+// in the language of msgs.
+func (msgs Messages) FileProtocolAuto() string {
+	return Catalog.Format(msgs.locale, "fileProtocolAuto", nil)
+}
+
+// FileProtocolAutoHint says "Files panes use SFTP, and the server's shell and scp when it has no SFTP."
+// in the language the app shows.
+func FileProtocolAutoHint() string { return In(i18n.Locale()).FileProtocolAutoHint() }
+
+// FileProtocolAutoHint says "Files panes use SFTP, and the server's shell and scp when it has no SFTP."
+// in the language of msgs.
+func (msgs Messages) FileProtocolAutoHint() string {
+	return Catalog.Format(msgs.locale, "fileProtocolAutoHint", nil)
+}
+
+// FileProtocolSftpHint says "Files panes use SFTP only; a server without it shows an error."
+// in the language the app shows.
+func FileProtocolSftpHint() string { return In(i18n.Locale()).FileProtocolSftpHint() }
+
+// FileProtocolSftpHint says "Files panes use SFTP only; a server without it shows an error."
+// in the language of msgs.
+func (msgs Messages) FileProtocolSftpHint() string {
+	return Catalog.Format(msgs.locale, "fileProtocolSftpHint", nil)
+}
+
+// FileProtocolScpHint says "Files panes list folders with the server's shell commands and move files with scp, for routers and other servers with…"
+// in the language the app shows.
+func FileProtocolScpHint() string { return In(i18n.Locale()).FileProtocolScpHint() }
+
+// FileProtocolScpHint says "Files panes list folders with the server's shell commands and move files with scp, for routers and other servers with…"
+// in the language of msgs.
+func (msgs Messages) FileProtocolScpHint() string {
+	return Catalog.Format(msgs.locale, "fileProtocolScpHint", nil)
 }
 
 // SudoPromptTitle says "sudo password for {host}"
