@@ -331,7 +331,10 @@ func (a *App) terminalPage(c *ui.Context, m locales.Messages, tok theme.Tokens) 
 		}
 	}
 	a.dropPreview = nil
-	ui.Box(c).Fill().Padding(paneGap / 2).Children(func() { a.nodeView(c, t, t.Root, tok, m) })
+	// Keyed: the find bar above shows only while a terminal has the focus,
+	// and the panes must keep their state, and their fields the keys, as
+	// the focus moves between a terminal and another pane.
+	ui.Box(c.Key("panes")).Fill().Padding(paneGap / 2).Children(func() { a.nodeView(c, t, t.Root, tok, m) })
 	a.syncPasteDialog(c, m)
 }
 

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/sftpsvc"
 	"github.com/Licoy/sshyard/internal/sshtest"
 	"golang.org/x/crypto/ssh"
@@ -149,5 +150,48 @@ func TestFilesSearchStops(t *testing.T) {
 	fs.close()
 	if !stopped || sr.running || sr.gen == gen || fs.local.search != nil {
 		t.Errorf("after close: canceled %v, running %v, gen %d (was %d), search %v", stopped, sr.running, sr.gen, gen, fs.local.search)
+	}
+}
+
+// A click on the terminal beside a files pane takes the keys from the
+// open search: what is typed after it is not searched for.
+func TestFilesSearchYieldsToTerminal(t *testing.T) {
+	srv, err := sshtest.Start("127.0.0.1:0", "demo", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer srv.Close()
+	a, tt := newTestApp(t)
+	h := addHost(t, a, srv, "box", "secret")
+	a.known.Add(srv.Addr, srv.HostKey.PublicKey())
+	a.Connect(h.ID, openAt{})
+	tc := a.focused()
+	tt.Frame()
+	a.OpenFilesBeside()
+	tt.Frame()
+	var fc *conn
+	for _, c := range a.conns {
+		if c.kind == layout.Files {
+			fc = c
+		}
+	}
+	waitFor(t, tt, "files connected", func() bool { return fc.fs.remote.client != nil })
+	fc.fs.remote.toggleSearch()
+	sr := fc.fs.remote.search
+	tt.Frame()
+	tt.Type("ab")
+	tt.Frame()
+	if sr.query != "ab" {
+		t.Fatalf("typed into the search: %q", sr.query)
+	}
+	tt.Advance(time.Second) // past the search's focus hold
+	mustClick(t, tt, "Terminal box")
+	tt.Frame()
+	tt.Advance(time.Second)
+	tt.Frame()
+	tt.Type("cd")
+	tt.Frame()
+	if sr.query != "ab" || a.focused() != tc {
+		t.Errorf("after the click on the terminal: query %q, focused pane %d (terminal %d)", sr.query, a.focused().id, tc.id)
 	}
 }
