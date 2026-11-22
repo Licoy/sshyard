@@ -16,8 +16,8 @@ import (
 const groupRowHeight = 32
 
 // groupIndent is how far in from a group its subgroups and hosts sit: past
-// its arrow, under its folder.
-var groupIndent = 14 + theme.Space(1.5)
+// its arrow and a step past its folder, so that the level shows.
+var groupIndent = 14 + theme.Space(4)
 
 // groupTree is a group of the sidebar, as a folder: its header (an arrow,
 // its icon, the folder unless it has its own, its name and how many hosts it holds, its subgroups'
@@ -89,7 +89,8 @@ func (a *App) groupTree(c *ui.Context, m locales.Messages, tok theme.Tokens, g s
 
 // groupGuide draws the guide of a group beside one of its subgroups or
 // hosts: down its whole height, from just under the group's arrow for the
-// first, and for the last down to the middle of its first row and into it.
+// first, and for the last down to the middle of its first row and into it,
+// round at the turn.
 func groupGuide(p *ui.Painter, r ui.Rect, tok theme.Tokens, first, last bool) {
 	x := r.X + theme.Space(2) + 7 // under the group's arrow
 	top := r.Y - theme.Space(0.5) // across the gap above it
@@ -102,7 +103,10 @@ func groupGuide(p *ui.Painter, r ui.Rect, tok theme.Tokens, first, last bool) {
 		return
 	}
 	mid := r.Y + min(r.H, groupRowHeight)/2
-	p.StrokePolyline([][2]float32{{x, top}, {x, mid}, {x + theme.Space(1.5), mid}}, 1, color)
+	var elbow ui.Path
+	elbow.MoveTo(x, top).LineTo(x, mid-theme.RadiusSmall).
+		QuadTo(x, mid, x+theme.RadiusSmall, mid).LineTo(r.X+groupIndent, mid)
+	p.StrokePath(&elbow, 1, color)
 }
 
 // groupMenu gives a group's section its menu, and takes the hosts and
