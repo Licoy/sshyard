@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/Licoy/sshyard/internal/scpfs"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/internal/sshtest"
 )
@@ -207,6 +208,9 @@ func TestMissingServerWithoutShell(t *testing.T) {
 	}
 	if !errors.Is(err, io.ErrUnexpectedEOF) && !errors.Is(err, io.EOF) {
 		t.Errorf("error %v, want the handshake's", err)
+	}
+	if !errors.Is(err, scpfs.ErrNoShell) {
+		t.Errorf("error %v, want why scp could not stand in", err)
 	}
 	if withoutSFTP(conn) {
 		t.Error("the connection is marked without SFTP though scp could not stand in")

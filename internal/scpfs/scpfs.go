@@ -42,6 +42,9 @@ type remote struct {
 	home string
 	// gnu: stat takes -c formats (GNU, busybox); else BSD's -f.
 	gnu bool
+	// ls: the server has no stat (OpenWrt's busybox): ls and date stand
+	// in.
+	ls bool
 	// scp: the server has scp to move contents with; else cat.
 	scp bool
 	// xargs: the server has xargs, to stat a folder's entries at once.
@@ -61,6 +64,9 @@ var remotes = struct {
 
 // noSCP, for tests, acts as if the server had no scp.
 var noSCP bool
+
+// noStat, for tests, acts as if the server had no stat.
+var noStat bool
 
 // remoteOf probes conn's server once; a failed probe is tried again.
 func remoteOf(conn *ssh.Client) (*remote, error) {
@@ -91,7 +97,7 @@ func remoteOf(conn *ssh.Client) (*remote, error) {
 func probeRemote(conn *ssh.Client) (*remote, error) {
 	r := &remote{conn: conn}
 	out, err := r.output(`pwd
-if stat -c %s / >/dev/null 2>&1; then echo gnu; else echo bsd; fi
+if stat -c %s / >/dev/null 2>&1; then echo gnu; elif stat -f %z / >/dev/null 2>&1; then echo bsd; else echo ls; fi
 if command -v scp >/dev/null 2>&1; then echo scp; else echo cat; fi
 if command -v xargs >/dev/null 2>&1; then echo xargs; else echo loop; fi`)
 	if err != nil {
@@ -103,7 +109,8 @@ if command -v xargs >/dev/null 2>&1; then echo xargs; else echo loop; fi`)
 	}
 	n := len(lines)
 	r.home = lines[n-4]
-	r.gnu = lines[n-3] == "gnu"
+	r.gnu = lines[n-3] == "gnu" && !noStat
+	r.ls = lines[n-3] == "ls" || noStat
 	r.scp = lines[n-2] == "scp" && !noSCP
 	r.xargs = lines[n-1] == "xargs"
 	return r, nil
@@ -235,6 +242,19 @@ func (r *remote) statCmd(follow bool) string {
 	return "stat " + l + "-f '%Xp %z %m %u %g %N'"
 }
 
+// lsStat is the script that prints the line statCmd would of the entry
+// name (a shell word), from ls and date, on a server without stat: a
+// device's size is 0, and so is an mtime date cannot tell.
+func lsStat(name string, follow bool) string {
+	l := "-lnd"
+	if follow {
+		l = "-lndL"
+	}
+	return "ls " + l + " -- " + name + ` 2>/dev/null | { read m n u g s x || exit 0; case $s in ''|*[!0-9]*) s=0;; esac
+t=$(date -r ` + name + ` +%s 2>/dev/null); case $t in ''|*[!0-9]*) t=0;; esac
+printf '%s %s %s %s %s %s\n' "$m" "$s" "$t" "$u" "$g" ` + name + `; }`
+}
+
 // fileInfo is an entry as stat printed it.
 type fileInfo struct {
 	name     string
@@ -262,6 +282,11 @@ func parseStat(line string) (fileInfo, bool) {
 		return fileInfo{}, false
 	}
 	mode, err1 := strconv.ParseUint(f[0], 16, 32)
+	if err1 != nil {
+		if m, ok := lsMode(f[0]); ok {
+			mode, err1 = uint64(m), nil
+		}
+	}
 	size, err2 := strconv.ParseInt(f[1], 10, 64)
 	mtime, err3 := strconv.ParseInt(f[2], 10, 64)
 	uid, err4 := strconv.ParseUint(f[3], 10, 32)
@@ -270,6 +295,49 @@ func parseStat(line string) (fileInfo, bool) {
 		return fileInfo{}, false
 	}
 	return fileInfo{name: f[5], size: size, mode: unixMode(uint32(mode)), mtime: time.Unix(mtime, 0), uid: uint32(uid), gid: uint32(gid)}, true
+}
+
+// lsMode is st_mode of a mode as ls prints it (drwxr-sr-t), with or
+// without the mark of an ACL after it.
+func lsMode(s string) (uint32, bool) {
+	if len(s) < 10 {
+		return 0, false
+	}
+	types := map[byte]uint32{'-': 0o100000, 'd': 0o040000, 'l': 0o120000, 'b': 0o060000, 'c': 0o020000, 'p': 0o010000, 's': 0o140000}
+	m, ok := types[s[0]]
+	if !ok {
+		return 0, false
+	}
+	for i, special := range []uint32{0o4000, 0o2000, 0o1000} {
+		r, w, x := s[1+3*i], s[2+3*i], s[3+3*i]
+		shift := uint(3 * (2 - i))
+		switch r {
+		case 'r':
+			m |= 4 << shift
+		case '-':
+		default:
+			return 0, false
+		}
+		switch w {
+		case 'w':
+			m |= 2 << shift
+		case '-':
+		default:
+			return 0, false
+		}
+		switch x {
+		case 'x':
+			m |= 1 << shift
+		case 's', 't':
+			m |= 1<<shift | special
+		case 'S', 'T':
+			m |= special
+		case '-':
+		default:
+			return 0, false
+		}
+	}
+	return m, true
 }
 
 // unixMode is st_mode as a FileMode.
@@ -326,7 +394,9 @@ func (r *remote) list(dir string) ([]os.FileInfo, error) {
 	q := quote(dir)
 	names := `for f in .[!.]* ..?* *; do if [ -e "$f" ] || [ -L "$f" ]; then printf '%s\0' "$f"; fi; done`
 	each := names + " | xargs -0 -r " + r.statCmd(false) + " -- 2>/dev/null"
-	if !r.xargs {
+	if r.ls {
+		each = `for f in .[!.]* ..?* *; do if [ -e "$f" ] || [ -L "$f" ]; then ` + lsStat(`"$f"`, false) + `; fi; done`
+	} else if !r.xargs {
 		each = `for f in .[!.]* ..?* *; do if [ -e "$f" ] || [ -L "$f" ]; then ` + r.statCmd(false) + ` -- "$f" 2>/dev/null; fi; done`
 	}
 	out, err := r.output("cd -- " + q + " 2>/dev/null || { [ -e " + q + " ] || exit 90; [ -d " + q + " ] || exit 93; exit 91; }\n" + each + "\nexit 0")
@@ -343,7 +413,11 @@ func (r *remote) stat(p string, follow bool) (fileInfo, error) {
 	if follow {
 		exists = "[ -e " + q + " ]"
 	}
-	out, err := r.output(exists + " || exit 90\n" + r.statCmd(follow) + " -- " + q)
+	cmd := r.statCmd(follow) + " -- " + q
+	if r.ls {
+		cmd = lsStat(q, follow)
+	}
+	out, err := r.output(exists + " || exit 90\n" + cmd)
 	if err != nil {
 		return fileInfo{}, err
 	}

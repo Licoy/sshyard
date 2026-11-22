@@ -143,10 +143,12 @@ func (c *Client) negotiateOperation(ctx context.Context) (*Client, error) {
 			// dropbear or OpenSSH does whose sftp-server is missing: its
 			// shell and scp stand in, if it runs commands.
 			session.Close()
-			if sub, scpErr := c.scpOperation(); scpErr == nil {
-				markWithoutSFTP(c.conn)
-				return sub, nil
+			sub, scpErr := c.scpOperation()
+			if scpErr != nil {
+				return nil, fmt.Errorf("%w (%w)", scpErr, err)
 			}
+			markWithoutSFTP(c.conn)
+			return sub, nil
 		}
 		return nil, err
 	}
