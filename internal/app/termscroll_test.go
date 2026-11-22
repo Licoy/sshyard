@@ -71,3 +71,75 @@ func TestTerminalScrollbarDrag(t *testing.T) {
 	tt.ClickAt(x, r.Y+r.H/2)
 	expectRead(t, tt, sh, "\x1b[<0;")
 }
+
+// TestTerminalScrollHoldsOnOutput: a view scrolled back stays on the lines
+// it shows while output pushes more into the scrollback; the live screen
+// follows the output.
+func TestTerminalScrollHoldsOnOutput(t *testing.T) {
+	lines := func(from, n int) string {
+		var out strings.Builder
+		for i := range n {
+			fmt.Fprintf(&out, "line %d\r\n", from+i)
+		}
+		return out.String()
+	}
+	srv, sh := startScript(t, lines(0, 200))
+	a, tt := newTestApp(t)
+	c := connected(t, a, tt, srv)
+	tv := c.tv
+	waitFor(t, tt, "the scrollback", func() bool { return tv.snap.Scrollback > 100 })
+	tt.Frame()
+
+	tv.offset = 20
+	tt.Frame()
+	first, sb := tv.first, tv.snap.Scrollback
+	sh.out <- lines(200, 50)
+	waitFor(t, tt, "the output", func() bool { return tv.snap.Scrollback >= sb+50 })
+	tt.Frame()
+	if tv.first != first || tv.offset != 70 {
+		t.Errorf("scrolled back: first line %d, offset %d; want %d, 70", tv.first, tv.offset, first)
+	}
+
+	tv.offset = 0
+	tt.Frame()
+	sb = tv.snap.Scrollback
+	sh.out <- lines(250, 30)
+	waitFor(t, tt, "more output", func() bool { return tv.snap.Scrollback >= sb+30 })
+	tt.Frame()
+	if tv.offset != 0 {
+		t.Errorf("at the live screen output scrolled it back %d lines", tv.offset)
+	}
+}
+
+// TestTerminalScrollOnKey: a key sent to the shell brings a view scrolled
+// back to the live screen only with settings.TerminalScrollOnKey; either
+// way the shell reads it.
+func TestTerminalScrollOnKey(t *testing.T) {
+	var out strings.Builder
+	for i := range 200 {
+		fmt.Fprintf(&out, "line %d\r\n", i)
+	}
+	srv, sh := startScript(t, out.String())
+	a, tt := newTestApp(t)
+	c := connected(t, a, tt, srv)
+	tv := c.tv
+	waitFor(t, tt, "the scrollback", func() bool { return tv.snap.Scrollback > 100 })
+	sh.take()
+
+	a.settings.TerminalScrollOnKey = false
+	tv.offset = 10
+	tt.Frame()
+	tv.send([]byte("a"))
+	expectRead(t, tt, sh, "a")
+	if tv.offset != 10 {
+		t.Errorf("off: a key moved the view to offset %d", tv.offset)
+	}
+
+	a.settings.TerminalScrollOnKey = true
+	tt.Frame()
+	tv.send([]byte("b"))
+	expectRead(t, tt, sh, "b")
+	if tv.offset != 0 {
+		t.Errorf("on: a key left the view at offset %d", tv.offset)
+	}
+}

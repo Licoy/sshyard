@@ -209,6 +209,8 @@
   "terminalLineNumbersNote": "터미널 왼쪽에 각 줄의 번호를 표시합니다",
   "terminalTimestamps": "타임스탬프",
   "terminalTimestampsNote": "터미널 왼쪽에 각 줄이 출력된 시간을 표시합니다",
+  "terminalScrollOnKey": "키 입력 시 맨 아래로 스크롤",
+  "terminalScrollOnKeyNote": "위로 스크롤한 상태에서 입력하거나 붙여넣으면 최신 출력으로 돌아갑니다. 스크롤한 동안 새 출력이 화면을 움직이지 않습니다",
   "cursorBlock": "블록",
   "cursorBar": "세로 막대",
   "cursorUnderline": "밑줄",

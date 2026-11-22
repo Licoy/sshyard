@@ -94,6 +94,9 @@ type termView struct {
 	// each line's number and the time output reached it
 	// (settings.TerminalLineNumbers, TerminalTimestamps).
 	lineNumbers, timestamps bool
+	// scrollOnKey brings a view scrolled back to the live screen when a
+	// key or a paste goes to the shell (settings.TerminalScrollOnKey).
+	scrollOnKey bool
 	// suggest completes the command typed at the shell's prompt
 	// (settings.TerminalCompletion).
 	suggest termSuggest
@@ -113,6 +116,7 @@ type termView struct {
 	sized               bool
 	first               int // absolute line of the top row last drawn
 	offset              int // lines scrolled into the scrollback
+	pushed              int // Terminal.Pushed last drawn, -1 for none to go by
 	scrollAcc           float32
 	w, h                float32 // the element's size last drawn
 	selA, selB          vt.Pos
@@ -164,7 +168,7 @@ type termView struct {
 }
 
 func newTermView(t ptyTarget, fontSize float32) *termView {
-	return &termView{target: t, fontSize: fontSize, cursorBlink: true}
+	return &termView{target: t, fontSize: fontSize, cursorBlink: true, scrollOnKey: true, pushed: -1}
 }
 
 // metrics measures the cells of the terminal font at a scale, again
@@ -564,8 +568,17 @@ func (v *termView) paint(p *ui.Painter, r ui.Rect, pal *theme.Terminal, focused 
 		}
 		v.cols, v.rows, v.sized = cols, rows, true
 		v.target.Resize(cols, rows)
+		// The lines it pushed or reflowed are not output to hold still for.
+		v.pushed = -1
 	}
 	t := v.target.Terminal()
+	// A view scrolled back stays on the lines it shows while output
+	// pushes more into the scrollback; the live screen follows it.
+	pushed := t.Pushed()
+	if v.offset > 0 && v.pushed >= 0 && pushed >= 0 {
+		v.offset += pushed - v.pushed
+	}
+	v.pushed = pushed
 	v.autoScroll(p)
 	t.SnapshotInto(&v.snap, v.offset)
 	snap := &v.snap
@@ -836,7 +849,9 @@ func (v *termView) send(b []byte) {
 		return
 	}
 	v.blink.at = time.Time{}
-	v.offset = 0
+	if v.scrollOnKey {
+		v.offset = 0
+	}
 	v.selected = false
 	v.dragScroll = 0
 	if _, err := v.target.Write(b); errors.Is(err, session.ErrInputBusy) && v.inputError != nil {

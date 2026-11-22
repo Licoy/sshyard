@@ -91,6 +91,19 @@ func (t *Terminal) scrollbackLen() int {
 	return t.scrollback.len()
 }
 
+// Pushed is how many lines have scrolled off the primary screen in all,
+// those the scrollback keeps and those that fell off its top, for a view
+// scrolled back to stay on the lines it shows as output arrives; -1 on the
+// alternate screen, which has no scrollback.
+func (t *Terminal) Pushed() int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.altActive {
+		return -1
+	}
+	return t.dropped + t.scrollback.len()
+}
+
 // offset is offset kept within the scrollback.
 func (t *Terminal) offset(offset int) int { return max(0, min(offset, t.scrollbackLen())) }
 

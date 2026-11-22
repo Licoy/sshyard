@@ -209,6 +209,8 @@
   "terminalLineNumbersNote": "ターミナルの左側に各行の行番号を表示します",
   "terminalTimestamps": "タイムスタンプ",
   "terminalTimestampsNote": "ターミナルの左側に各行が出力された時刻を表示します",
+  "terminalScrollOnKey": "キー入力で最下部へスクロール",
+  "terminalScrollOnKeyNote": "さかのぼって表示中に入力や貼り付けをすると最新の出力に戻ります。さかのぼっている間は新しい出力で表示が動きません",
   "cursorBlock": "ブロック",
   "cursorBar": "縦線",
   "cursorUnderline": "下線",

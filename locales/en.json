@@ -209,6 +209,8 @@
   "terminalLineNumbersNote": "Show each line's number left of the terminal",
   "terminalTimestamps": "Timestamps",
   "terminalTimestampsNote": "Show when output reached each line, left of the terminal",
+  "terminalScrollOnKey": "Scroll to bottom on keypress",
+  "terminalScrollOnKeyNote": "Typing or pasting while scrolled back returns to the latest output. New output never moves the view while you read back",
   "cursorBlock": "Block",
   "cursorBar": "Vertical bar",
   "cursorUnderline": "Underline",

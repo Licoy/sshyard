@@ -2137,6 +2137,26 @@ func (msgs Messages) TerminalTimestampsNote() string {
 	return Catalog.Format(msgs.locale, "terminalTimestampsNote", nil)
 }
 
+// TerminalScrollOnKey says "Scroll to bottom on keypress"
+// in the language the app shows.
+func TerminalScrollOnKey() string { return In(i18n.Locale()).TerminalScrollOnKey() }
+
+// TerminalScrollOnKey says "Scroll to bottom on keypress"
+// in the language of msgs.
+func (msgs Messages) TerminalScrollOnKey() string {
+	return Catalog.Format(msgs.locale, "terminalScrollOnKey", nil)
+}
+
+// TerminalScrollOnKeyNote says "Typing or pasting while scrolled back returns to the latest output. New output never moves the view while you read back"
+// in the language the app shows.
+func TerminalScrollOnKeyNote() string { return In(i18n.Locale()).TerminalScrollOnKeyNote() }
+
+// TerminalScrollOnKeyNote says "Typing or pasting while scrolled back returns to the latest output. New output never moves the view while you read back"
+// in the language of msgs.
+func (msgs Messages) TerminalScrollOnKeyNote() string {
+	return Catalog.Format(msgs.locale, "terminalScrollOnKeyNote", nil)
+}
+
 // CursorBlock says "Block"
 // in the language the app shows.
 func CursorBlock() string { return In(i18n.Locale()).CursorBlock() }

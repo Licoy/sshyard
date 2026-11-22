@@ -93,6 +93,10 @@ type Settings struct {
 	// both off by default.
 	TerminalLineNumbers bool `json:"terminalLineNumbers,omitempty"`
 	TerminalTimestamps  bool `json:"terminalTimestamps,omitempty"`
+	// TerminalScrollOnKey brings a terminal scrolled back to the live
+	// screen when a key or a paste goes to the shell; on by default. Output
+	// never moves one scrolled back.
+	TerminalScrollOnKey bool `json:"terminalScrollOnKey"`
 	// TabTitle is what a tab not renamed is called: "", the default, its
 	// host's name, TabTitleProgram the title its terminal's program set,
 	// or TabTitleCwd the directory its shell reported.
@@ -749,7 +753,7 @@ const (
 
 // Default returns the defaults.
 func Default() Settings {
-	return Settings{Background: DefaultBackground(), Theme: theme.Auto, CloseBehavior: CloseToTray, TrayIcon: TrayIconColor, TrayClick: TrayClickPanel, TrayMaterial: MaterialTranslucent, TrayHeight: DefaultTrayHeight, CheckUpdates: true, UpdateIntervalHours: 1, TerminalFontSize: 13, TerminalLineHeight: 100, TerminalCharWidth: 100, TerminalCursorStyle: CursorBlock, TerminalCursorBlink: true, TerminalCompletion: CompletionInline, KeepAliveSeconds: 30, AutoReconnect: true, ReturnToFolder: true, SidebarWidth: 240, ChromeMaterial: MaterialTranslucent, ContentMaterial: MaterialOpaque, MonospacedOnly: true, TransferConcurrency: 3, KeepAwake: true, OpenConfirmMB: 10, FilesSplit: 50, FilesEdge: FilesRight, TerminalRightClick: RightClickMenu, EditorTreeWidth: 240, TerminalTransfers: true, OSC52Write: OSC52Ask, OSC52MaxBytes: OSC52MaxDefault, OSC52Notify: true, MetricsEnabled: true, MetricsInterval: 2,
+	return Settings{Background: DefaultBackground(), Theme: theme.Auto, CloseBehavior: CloseToTray, TrayIcon: TrayIconColor, TrayClick: TrayClickPanel, TrayMaterial: MaterialTranslucent, TrayHeight: DefaultTrayHeight, CheckUpdates: true, UpdateIntervalHours: 1, TerminalFontSize: 13, TerminalLineHeight: 100, TerminalCharWidth: 100, TerminalCursorStyle: CursorBlock, TerminalCursorBlink: true, TerminalScrollOnKey: true, TerminalCompletion: CompletionInline, KeepAliveSeconds: 30, AutoReconnect: true, ReturnToFolder: true, SidebarWidth: 240, ChromeMaterial: MaterialTranslucent, ContentMaterial: MaterialOpaque, MonospacedOnly: true, TransferConcurrency: 3, KeepAwake: true, OpenConfirmMB: 10, FilesSplit: 50, FilesEdge: FilesRight, TerminalRightClick: RightClickMenu, EditorTreeWidth: 240, TerminalTransfers: true, OSC52Write: OSC52Ask, OSC52MaxBytes: OSC52MaxDefault, OSC52Notify: true, MetricsEnabled: true, MetricsInterval: 2,
 		AIDefaultAgent: "builtin", AIDefaultMode: "ask", AIReviewStrictness: AIReviewStandard, AIContextLines: 200, AIAuditRetentionDays: 90, AIRequestTimeout: DefaultAIRequestTimeout, AIRedact: true, MCPPort: MCPPortDefault, LocalKeys: true, Highlight: Highlight{On: true}, RenewalNotify: true}
 }
 

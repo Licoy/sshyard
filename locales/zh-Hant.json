@@ -209,6 +209,8 @@
   "terminalLineNumbersNote": "在終端機左側顯示每行的行號",
   "terminalTimestamps": "時間戳記",
   "terminalTimestampsNote": "在終端機左側顯示每行輸出的時間",
+  "terminalScrollOnKey": "按鍵時捲動到底部",
+  "terminalScrollOnKeyNote": "向上翻看時輸入或貼上會回到最新輸出。翻看時新輸出不會移動畫面",
   "cursorBlock": "方塊",
   "cursorBar": "豎線",
   "cursorUnderline": "底線",

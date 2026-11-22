@@ -529,6 +529,11 @@ func (a *App) prefTerminal(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 				*changed = true
 			}
 		})
+		g.row(m.TerminalScrollOnKey(), m.TerminalScrollOnKeyNote(), func() {
+			if formSwitch(c.Key("scrollonkey"), &s.TerminalScrollOnKey).Label(m.TerminalScrollOnKey()).Changed() {
+				*changed = true
+			}
+		})
 		g.row(m.TabTitleSource(), m.TabTitleSourceNote(), func() {
 			codes := []string{"", settings.TabTitleProgram, settings.TabTitleCwd}
 			names := []string{m.TabTitleHost(), m.TabTitleProgram(), m.TabTitleCwd()}
