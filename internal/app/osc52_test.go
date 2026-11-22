@@ -549,8 +549,10 @@ func TestOSC52HostOverride(t *testing.T) {
 	}
 	a.openEditor(&h)
 	tt.Frame()
+	scrollEditorTo(t, tt, "Advanced")
 	mustClick(t, tt, "Advanced")
 	tt.Advance(250 * time.Millisecond)
+	scrollEditorTo(t, tt, "Follow the global setting")
 	mustClick(t, tt, "Follow the global setting")
 	tt.Frame()
 	mustClick(t, tt, "Deny")

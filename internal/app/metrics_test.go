@@ -492,9 +492,7 @@ func TestHostMetricsDisabledWhenGlobalOff(t *testing.T) {
 	}
 	a.openEditor(&h)
 	tt.Frame()
-	// Scroll the metrics control into view at the default window height.
-	r := mustFind(t, tt, a.form.auth)
-	tt.Scroll(r.X+r.W/2, r.Y+r.H/2, 0, 300)
+	scrollEditorTo(t, tt, "Off")
 	mustClick(t, tt, "Off")
 	tt.Frame()
 	if a.form == nil || a.form.metricsIdx != 2 {

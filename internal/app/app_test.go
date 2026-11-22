@@ -78,6 +78,16 @@ func mustFind(t *testing.T, tt *ui.Tester, s string) ui.Rect {
 	return r
 }
 
+// scrollEditorTo scrolls the host editor so the control labelled s sits
+// near the top of the window, however many fields come before it.
+func scrollEditorTo(t *testing.T, tt *ui.Tester, s string) {
+	t.Helper()
+	r := mustFind(t, tt, s)
+	tt.Scroll(r.X+r.W/2, 300, 0, r.Y-300)
+	tt.Advance(300 * time.Millisecond)
+	tt.Frame()
+}
+
 func mustClick(t *testing.T, tt *ui.Tester, s string) {
 	t.Helper()
 	if err := tt.Click(s); err != nil {
