@@ -210,6 +210,7 @@ func main() {
 		p.SetTrayIcon = func(style string) error { return d.setTrayIcon(style) }
 		p.SetRememberLayout = changeRememberLayout
 		p.Notify = showNotification
+		p.Relaunch = func() { mygo.App.Relaunch() }
 		p.MainWindowBackground = func() bool {
 			return d != nil && (!mygo.App.IsActive() || !d.window.IsFocused() || !d.window.IsVisible() || d.window.IsMinimized())
 		}

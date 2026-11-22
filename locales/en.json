@@ -2907,7 +2907,7 @@
   "appLockOnSleep": "Lock when the screen locks or the computer sleeps",
   "appLockNow": "Lock now",
   "appLockAction": "Lock SSHYard",
-  "appLockScopeNote": "The app lock keeps your hosts and sessions from anyone else using this computer; while it is locked, sessions, forwards and transfers keep running. It does not encrypt the data folder. If you can no longer unlock, reset the app lock from the lock screen: this deletes the secrets saved on this computer, while hosts and settings stay.",
+  "appLockScopeNote": "The app lock keeps your hosts and sessions from anyone else using this computer; while it is locked, sessions, forwards and transfers keep running. It does not encrypt the data folder. If you can no longer unlock, reset the app lock from the lock screen: this deletes all of SSHYard's data on this computer, hosts, settings and secrets included, and restarts the app.",
   "appLockedTitle": "SSHYard is locked",
   "appLockedPasswordPrompt": "Enter your password to unlock.",
   "appLockedCodePrompt": "Enter the code from your authenticator app to unlock.",
@@ -2932,8 +2932,10 @@
   "appLockCodeWrong": "The code doesn't match. Check that the time on your phone and computer is right, then enter the current code.",
   "appLockResetEllipsis": "Reset App Lock…",
   "appLockResetTitle": "Reset the app lock?",
-  "appLockResetBody": "Resetting turns off the app lock and deletes every secret saved on this computer: passwords, private keys, passphrases, API keys and backup credentials. Hosts, groups and settings stay. This can't be undone.",
-  "appLockReset": "Reset and Delete Secrets",
-  "appLockResetDone": "The app lock was reset and saved secrets were deleted.",
+  "appLockResetBody": "Resetting deletes everything SSHYard keeps on this computer: hosts, groups, settings, AI conversations and every saved secret (passwords, private keys, passphrases, API keys and backup credentials), turns off the app lock and restarts the app, closing every session. Files in your backup locations stay: restore one with its backup password afterwards. This can't be undone.",
+  "appLockReset": "Delete All Data and Restart",
+  "appLockResetDone": "The app lock was reset and SSHYard's data was deleted.",
+  "appLockResetPending": "The app lock was reset. SSHYard restarts to finish deleting its data.",
+  "appLockResetRestart": "Restart Now",
   "appLockRestored": "The app lock was changed outside SSHYard and has been restored."
 }

@@ -9,10 +9,12 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Licoy/sshyard/internal/applock"
 	"github.com/Licoy/sshyard/internal/keychain"
+	"github.com/Licoy/sshyard/internal/settings"
 	"github.com/Licoy/sshyard/locales"
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
@@ -29,7 +31,8 @@ import (
 // opens it (keychain.AppLock), which wins over applock.json once the
 // store is unlocked, as anyone reading the data folder can delete or
 // replace that file. A lock that can no longer be opened is reset, which
-// deletes every secret before the lock.
+// deletes every secret before the lock, and the rest of the data as the
+// app starts again.
 
 // appLock is the lock and the lock screen's fields, which live only while
 // it shows.
@@ -54,9 +57,10 @@ type appLock struct {
 	form     *lockForm
 	formOpen bool
 	formHold focusHold
-	// resetOpen asks whether to reset the lock
-	resetOpen bool
-	stopSleep func()
+	// resetOpen asks whether to reset the lock; resetting is set once it
+	// was, until the app starts again
+	resetOpen, resetting bool
+	stopSleep            func()
 	// now is time.Now, replaced in tests
 	now func() time.Time
 }
@@ -548,26 +552,87 @@ func (a *App) adoptLockRecord() bool {
 
 // ResetAppLock is the way out of a lock that can no longer be opened:
 // every saved secret is deleted, then the lock, so that removing it never
-// hands over what it stood in front of. Hosts and settings stay. It says
-// why it could not.
+// hands over what it stood in front of; the rest of the data folder goes
+// as the app starts again (finishReset), since what runs now would write
+// it back. The lock screen stays until then. It says why it could not.
 func (a *App) ResetAppLock(m locales.Messages) string {
 	if err := a.kc.Wipe(); err != nil {
 		return m.ErrGeneric(secretStoreErrorText(m, err))
 	}
 	a.unlock.stored = a.unlocked()
+	if err := settings.WriteFileAtomic(filepath.Join(a.p.DataDir, resetFile), nil, 0o600); err != nil {
+		return m.ErrGeneric(err.Error())
+	}
 	if err := os.Remove(a.lockPath()); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return m.ErrGeneric(err.Error())
 	}
 	l := &a.lock
-	l.cfg, l.broken, l.locked = applock.Default(), false, false
+	l.cfg, l.broken, l.locked, l.resetting = applock.Default(), false, true, true
 	l.password, l.code, l.err, l.hold = "", "", "", focusHold{}
 	l.gen++
-	l.input = a.lockClock()
 	l.resetOpen = false
 	a.closeLockForm()
-	a.toast(func(m locales.Messages) ui.Toast { return ui.Toast{Title: m.AppLockResetDone()} })
+	a.relaunch()
 	a.invalidate()
 	return ""
+}
+
+// relaunch quits and starts the app again; a quit that is cancelled
+// leaves the app as it is.
+func (a *App) relaunch() {
+	if a.p.Relaunch != nil {
+		a.p.Relaunch()
+	}
+}
+
+// resetFile in the data folder asks the next start to empty it: the app
+// lock was reset.
+const resetFile = ".sshyard-reset"
+
+// resetFiles are what a reset deletes from the data folder, which may be
+// one set from outside holding more than SSHYard's: everything SSHYard
+// keeps there but the lifetime lock, the updater's state and the
+// windows' places. resetTemps are the prefixes of the files written
+// beside them before they replace them.
+var (
+	resetFiles = []string{"hosts.json", "settings.json", "layout.json", "known_hosts", "localkeys.json", cloudFile, applock.File, "secrets.enc", "master.enc", "ai-history", "ai-audit", "backgrounds"}
+	resetTemps = []string{".tmp-", ".secrets-", ".known_hosts-"}
+)
+
+// finishReset empties dir of what resetFiles name when a reset asked
+// for it, and reports whether it did. A failure keeps the request, so the
+// next start tries again.
+func finishReset(dir string) (bool, error) {
+	marker := filepath.Join(dir, resetFile)
+	if _, err := os.Stat(marker); errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	var errs []error
+	for _, name := range resetFiles {
+		if err := os.RemoveAll(filepath.Join(dir, name)); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		errs = append(errs, err)
+	}
+	for _, e := range entries {
+		if slices.ContainsFunc(resetTemps, func(p string) bool { return strings.HasPrefix(e.Name(), p) }) {
+			if err := os.RemoveAll(filepath.Join(dir, e.Name())); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+	if err := errors.Join(errs...); err != nil {
+		return false, err
+	}
+	if err := os.Remove(marker); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return false, err
+	}
+	return true, nil
 }
 
 // setLockIdle and setLockOnSleep change when the lock locks by itself.

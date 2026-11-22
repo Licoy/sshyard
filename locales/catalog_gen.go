@@ -20409,34 +20409,54 @@ func (msgs Messages) AppLockResetTitle() string {
 	return Catalog.Format(msgs.locale, "appLockResetTitle", nil)
 }
 
-// AppLockResetBody says "Resetting turns off the app lock and deletes every secret saved on this computer: passwords, private keys, passphrase…"
+// AppLockResetBody says "Resetting deletes everything SSHYard keeps on this computer: hosts, groups, settings, AI conversations and every save…"
 // in the language the app shows.
 func AppLockResetBody() string { return In(i18n.Locale()).AppLockResetBody() }
 
-// AppLockResetBody says "Resetting turns off the app lock and deletes every secret saved on this computer: passwords, private keys, passphrase…"
+// AppLockResetBody says "Resetting deletes everything SSHYard keeps on this computer: hosts, groups, settings, AI conversations and every save…"
 // in the language of msgs.
 func (msgs Messages) AppLockResetBody() string {
 	return Catalog.Format(msgs.locale, "appLockResetBody", nil)
 }
 
-// AppLockReset says "Reset and Delete Secrets"
+// AppLockReset says "Delete All Data and Restart"
 // in the language the app shows.
 func AppLockReset() string { return In(i18n.Locale()).AppLockReset() }
 
-// AppLockReset says "Reset and Delete Secrets"
+// AppLockReset says "Delete All Data and Restart"
 // in the language of msgs.
 func (msgs Messages) AppLockReset() string {
 	return Catalog.Format(msgs.locale, "appLockReset", nil)
 }
 
-// AppLockResetDone says "The app lock was reset and saved secrets were deleted."
+// AppLockResetDone says "The app lock was reset and SSHYard's data was deleted."
 // in the language the app shows.
 func AppLockResetDone() string { return In(i18n.Locale()).AppLockResetDone() }
 
-// AppLockResetDone says "The app lock was reset and saved secrets were deleted."
+// AppLockResetDone says "The app lock was reset and SSHYard's data was deleted."
 // in the language of msgs.
 func (msgs Messages) AppLockResetDone() string {
 	return Catalog.Format(msgs.locale, "appLockResetDone", nil)
+}
+
+// AppLockResetPending says "The app lock was reset. SSHYard restarts to finish deleting its data."
+// in the language the app shows.
+func AppLockResetPending() string { return In(i18n.Locale()).AppLockResetPending() }
+
+// AppLockResetPending says "The app lock was reset. SSHYard restarts to finish deleting its data."
+// in the language of msgs.
+func (msgs Messages) AppLockResetPending() string {
+	return Catalog.Format(msgs.locale, "appLockResetPending", nil)
+}
+
+// AppLockResetRestart says "Restart Now"
+// in the language the app shows.
+func AppLockResetRestart() string { return In(i18n.Locale()).AppLockResetRestart() }
+
+// AppLockResetRestart says "Restart Now"
+// in the language of msgs.
+func (msgs Messages) AppLockResetRestart() string {
+	return Catalog.Format(msgs.locale, "appLockResetRestart", nil)
 }
 
 // AppLockRestored says "The app lock was changed outside SSHYard and has been restored."

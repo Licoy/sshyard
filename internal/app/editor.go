@@ -324,7 +324,8 @@ func (a *App) openEditorWindow(cn *conn) {
 // editorClosing says whether the editor's window may close, as the user
 // closes it: with unsaved changes it stays and asks what to do with them.
 func (a *App) editorClosing(cn *conn) bool {
-	if !cn.ed.dirty.Load() {
+	// A reset of the app lock deletes the drafts with everything else.
+	if !cn.ed.dirty.Load() || a.lock.resetting {
 		return true
 	}
 	a.post(func() { cn.ed.closeOpen = true })

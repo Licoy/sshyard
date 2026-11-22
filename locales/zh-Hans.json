@@ -2184,7 +2184,7 @@
   "appLockOnSleep": "锁屏或电脑睡眠时锁定",
   "appLockNow": "立即锁定",
   "appLockAction": "锁定 SSHYard",
-  "appLockScopeNote": "应用锁会对使用这台电脑的其他人隐藏你的主机和会话；锁定期间，会话、端口转发和传输照常运行。它不会加密数据目录。如果无法再解锁，可以在锁屏上重置应用锁：这会删除这台电脑上保存的机密，主机和设置都会保留。",
+  "appLockScopeNote": "应用锁会对使用这台电脑的其他人隐藏你的主机和会话；锁定期间，会话、端口转发和传输照常运行。它不会加密数据目录。如果无法再解锁，可以在锁屏上重置应用锁：这会删除 SSHYard 在这台电脑上的全部数据（包括主机、设置和机密）并重启应用。",
   "appLockedTitle": "SSHYard 已锁定",
   "appLockedPasswordPrompt": "输入密码以解锁。",
   "appLockedCodePrompt": "输入验证器 App 中的验证码以解锁。",
@@ -2209,8 +2209,10 @@
   "appLockCodeWrong": "验证码不匹配。请确认手机和电脑的时间准确，然后输入当前的验证码。",
   "appLockResetEllipsis": "重置应用锁…",
   "appLockResetTitle": "要重置应用锁吗？",
-  "appLockResetBody": "重置会关闭应用锁，并删除这台电脑上保存的全部机密：密码、私钥、密码短语、API 密钥和备份凭据。主机、分组和设置都会保留。此操作无法撤销。",
-  "appLockReset": "重置并删除机密",
-  "appLockResetDone": "应用锁已重置，已保存的机密已删除。",
+  "appLockResetBody": "重置会删除 SSHYard 在这台电脑上保存的全部数据：主机、分组、设置、AI 对话，以及所有已保存的机密（密码、私钥、密码短语、API 密钥和备份凭据），然后关闭应用锁并重启应用，所有会话都会断开。备份位置中的文件会保留，重置后可用备份密码恢复。此操作无法撤销。",
+  "appLockReset": "删除全部数据并重启",
+  "appLockResetDone": "应用锁已重置，SSHYard 的数据已删除。",
+  "appLockResetPending": "应用锁已重置。SSHYard 将重启以完成数据删除。",
+  "appLockResetRestart": "立即重启",
   "appLockRestored": "应用锁在 SSHYard 之外被改动，现已恢复。"
 }

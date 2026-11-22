@@ -473,10 +473,13 @@ func TestAppLockRecordWins(t *testing.T) {
 }
 
 // TestAppLockReset: a reset deletes every saved secret, then the lock,
-// and keeps the hosts.
+// keeps the lock screen and restarts the app, which then deletes the rest
+// of the data: no host is left to see.
 func TestAppLockReset(t *testing.T) {
 	a, tt, now := lockTestApp(t)
-	h, err := a.store.Add(assets.Host{Name: "kept", Address: "127.0.0.1", User: "demo"})
+	relaunched := 0
+	a.p.Relaunch = func() { relaunched++ }
+	h, err := a.store.Add(assets.Host{Name: "gone", Address: "127.0.0.1", User: "demo"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -485,25 +488,87 @@ func TestAppLockReset(t *testing.T) {
 	}
 	setUpLock(t, a, tt, applock.Both, "correct horse", *now)
 	a.LockApp()
+	dir := a.p.DataDir
+	for _, name := range []string{"updater.json", "window-state.json", "notes.txt"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "ai-history", "h1"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".tmp-123"), []byte("hosts"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "known_hosts"), []byte("gone.example ssh-ed25519 AAAA\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	if msg := a.ResetAppLock(en); msg != "" {
 		t.Fatal(msg)
 	}
-	if a.appLocked() || a.lock.cfg.Enabled() {
-		t.Fatal("still locked after the reset")
+	if !a.appLocked() || !a.lock.resetting || a.lock.cfg.Enabled() {
+		t.Fatal("the lock screen went before the restart")
+	}
+	if relaunched != 1 {
+		t.Fatalf("relaunched %d times, want 1", relaunched)
 	}
 	for _, key := range []string{keychain.Host(h.ID, keychain.Password), keychain.AppLock, keychain.AppLockTOTP} {
 		if a.kc.Has(key) {
 			t.Fatalf("%s kept after the reset", key)
 		}
 	}
-	if _, err := os.Stat(filepath.Join(a.p.DataDir, applock.File)); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, applock.File)); !os.IsNotExist(err) {
 		t.Fatalf("applock.json kept: %v", err)
 	}
 	a, _ = reopenLockApp(t, a)
 	if a.appLocked() {
 		t.Fatal("locked again after a restart")
 	}
-	if _, ok := a.store.Get(h.ID); !ok {
-		t.Fatal("the reset removed a host")
+	if len(a.store.List()) != 0 {
+		t.Fatal("a host was kept after the reset")
+	}
+	for _, name := range []string{resetFile, ".tmp-123", "ai-history"} {
+		if _, err := os.Stat(filepath.Join(dir, name)); !os.IsNotExist(err) {
+			t.Fatalf("%s kept after the reset: %v", name, err)
+		}
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "known_hosts")); bytes.Contains(b, []byte("gone.example")) {
+		t.Fatal("known_hosts kept after the reset")
+	}
+	for _, name := range []string{"updater.json", "window-state.json", "notes.txt"} {
+		if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
+			t.Fatalf("%s deleted by the reset: %v", name, err)
+		}
+	}
+}
+
+// TestFinishResetOnlyWhenAsked: a data folder no reset asked to empty is
+// left as it is.
+func TestFinishResetOnlyWhenAsked(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "hosts.json")
+	if err := os.WriteFile(path, []byte("{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if done, err := finishReset(dir); done || err != nil {
+		t.Fatalf("finishReset = %v, %v without a request", done, err)
+	}
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("hosts.json deleted: %v", err)
+	}
+}
+
+// TestAppLockResetClosesDirtyEditors: an editor with unsaved changes asks
+// before its window closes, but not while a reset restarts the app.
+func TestAppLockResetClosesDirtyEditors(t *testing.T) {
+	a, _, _ := lockTestApp(t)
+	cn := &conn{ed: &edWin{}}
+	cn.ed.dirty.Store(true)
+	if a.editorClosing(cn) {
+		t.Fatal("a dirty editor closed without asking")
+	}
+	a.lock.resetting = true
+	if !a.editorClosing(cn) {
+		t.Fatal("a dirty editor held up the restart of a reset")
 	}
 }

@@ -2184,7 +2184,7 @@
   "appLockOnSleep": "螢幕鎖定或電腦睡眠時鎖定",
   "appLockNow": "立即鎖定",
   "appLockAction": "鎖定 SSHYard",
-  "appLockScopeNote": "應用程式鎖會對使用這台電腦的其他人隱藏你的主機和工作階段；鎖定期間，工作階段、連接埠轉送和傳輸照常執行。它不會加密資料夾。如果無法再解鎖，可以在鎖定畫面上重設應用程式鎖：這會刪除這台電腦上儲存的機密，主機和設定都會保留。",
+  "appLockScopeNote": "應用程式鎖會對使用這台電腦的其他人隱藏你的主機和工作階段；鎖定期間，工作階段、連接埠轉送和傳輸照常執行。它不會加密資料夾。如果無法再解鎖，可以在鎖定畫面上重設應用程式鎖：這會刪除 SSHYard 在這台電腦上的全部資料（包括主機、設定和機密）並重新啟動應用程式。",
   "appLockedTitle": "SSHYard 已鎖定",
   "appLockedPasswordPrompt": "輸入密碼以解鎖。",
   "appLockedCodePrompt": "輸入驗證器 App 中的驗證碼以解鎖。",
@@ -2209,8 +2209,10 @@
   "appLockCodeWrong": "驗證碼不相符。請確認手機和電腦的時間正確，然後輸入目前的驗證碼。",
   "appLockResetEllipsis": "重設應用程式鎖…",
   "appLockResetTitle": "要重設應用程式鎖嗎？",
-  "appLockResetBody": "重設會關閉應用程式鎖，並刪除這台電腦上儲存的全部機密：密碼、私密金鑰、密碼短語、API 金鑰和備份憑證。主機、群組和設定都會保留。此操作無法復原。",
-  "appLockReset": "重設並刪除機密",
-  "appLockResetDone": "應用程式鎖已重設，已儲存的機密已刪除。",
+  "appLockResetBody": "重設會刪除 SSHYard 在這台電腦上儲存的全部資料：主機、群組、設定、AI 對話，以及所有已儲存的機密（密碼、私密金鑰、密碼短語、API 金鑰和備份憑證），然後關閉應用程式鎖並重新啟動應用程式，所有工作階段都會中斷。備份位置中的檔案會保留，重設後可用備份密碼還原。此操作無法復原。",
+  "appLockReset": "刪除全部資料並重新啟動",
+  "appLockResetDone": "應用程式鎖已重設，SSHYard 的資料已刪除。",
+  "appLockResetPending": "應用程式鎖已重設。SSHYard 將重新啟動以完成資料刪除。",
+  "appLockResetRestart": "立即重新啟動",
   "appLockRestored": "應用程式鎖在 SSHYard 之外被變更，現已復原。"
 }

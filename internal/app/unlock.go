@@ -10,6 +10,8 @@ import (
 	"sync/atomic"
 
 	"github.com/Licoy/sshyard/internal/keychain"
+	"github.com/Licoy/sshyard/locales"
+	"github.com/egoist/mygo/ui"
 )
 
 // Authorization runs off the UI thread; completed actions return through post.
@@ -62,6 +64,18 @@ func (a *App) prepareStorage() error {
 	kc, err := a.openSecrets()
 	if err != nil {
 		return err
+	}
+	// A reset of the app lock left the data folder to empty, now that no
+	// other copy writes to it.
+	if done, err := finishReset(a.p.DataDir); err != nil {
+		a.closeSecrets(kc)
+		return &keychain.OpError{Op: "file-write", Err: err}
+	} else if done {
+		a.closeSecrets(kc)
+		if kc, err = a.openSecrets(); err != nil {
+			return err
+		}
+		a.toast(func(m locales.Messages) ui.Toast { return ui.Toast{Title: m.AppLockResetDone()} })
 	}
 	if err := a.loadData(); err != nil {
 		a.closeSecrets(kc)

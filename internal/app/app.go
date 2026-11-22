@@ -125,6 +125,9 @@ type Platform struct {
 	// WatchSleep calls fn, on any goroutine, each time the screen locks
 	// or the computer goes to sleep, until stop; nil tells nothing.
 	WatchSleep func(fn func()) (stop func())
+	// Relaunch quits the app and starts it again, unless the quit is
+	// cancelled; nil can't.
+	Relaunch func()
 }
 
 // WindowSpec is a window the app opens beside the main one.

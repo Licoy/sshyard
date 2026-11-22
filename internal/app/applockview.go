@@ -56,6 +56,15 @@ func (a *App) lockView(c *ui.Context) {
 		ui.Column(c).Grow(1).FillWidth().AlignItems(ui.Center).Justify(ui.Center).Gap(theme.Space(4)).Children(func() {
 			ui.Image(c, a.logo).Size(64, 64).Radius(theme.RadiusSheet).Label(m.AppName())
 			sheetTitle(c, m.AppLockedTitle())
+			// A reset waits for the app to start again; a cancelled quit
+			// leaves it here.
+			if l.resetting {
+				ui.Text(c, m.AppLockResetPending()).FontSize(theme.Body).TextColor(tok.TextMuted).TextAlign(ui.Center).MaxWidth(420)
+				if pill(c, m.AppLockResetRestart(), true, false, false) {
+					a.relaunch()
+				}
+				return
+			}
 			if l.broken {
 				ui.Text(c, m.AppLockBroken()).FontSize(theme.Body).TextColor(tok.TextMuted).TextAlign(ui.Center).MaxWidth(420)
 				if l.err != "" {
