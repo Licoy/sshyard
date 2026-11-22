@@ -59,3 +59,22 @@ func TestEncodeKeyLinuxKeys(t *testing.T) {
 		}
 	}
 }
+
+func TestEncodeKeyBackspaceBS(t *testing.T) {
+	bs := vt.Modes{BackspaceBS: true}
+	for _, tc := range []struct {
+		name string
+		mods ui.Modifiers
+		m    vt.Modes
+		want string
+	}{
+		{"xterm", 0, vt.Modes{}, "\x7f"},
+		{"xterm ctrl", ui.Ctrl, vt.Modes{}, "\x08"},
+		{"bs", 0, bs, "\x08"},
+		{"bs ctrl", ui.Ctrl, bs, "\x7f"},
+	} {
+		if got, ok := EncodeKey(ui.KeyBackspace, tc.mods, tc.m); !ok || string(got) != tc.want {
+			t.Errorf("%s: EncodeKey = %q, %v; want %q", tc.name, got, ok, tc.want)
+		}
+	}
+}

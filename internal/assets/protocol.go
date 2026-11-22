@@ -51,6 +51,17 @@ func (n NewLine) Bytes() string {
 	return "\r"
 }
 
+// Backspace is what the Backspace key sends to a Telnet or serial host.
+type Backspace string
+
+const (
+	// BackspaceDEL sends DEL (^?), as xterm does.
+	BackspaceDEL Backspace = ""
+	// BackspaceBS sends BS (^H), the erase character of many network
+	// and embedded devices; Ctrl+Backspace then sends DEL.
+	BackspaceBS Backspace = "bs"
+)
+
 // SerialLine is a serial host's port and its settings.
 type SerialLine struct {
 	Device   string `json:"device"`
@@ -161,6 +172,11 @@ func (h Host) validateStream() error {
 	case NewLineCR, NewLineLF, NewLineCRLF:
 	default:
 		return &FieldError{"newline", "unknown"}
+	}
+	switch h.Backspace {
+	case BackspaceDEL, BackspaceBS:
+	default:
+		return &FieldError{"backspace", "unknown"}
 	}
 	return nil
 }

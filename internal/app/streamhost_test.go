@@ -38,12 +38,13 @@ func TestHostEditorProtocols(t *testing.T) {
 		tt.HasText(m.MetricsBar()) || tt.HasText(m.CwdFollow()) {
 		t.Fatalf("telnet editor %q", tt.Texts())
 	}
-	f.name, f.address, f.user, f.newLine, f.localEcho = "switch", "sw.lan", "admin", 2, true
+	f.name, f.address, f.user, f.newLine, f.localEcho, f.backspace = "switch", "sw.lan", "admin", 2, true, 1
 	if !a.SaveForm(m) {
 		t.Fatalf("telnet not saved: %q", f.err)
 	}
 	tn, _ := a.store.Get(a.selected)
-	if tn.Protocol != assets.ProtoTelnet || tn.Port != 23 || tn.Auth != assets.AuthNone || tn.NewLine != assets.NewLineCRLF || !tn.LocalEcho {
+	if tn.Protocol != assets.ProtoTelnet || tn.Port != 23 || tn.Auth != assets.AuthNone || tn.NewLine != assets.NewLineCRLF || !tn.LocalEcho ||
+		tn.Backspace != assets.BackspaceBS {
 		t.Fatalf("saved telnet %+v", tn)
 	}
 

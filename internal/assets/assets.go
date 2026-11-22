@@ -135,6 +135,9 @@ type Host struct {
 	// LocalEcho shows what is typed to a Telnet or serial host that
 	// does not echo it.
 	LocalEcho bool `json:"localEcho,omitempty"`
+	// Backspace is what the Backspace key sends to a Telnet or serial
+	// host.
+	Backspace Backspace `json:"backspace,omitempty"`
 	// Encoding is the output encoding the host's new terminals decode
 	// with, a vt.OutputEncoding; empty is UTF-8.
 	Encoding string `json:"encoding,omitempty"`
@@ -229,13 +232,14 @@ func (h *Host) Normalize() {
 		h.Color = ""
 	}
 	h.NewLine = NewLine(strings.TrimSpace(string(h.NewLine)))
+	h.Backspace = Backspace(strings.TrimSpace(string(h.Backspace)))
 	if h.Port == 0 {
 		h.Port = h.Protocol.DefaultPort()
 	}
 	if !h.SSH() {
 		h.normalizeStream()
 	} else {
-		h.Serial, h.NewLine, h.LocalEcho = nil, "", false
+		h.Serial, h.NewLine, h.LocalEcho, h.Backspace = nil, "", false, ""
 		h.TerminalDir, h.RemoteDir, h.LocalDir = cleanDir(h.TerminalDir), cleanDir(h.RemoteDir), cleanDir(h.LocalDir)
 	}
 	if h.Auth == "" {

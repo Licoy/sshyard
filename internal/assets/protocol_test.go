@@ -53,9 +53,9 @@ func TestStreamHostNormalize(t *testing.T) {
 		t.Fatalf("target %q", got)
 	}
 
-	ssh := Host{Address: "h", User: "u", NewLine: NewLineLF, LocalEcho: true, Serial: &SerialLine{Device: "COM1"}}
+	ssh := Host{Address: "h", User: "u", NewLine: NewLineLF, LocalEcho: true, Backspace: BackspaceBS, Serial: &SerialLine{Device: "COM1"}}
 	ssh.Normalize()
-	if ssh.NewLine != "" || ssh.LocalEcho || ssh.Serial != nil || !ssh.SSH() {
+	if ssh.NewLine != "" || ssh.LocalEcho || ssh.Backspace != "" || ssh.Serial != nil || !ssh.SSH() {
 		t.Fatalf("ssh %+v", ssh)
 	}
 }
@@ -77,6 +77,7 @@ func TestStreamHostValidate(t *testing.T) {
 		{Host{Protocol: ProtoTelnet, Address: "h", Auth: AuthAgent}, "auth", ""},
 		{Host{Protocol: ProtoTelnet, Address: "h", Auth: AuthCredential}, "credential", "required"},
 		{Host{Protocol: ProtoTelnet, Address: "h", NewLine: "nul"}, "newline", ""},
+		{Host{Protocol: ProtoTelnet, Address: "h", Backspace: "ctrl-x"}, "backspace", ""},
 		{Host{Protocol: "rlogin", Address: "h"}, "protocol", ""},
 	}
 	for _, tc := range cases {

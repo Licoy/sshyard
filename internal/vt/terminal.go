@@ -38,6 +38,10 @@ type Modes struct {
 	// F1–F5 ESC [ [ A–E, Home and End ESC [ 1 ~ and ESC [ 4 ~. It is the
 	// terminal's, set with SetLinuxKeys, which no program changes.
 	LinuxKeys bool
+	// BackspaceBS sends BS (^H) for Backspace and DEL for Ctrl+Backspace,
+	// the other way round from xterm. It is the terminal's, set with
+	// SetBackspaceBS, which no program changes.
+	BackspaceBS bool
 }
 
 type cursor struct {
@@ -62,6 +66,7 @@ type Terminal struct {
 	alt        screen
 	altActive  bool
 	linuxKeys  bool // Modes.LinuxKeys
+	bsKey      bool // Modes.BackspaceBS
 
 	scrollback    history
 	maxScrollback int
@@ -262,6 +267,7 @@ func (t *Terminal) Modes() Modes {
 	m := t.modes
 	m.AltScreen = t.altActive
 	m.LinuxKeys = t.linuxKeys
+	m.BackspaceBS = t.bsKey
 	return m
 }
 
@@ -270,6 +276,13 @@ func (t *Terminal) SetLinuxKeys(on bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.linuxKeys = on
+}
+
+// SetBackspaceBS makes Backspace send BS (Modes.BackspaceBS).
+func (t *Terminal) SetBackspaceBS(on bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.bsKey = on
 }
 
 // Generation increases every time the terminal changes.

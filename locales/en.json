@@ -2659,6 +2659,7 @@
   "parityMark": "Mark",
   "paritySpace": "Space",
   "fieldNewLine": "Return sends",
+  "fieldBackspace": "Backspace sends",
   "localEcho": "Local echo",
   "localEchoHint": "Show what you type when the other end doesn’t echo it.",
   "telnetPlaintext": "Telnet is unencrypted: everything, passwords included, crosses the network in plain text. Use it only on networks you trust.",

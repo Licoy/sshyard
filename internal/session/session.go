@@ -73,6 +73,9 @@ type Options struct {
 	// LocalEcho shows what is typed on an opened stream, for a device
 	// that does not echo it.
 	LocalEcho bool
+	// BackspaceBS makes Backspace send BS (^H) rather than DEL
+	// (vt.Modes.BackspaceBS).
+	BackspaceBS bool
 	// Dir is the folder an SSH shell goes to each time it starts: a cd
 	// typed once the shell has gone quiet (enterShell). "~" or "~/…" is
 	// under the home folder.
@@ -189,6 +192,7 @@ func New(cfg Config, opts Options, cols, rows int) *Session {
 	s := &Session{cfg: cfg, opts: opts, cols: max(cols, 1), rows: max(rows, 1), wake: make(chan struct{}, 1), done: make(chan struct{}), probeNote: make(chan struct{}, 1), tag: newTag()}
 	s.Term = vt.New(s.cols, s.rows)
 	s.Term.SetLinuxKeys(linuxTerm(opts.Term))
+	s.Term.SetBackspaceBS(opts.BackspaceBS)
 	if opts.Scrollback > 0 {
 		s.Term.SetScrollback(opts.Scrollback)
 	}

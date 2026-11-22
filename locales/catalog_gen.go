@@ -17649,6 +17649,16 @@ func (msgs Messages) FieldNewLine() string {
 	return Catalog.Format(msgs.locale, "fieldNewLine", nil)
 }
 
+// FieldBackspace says "Backspace sends"
+// in the language the app shows.
+func FieldBackspace() string { return In(i18n.Locale()).FieldBackspace() }
+
+// FieldBackspace says "Backspace sends"
+// in the language of msgs.
+func (msgs Messages) FieldBackspace() string {
+	return Catalog.Format(msgs.locale, "fieldBackspace", nil)
+}
+
 // LocalEcho says "Local echo"
 // in the language the app shows.
 func LocalEcho() string { return In(i18n.Locale()).LocalEcho() }

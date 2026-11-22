@@ -1936,6 +1936,7 @@
   "parityMark": "マーク",
   "paritySpace": "スペース",
   "fieldNewLine": "Return で送信",
+  "fieldBackspace": "Backspace で送信",
   "localEcho": "ローカルエコー",
   "localEchoHint": "相手側がエコーしないとき、入力した文字を表示します。",
   "telnetPlaintext": "Telnet は暗号化されません。パスワードを含むすべての内容が平文で送信されるため、信頼できるネットワークでのみ使用してください。",

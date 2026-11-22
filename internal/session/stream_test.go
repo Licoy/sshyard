@@ -93,6 +93,18 @@ func TestStreamSession(t *testing.T) {
 	}
 }
 
+// TestStreamBackspaceBS: the option makes the terminal's Backspace send
+// BS, and a session without it keeps DEL.
+func TestStreamBackspaceBS(t *testing.T) {
+	bs := New(Config{}, Options{Open: opener(newFakeStream()), BackspaceBS: true}, 80, 24)
+	defer bs.Close()
+	del := New(Config{}, Options{Open: opener(newFakeStream())}, 80, 24)
+	defer del.Close()
+	if !bs.Term.Modes().BackspaceBS || del.Term.Modes().BackspaceBS {
+		t.Fatalf("BackspaceBS %v, without it %v", bs.Term.Modes().BackspaceBS, del.Term.Modes().BackspaceBS)
+	}
+}
+
 // TestStreamLost: a stream that fails is a lost connection, and one that
 // does not open is the session failing with its error.
 func TestStreamLost(t *testing.T) {

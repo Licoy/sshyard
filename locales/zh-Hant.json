@@ -1936,6 +1936,7 @@
   "parityMark": "標記",
   "paritySpace": "空白",
   "fieldNewLine": "Return 送出",
+  "fieldBackspace": "退格鍵送出",
   "localEcho": "本機回顯",
   "localEchoHint": "對端不回顯時，在本機顯示輸入的字元。",
   "telnetPlaintext": "Telnet 不加密：包含密碼在內的所有內容都以明文在網路上傳輸，請僅在可信任的網路中使用。",

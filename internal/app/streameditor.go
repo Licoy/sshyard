@@ -36,8 +36,10 @@ type streamForm struct {
 	ports     []string
 	portsRead bool
 	portPick  string
-	// newLine is the index of newLineChoices.
+	// newLine is the index of newLineChoices, backspace of
+	// backspaceChoices.
 	newLine   int
+	backspace int
 	localEcho bool
 }
 
@@ -58,6 +60,7 @@ func (f *hostForm) loadStream(h *assets.Host) {
 	}
 	f.proto = max(0, slices.Index(protocols, h.Protocol))
 	f.newLine = max(0, slices.Index(newLineChoices, h.NewLine))
+	f.backspace = max(0, slices.Index(backspaceChoices, h.Backspace))
 	f.localEcho = h.LocalEcho
 	if h.Serial != nil {
 		sc := h.Serial.Config().Normalized()
@@ -71,6 +74,7 @@ func (f *hostForm) loadStream(h *assets.Host) {
 func (f *hostForm) applyStream(h *assets.Host) {
 	h.Protocol = f.protocol()
 	h.NewLine, h.LocalEcho = newLineChoices[min(max(0, f.newLine), len(newLineChoices)-1)], f.localEcho
+	h.Backspace = backspaceChoices[min(max(0, f.backspace), len(backspaceChoices)-1)]
 	h.Serial = nil
 	if h.Protocol == assets.ProtoSerial {
 		h.Serial = &assets.SerialLine{Device: strings.TrimSpace(f.device), Baud: f.baud, DataBits: 5 + f.dataBits,
@@ -182,11 +186,14 @@ func (a *App) serialFields(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 	})
 }
 
-// streamTermFields are what Return sends and the local echo of a Telnet
-// or serial host.
+// streamTermFields are what Return and Backspace send and the local echo
+// of a Telnet or serial host.
 func (a *App) streamTermFields(c *ui.Context, m locales.Messages, tok theme.Tokens, f *hostForm) {
 	ui.Field(c, m.FieldNewLine(), func() {
 		formSegmented(c.Key("f:newline"), &f.newLine, false, newLineLabels...).Label(m.FieldNewLine())
+	})
+	ui.Field(c, m.FieldBackspace(), func() {
+		formSegmented(c.Key("f:backspace"), &f.backspace, false, backspaceLabels...).Label(m.FieldBackspace())
 	})
 	ui.Field(c, "", func() {
 		ui.Column(c).Gap(6).Children(func() {

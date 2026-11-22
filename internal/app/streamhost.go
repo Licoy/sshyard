@@ -70,6 +70,7 @@ func (a *App) streamSession(h assets.Host, c *conn, opts *session.Options) sessi
 		opts.Open = session.Telnet(cfg)
 	}
 	opts.Login, opts.NewLine, opts.LocalEcho = h.LogsIn(), h.NewLine.Bytes(), h.LocalEcho
+	opts.BackspaceBS = h.Backspace == assets.BackspaceBS
 	return cfg
 }
 
@@ -136,6 +137,14 @@ var newLineChoices = []assets.NewLine{assets.NewLineCR, assets.NewLineLF, assets
 // newLineLabels name newLineChoices: control characters, the same in
 // every language.
 var newLineLabels = []string{"CR", "LF", "CR LF"}
+
+// backspaceChoices are what Backspace can send, as the editor offers
+// them.
+var backspaceChoices = []assets.Backspace{assets.BackspaceDEL, assets.BackspaceBS}
+
+// backspaceLabels name backspaceChoices: control characters, the same in
+// every language.
+var backspaceLabels = []string{"DEL (^?)", "BS (^H)"}
 
 // streamFacts are the connection card of a Telnet or serial host; or
 // stands in a dash for an empty value.

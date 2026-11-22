@@ -62,7 +62,8 @@ func typesText(k ui.Key) bool {
 
 // EncodeKey returns what a key pressed in the terminal sends to the
 // program, as xterm sends it (the Linux console's F1–F5, Home and End when
-// m.LinuxKeys, without modifiers), and false for keys it leaves: keys that type
+// m.LinuxKeys, without modifiers; BS for Backspace and DEL with Ctrl when
+// m.BackspaceBS), and false for keys it leaves: keys that type
 // text (the text comes after them, InputText) and the app's own shortcuts.
 // Cmd+Left and Cmd+Right (the Windows key elsewhere, when the system lets
 // it through) go to the line's start and end, as Home and End.
@@ -106,7 +107,7 @@ func EncodeKey(k ui.Key, mods ui.Modifiers, m vt.Modes) ([]byte, bool) {
 	case ui.KeyEnter:
 		return esc([]byte{'\r'}), true
 	case ui.KeyBackspace:
-		if mods&ui.Ctrl != 0 {
+		if (mods&ui.Ctrl != 0) != m.BackspaceBS {
 			return esc([]byte{0x08}), true
 		}
 		return esc([]byte{0x7f}), true
