@@ -671,6 +671,9 @@ func (a *App) termElement(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn
 				a.focusReq = cn.id
 			}
 		}
+		if a.altTabKey(ev) {
+			return true
+		}
 		tv.shortcuts = a.settings.Shortcuts
 		tv.fanout = a.fanoutFrom(cn)
 		tv.holdPaste = func(text string) bool { return a.holdPaste(cn, text) }

@@ -310,6 +310,24 @@ func (a *App) shortcuts(c *ui.Context) {
 	}
 }
 
+// altTabKey runs the tab action recorded as Alt (⌥ on macOS) and the
+// digit of ev, a key down the terminal got, and reports whether there was
+// one. The terminal takes such a key as it comes rather than leave it to
+// the window's shortcuts: Windows looks for a menu of an Alt and a
+// character no one took, and sounds its alert for none.
+func (a *App) altTabKey(ev ui.InputEvent) bool {
+	if ev.Kind != ui.InputKeyDown || ev.Mods != ui.Alt {
+		return false
+	}
+	for _, ac := range actions {
+		if k := a.keyOf(ac.id); altDigit(ac, k) && k.Key == ev.Key {
+			a.runAction(ac.id)
+			return true
+		}
+	}
+	return false
+}
+
 // runAction runs the main window's action id, by its shortcut or from
 // the command palette.
 func (a *App) runAction(id string) {

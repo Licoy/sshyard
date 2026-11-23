@@ -74,6 +74,26 @@ func TestTabShortcuts(t *testing.T) {
 	if a.ws.Active != 3 {
 		t.Fatalf("a tab past the last moved to %d", a.ws.Active)
 	}
+
+	// A recorded Alt and digit runs as the terminal gets it, which takes
+	// the key: Windows sounds its alert for an Alt and a character no
+	// one took. The others go by.
+	a.settings.Shortcuts = map[string]string{actTab + "1": "alt+1"}
+	alt := func(k ui.Key, mods ui.Modifiers) ui.InputEvent {
+		return ui.InputEvent{Kind: ui.InputKeyDown, Key: k, Mods: mods}
+	}
+	if !a.altTabKey(alt(ui.Key1, ui.Alt)) || a.ws.Active != 0 {
+		t.Fatalf("recorded Alt+1: active %d", a.ws.Active)
+	}
+	for _, ev := range []ui.InputEvent{alt(ui.Key2, ui.Alt), alt(ui.Key1, ui.Alt|ui.Shift), alt(ui.Key1, appMods), {Kind: ui.InputKeyUp, Key: ui.Key1, Mods: ui.Alt}} {
+		if a.altTabKey(ev) {
+			t.Errorf("%v %v %v: taken", ev.Kind, ev.Mods, ev.Key)
+		}
+	}
+	a.settings.Shortcuts = map[string]string{actQuickConnect: "alt+1"}
+	if a.altTabKey(alt(ui.Key1, ui.Alt)) {
+		t.Error("only a tab's shortcut may be Alt and a digit alone")
+	}
 }
 
 // TestTabName: a tab's own name wins, then what its terminal reported
