@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/Licoy/sshyard/internal/app"
@@ -200,6 +201,25 @@ func main() {
 	}
 	wd, _ := os.Getwd()
 	launchDir := launch.Dir(os.Args[1:], wd)
+	// macOS may deliver a folder opened with the app before MyGo is ready,
+	// so take open events from the start and hold them until there is an app
+	// to open them.
+	var opened struct {
+		sync.Mutex
+		paths []string
+		ready func(string)
+	}
+	mygo.App.OnOpenFile(func(path string) {
+		opened.Lock()
+		f := opened.ready
+		if f == nil {
+			opened.paths = append(opened.paths, path)
+		}
+		opened.Unlock()
+		if f != nil {
+			f(path)
+		}
+	})
 	setupStorage()
 	mygo.Use(updatePlugin())
 	if runtime.GOOS == "darwin" {
@@ -226,6 +246,14 @@ func main() {
 		}
 		a, _ := app.New(p)
 		a.SetLaunchDir(launchDir)
+		opened.Lock()
+		opened.ready = a.SetLaunchDir
+		paths := opened.paths
+		opened.paths = nil
+		opened.Unlock()
+		for _, path := range paths {
+			a.SetLaunchDir(path)
+		}
 		installWindowStates(a)
 		mygo.App.OnQuit(a.Close)
 		prepareWindowState("main")
