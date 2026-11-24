@@ -30,6 +30,13 @@ type Breaker interface {
 	Break(d time.Duration) error
 }
 
+// ScreenClearer is a Stream whose other end keeps a screen of its own,
+// as a Windows console does, which must be told when the terminal clears
+// its screen: ConPTY would otherwise draw the prompt on its old row again.
+type ScreenClearer interface {
+	ClearScreen() error
+}
+
 // ErrNoBreak is Break on a session whose connection cannot send one.
 var ErrNoBreak = errors.New("session: this connection cannot send a break")
 

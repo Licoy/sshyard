@@ -391,6 +391,17 @@ func (s *Session) Resize(cols, rows int) {
 	s.changed()
 }
 
+// ClearScreen tells a local console that the terminal cleared its screen,
+// where the stream has one. Other streams have no screen of their own.
+func (s *Session) ClearScreen() {
+	s.mu.Lock()
+	stream := s.stream
+	s.mu.Unlock()
+	if c, ok := stream.(ScreenClearer); ok {
+		_ = c.ClearScreen()
+	}
+}
+
 func (s *Session) isClosed() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()

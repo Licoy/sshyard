@@ -35,6 +35,12 @@ type ptyTarget interface {
 	Resize(cols, rows int)
 }
 
+// consoleClearer is a target whose other end keeps a screen of its own,
+// as a Windows console does, and must be told when the view clears it.
+type consoleClearer interface {
+	ClearScreen()
+}
+
 const termPad = 10 // DIPs around the grid, inside the pane card
 
 // A selection drag scrolls the view taken past the grid's top or bottom:
@@ -842,6 +848,24 @@ func placeGlyphs(placed, g []ui.Glyph, colOf []int, cells []vt.Cell, cw float32)
 func (v *termView) caret() ui.Rect {
 	x, y := v.target.Terminal().Cursor(v.offset)
 	return ui.Rect{X: termPad + v.gutterW() + float32(x)*v.cellW, Y: termPad + float32(y)*v.cellH, W: max(v.cellW, 1), H: max(v.cellH, 1)}
+}
+
+// clearScreen clears the terminal's scrollback and the screen above the
+// cursor's line, as ⌘K does in Terminal.app, and returns the view to the
+// live screen. A full-screen program's screen is left alone.
+func (v *termView) clearScreen() bool {
+	if !v.target.Terminal().ClearScreen() {
+		return false
+	}
+	v.offset = 0
+	v.dragScroll = 0
+	v.selected, v.selecting = false, false
+	v.block.on, v.block.pending = false, false
+	v.selA, v.selB = vt.Pos{}, vt.Pos{}
+	if c, ok := v.target.(consoleClearer); ok {
+		c.ClearScreen()
+	}
+	return true
 }
 
 func (v *termView) send(b []byte) {

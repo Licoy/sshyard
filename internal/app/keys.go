@@ -217,6 +217,16 @@ var appMods = func() ui.Modifiers {
 	return ui.Ctrl | ui.Shift
 }()
 
+// clearMods clears the terminal: ⌘⇧K on macOS, Ctrl+Shift+Alt+K
+// elsewhere, where Ctrl+Shift+K is Quick Connect and plain Ctrl+L is the
+// shell's.
+var clearMods = func() ui.Modifiers {
+	if runtime.GOOS == "darwin" {
+		return ui.Super | ui.Shift
+	}
+	return ui.Ctrl | ui.Shift | ui.Alt
+}()
+
 // saveMods is the modifier of saving in an editor window: Cmd on macOS,
 // Ctrl elsewhere.
 var saveMods = func() ui.Modifiers {

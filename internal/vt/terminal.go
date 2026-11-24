@@ -539,6 +539,11 @@ func fitLine(l Line, cols int) Line {
 func (t *Terminal) Write(p []byte) (int, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	return t.write(p)
+}
+
+// write is Write under mu.
+func (t *Terminal) write(p []byte) (int, error) {
 	t.gen++
 	if t.outputEncoding != EncodingUTF8 {
 		return t.writeEncoded(p)
@@ -571,6 +576,36 @@ func (t *Terminal) Write(p []byte) (int, error) {
 
 // WriteString is Write for a string.
 func (t *Terminal) WriteString(s string) { t.Write([]byte(s)) }
+
+// ClearScreen clears the scrollback and the screen above the cursor's
+// line, which moves to the top, as Terminal.app's ⌘K and Kitty's
+// clear_terminal to_cursor do: the prompt stays and the shell, which
+// moves its cursor from where it is, goes on drawing there. A
+// full-screen program's alternate screen is left alone, which this would
+// break. It reports whether it cleared.
+func (t *Terminal) ClearScreen() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.altActive {
+		return false
+	}
+	t.eraseDisplay(3)
+	if y := t.cur.y; y > 0 {
+		// The lines above the cursor's go, and the cursor's line, with
+		// those below it, comes to the top.
+		lines := t.primary.lines
+		copy(lines, lines[y:])
+		for i := t.rows - y; i < t.rows; i++ {
+			lines[i] = newLine(t.cols, t.cur.pen)
+		}
+		// Keep the lines left on the screen at their absolute numbers.
+		t.dropped += y
+		t.cur.y = 0
+	}
+	t.cur.wrapPending = false
+	t.gen++
+	return true
+}
 
 // SetLineHook has hook told each line of the primary screen the cursor
 // leaves, by a line feed or by wrapping, as the line reads then: a line

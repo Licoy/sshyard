@@ -293,3 +293,35 @@ func TestToolPaneShortcuts(t *testing.T) {
 		}
 	}
 }
+
+// TestClearScreenShortcut binds clearing the terminal to a key that is
+// not Quick Connect's on any system.
+func TestClearScreenShortcut(t *testing.T) {
+	ac, ok := actionOf(actClearScreen)
+	if !ok {
+		t.Fatal("no clear-screen action")
+	}
+	want := keymap.Combo{Mods: clearMods, Key: ui.KeyK}
+	if ac.def != want {
+		t.Errorf("default %v, want %v", ac.def, want)
+	}
+	if !isAppShortcut(nil, ui.KeyK, clearMods) {
+		t.Error("the clear-screen shortcut must reach the app")
+	}
+	if shortcutRule(runtime.GOOS, ac, ac.def) != ruleOK {
+		t.Error("the default shortcut must be allowed")
+	}
+	if ac.def == (keymap.Combo{Mods: appMods, Key: ui.KeyK}) {
+		t.Error("clearing must not take Quick Connect's shortcut")
+	}
+	switch runtime.GOOS {
+	case "darwin":
+		if ac.def != (keymap.Combo{Mods: ui.Super | ui.Shift, Key: ui.KeyK}) {
+			t.Errorf("macOS default %v, want ⌘⇧K", ac.def)
+		}
+	default:
+		if ac.def != (keymap.Combo{Mods: ui.Ctrl | ui.Shift | ui.Alt, Key: ui.KeyK}) {
+			t.Errorf("default %v, want Ctrl+Shift+Alt+K", ac.def)
+		}
+	}
+}

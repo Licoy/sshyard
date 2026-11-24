@@ -287,6 +287,9 @@ type sessTarget struct{ s *session.Session }
 func (t sessTarget) Terminal() *vt.Terminal { return t.s.Term }
 func (t sessTarget) Resize(cols, rows int)  { t.s.Resize(cols, rows) }
 
+// ClearScreen tells a local console that the terminal cleared its screen.
+func (t sessTarget) ClearScreen() { t.s.ClearScreen() }
+
 // Write sends typed input without waiting for the connection.
 func (t sessTarget) Write(p []byte) (int, error) {
 	if err := t.s.Send(p); err != nil {

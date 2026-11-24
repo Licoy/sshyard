@@ -726,7 +726,7 @@ func (a *App) termEntries(t *layout.Tab, n *layout.Node, cn *conn, tv *termView,
 		{Icon: icons.Copy, Label: m.Copy(), Disabled: sel == "", Do: func() { svc.WriteClipboard(sel) }},
 		{Icon: icons.Paste, Label: m.Paste(), Do: func() { tv.pasteClipboard(svc) }},
 		a.bound(actFind, menuEntry{Icon: icons.Search, Label: m.Find(), Do: focus(func() { a.finding = true })}),
-		{Icon: icons.Clear, Label: m.ClearScreen(), Do: func() { tv.send([]byte{0x0c}) }},
+		a.bound(actClearScreen, menuEntry{Icon: icons.Clear, Label: m.ClearScreen(), Do: focus(func() { tv.clearScreen() })}),
 	}
 	if isStream(cn.host) {
 		entries = append(entries, a.bound(actSendBreak, menuEntry{Icon: icons.SendBreak, Label: m.SendBreak(), Disabled: !canBreak(cn), Do: func() { a.sendBreak(cn) }}))
