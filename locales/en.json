@@ -860,6 +860,7 @@
   "defaultShellNote": "What a new local terminal runs. The other shells are in the local terminal menu.",
   "shellDefault": "Default",
   "localTerminalWith": "Local terminal: {name}",
+  "localTerminalDirFailed": "Could not open a local terminal in {path}.",
   "newGroup": "New group",
   "newGroupEllipsis": "New group…",
   "editGroup": "Edit group",

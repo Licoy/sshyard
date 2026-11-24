@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"os"
 	"strings"
 )
 
@@ -42,6 +43,18 @@ func mergeEnv(env []string, fold bool) []string {
 	return out
 }
 
+// localDir is the folder a local shell starts in: dir, else the user's
+// home folder.
+func localDir(dir string) string {
+	if dir != "" {
+		return dir
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		return home
+	}
+	return ""
+}
+
 // startPTY starts the local shell; a variable so that tests can stand in.
 var startPTY = startLocal
 
@@ -52,7 +65,7 @@ func (s *Session) connectLocal() error {
 		sh = Shells()[0]
 	}
 	return s.connectStream(func(cols, rows int) (Stream, error) {
-		return startPTY(sh, cols, rows, s.opts.Term)
+		return startPTY(sh, s.opts.Dir, cols, rows, s.opts.Term)
 	}, nil)
 }
 

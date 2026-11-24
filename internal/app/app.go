@@ -624,6 +624,11 @@ type App struct {
 	// localName is what local terminals are called, in the language of
 	// the last frame.
 	localName string
+	// launchDir is the folder a launch asks a local terminal to open in,
+	// opened once the data is ready (SetLaunchDir); independentStarted is
+	// set once startIndependent has run, so a later launch opens at once.
+	launchDir          string
+	independentStarted atomic.Bool
 	// logs is the session logs pane's.
 	logs logsState
 	// toolNames are what the tool panes are called, in the language of
@@ -927,10 +932,14 @@ func (a *App) startIndependent() {
 		return
 	}
 	a.unlock.started = true
+	a.independentStarted.Store(true)
 	a.watchNetwork()
 	a.watchSleep()
 	a.loadLayout()
-	if a.settings.OpenLocalOnStart {
+	if dir := a.launchDir; dir != "" {
+		a.launchDir = ""
+		a.post(func() { a.OpenLocalTerminalAt(dir) })
+	} else if a.settings.OpenLocalOnStart {
 		a.post(func() {
 			if len(a.ws.Tabs) == 0 {
 				a.OpenLocalTerminal()
@@ -1068,10 +1077,15 @@ func (a *App) OpenFiles(hostID string, at openAt, from *conn) (int, error) {
 }
 
 func (a *App) open(hostID string, kind layout.Kind, at openAt, from *conn) (int, error) {
+	return a.openIn(hostID, kind, at, from, "")
+}
+
+// openIn is open, with dir the folder a local terminal starts in.
+func (a *App) openIn(hostID string, kind layout.Kind, at openAt, from *conn, dir string) (int, error) {
 	if ex := a.singleAt(kind, at); ex != nil {
 		return a.reuse(ex, hostID, 0)
 	}
-	c, err := a.makeConn(hostID, kind, 0)
+	c, err := a.makeConnIn(hostID, kind, 0, dir)
 	var inUse *serialInUseError
 	if errors.As(err, &inUse) {
 		// A serial port opens once: its pane is the host's terminal.
@@ -1088,6 +1102,11 @@ func (a *App) open(hostID string, kind layout.Kind, at openAt, from *conn) (int,
 // makeConn builds a pane and registers it. It does not place or start it.
 // An AI pane gets no SSH session.
 func (a *App) makeConn(hostID string, kind layout.Kind, link int) (*conn, error) {
+	return a.makeConnIn(hostID, kind, link, "")
+}
+
+// makeConnIn is makeConn, with dir the folder a local terminal starts in.
+func (a *App) makeConnIn(hostID string, kind layout.Kind, link int, dir string) (*conn, error) {
 	if !a.ready() {
 		return nil, keychain.ErrLocked
 	}
@@ -1140,6 +1159,9 @@ func (a *App) makeConn(hostID string, kind layout.Kind, link int) (*conn, error)
 	}
 	if kind == layout.Terminal {
 		opts.Dir = h.TerminalDir
+		if isLocal(h.ID) {
+			opts.Dir = dir
+		}
 		if !opts.Local && !isStream(h) {
 			c.start = &shellStart{host: h.Tmux, dir: h.TerminalDir, startup: h.Startup}
 			opts.Start = a.shellStartCmd(c)

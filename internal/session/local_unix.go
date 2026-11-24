@@ -32,13 +32,11 @@ func localShells() []Shell {
 	return []Shell{{ID: sh, Name: filepath.Base(sh), Path: sh, Args: []string{"-l"}}}
 }
 
-// startLocal starts sh in the user's home, as a terminal app does.
-func startLocal(sh Shell, cols, rows int, term string) (localPTY, error) {
+// startLocal starts sh in dir, or the user's home, as a terminal app does.
+func startLocal(sh Shell, dir string, cols, rows int, term string) (localPTY, error) {
 	cmd := exec.Command(sh.Path, sh.Args...)
 	cmd.Env = localEnv(sh, term)
-	if home, err := os.UserHomeDir(); err == nil {
-		cmd.Dir = home
-	}
+	cmd.Dir = localDir(dir)
 	f, err := pty.StartWithSize(cmd, &pty.Winsize{Cols: uint16(cols), Rows: uint16(rows)})
 	if err != nil {
 		return nil, err

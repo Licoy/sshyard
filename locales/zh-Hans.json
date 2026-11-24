@@ -860,6 +860,7 @@
   "defaultShellNote": "新建本地终端时运行的 shell，其他 shell 可在本地终端菜单中选择。",
   "shellDefault": "默认",
   "localTerminalWith": "本地终端：{name}",
+  "localTerminalDirFailed": "无法在 {path} 打开本地终端。",
   "newGroup": "新建分组",
   "newGroupEllipsis": "新建分组…",
   "editGroup": "编辑分组",

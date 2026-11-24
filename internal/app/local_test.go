@@ -1,14 +1,18 @@
 package app
 
 import (
+	"errors"
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
 
+	"github.com/Licoy/sshyard/internal/keychain"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/internal/settings"
 	"github.com/Licoy/sshyard/internal/theme"
 	"github.com/Licoy/sshyard/locales"
+	"github.com/egoist/mygo/ui"
 )
 
 // withShells stands in shells for this computer's, for apps made after.
@@ -190,5 +194,62 @@ func TestLocalTerminalTabOrSplit(t *testing.T) {
 	tt.Frame()
 	if len(a.ws.Tabs) != 2 || len(a.conns) != 3 {
 		t.Fatalf("%d tabs, %d panes: the status bar did not split", len(a.ws.Tabs), len(a.conns))
+	}
+}
+
+// TestOpenLocalTerminalAt: a local terminal opens in the folder asked for,
+// and a path that is not a folder is refused.
+func TestOpenLocalTerminalAt(t *testing.T) {
+	withShells(t, session.Shell{ID: "/bin/sh", Name: "sh", Path: "/bin/sh"})
+	a, _ := newTestApp(t)
+	dir := t.TempDir()
+	id, err := a.OpenLocalTerminalAt(dir)
+	c := shellPane(t, a, id, err)
+	if c.s.Dir() != dir {
+		t.Errorf("opened in %q, want %q", c.s.Dir(), dir)
+	}
+
+	file := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(file, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.OpenLocalTerminalAt(file); !errors.Is(err, errLocalDirNotDir) {
+		t.Errorf("opening at a file: %v, want errLocalDirNotDir", err)
+	}
+	if _, err := a.OpenLocalTerminalAt(filepath.Join(t.TempDir(), "missing")); err == nil {
+		t.Error("opening at a missing folder succeeded")
+	}
+}
+
+// TestLaunchDir: the folder a launch asks for opens a local terminal once
+// the app is ready, even with OpenLocalOnStart off.
+func TestLaunchDirOpensLocalTerminal(t *testing.T) {
+	withShells(t, session.Shell{ID: "/bin/sh", Name: "sh", Path: "/bin/sh"})
+	data, dir := t.TempDir(), t.TempDir()
+	a, err := New(Platform{DataDir: data, Secrets: keychain.NewMemory(), HomeDir: data, CacheDir: filepath.Join(data, "cache")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(a.Close)
+	a.SetLaunchDir(dir)
+	a.Start()
+	a.withSecrets(nil)
+	tt := ui.NewTester(a.View, 1200, 760)
+	tt.SetLocale("en")
+	tt.Frame()
+	waitFor(t, tt, "the launched local terminal", func() bool { return len(a.conns) == 1 })
+	for _, c := range a.conns {
+		if got := c.s.Dir(); got != dir {
+			t.Errorf("opened in %q, want %q", got, dir)
+		}
+	}
+
+	other := t.TempDir()
+	a.SetLaunchDir(other)
+	waitFor(t, tt, "the second launched local terminal", func() bool { return len(a.conns) == 2 })
+	for _, c := range a.conns {
+		if got := c.s.Dir(); got != dir && got != other {
+			t.Errorf("opened in %q, want %q or %q", got, dir, other)
+		}
 	}
 }

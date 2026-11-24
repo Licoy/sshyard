@@ -22,6 +22,24 @@ type Shell struct {
 // always one.
 func Shells() []Shell { return localShells() }
 
+// argsAt is sh's arguments with the folder it starts in set to dir, for a
+// shell that takes it as an argument rather than as the process's own
+// working folder: WSL's --cd. Other shells, and an empty dir, keep their
+// arguments.
+func argsAt(sh Shell, dir string) []string {
+	if dir == "" || !strings.HasPrefix(sh.ID, "wsl:") {
+		return sh.Args
+	}
+	args := append([]string(nil), sh.Args...)
+	for i := 0; i+1 < len(args); i++ {
+		if args[i] == "--cd" {
+			args[i+1] = dir
+			return args
+		}
+	}
+	return append(args, "--cd", dir)
+}
+
 // winProbe is what finds Windows' shells; tests stand in for it.
 type winProbe struct {
 	getenv   func(string) string

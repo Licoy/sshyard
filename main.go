@@ -15,6 +15,7 @@ import (
 	"github.com/Licoy/sshyard/internal/awake"
 	"github.com/Licoy/sshyard/internal/gtkfix"
 	"github.com/Licoy/sshyard/internal/keychain"
+	"github.com/Licoy/sshyard/internal/launch"
 	"github.com/Licoy/sshyard/internal/macfix"
 	"github.com/Licoy/sshyard/internal/netwatch"
 	"github.com/Licoy/sshyard/internal/portable"
@@ -194,6 +195,11 @@ func appMenu() *mygo.Menu {
 }
 
 func main() {
+	if !mygo.App.RequestSingleInstanceLock() {
+		return
+	}
+	wd, _ := os.Getwd()
+	launchDir := launch.Dir(os.Args[1:], wd)
 	setupStorage()
 	mygo.Use(updatePlugin())
 	if runtime.GOOS == "darwin" {
@@ -219,6 +225,7 @@ func main() {
 			d.window.Focus()
 		}
 		a, _ := app.New(p)
+		a.SetLaunchDir(launchDir)
 		installWindowStates(a)
 		mygo.App.OnQuit(a.Close)
 		prepareWindowState("main")
@@ -249,6 +256,14 @@ func main() {
 		// once the window has made MyGo's view class.
 		macfix.TitleBarClicks()
 		d = newDesktop(a, w)
+		mygo.App.OnSecondInstance(func(args []string, wd string) {
+			if d != nil {
+				d.show()
+			}
+			if dir := launch.Dir(args, wd); dir != "" {
+				a.SetLaunchDir(dir)
+			}
+		})
 		a.Start()
 		go updater.CleanLeftovers()
 		mygo.App.OnDidResignActive(a.NotifyPendingApprovals)
