@@ -1023,7 +1023,7 @@ func (a *App) Close() {
 	a.waitMCP()
 	if !a.closing {
 		a.closing = true
-		a.saveLayout()
+		a.flushLayout()
 	}
 	for _, c := range a.conns {
 		if c.kind == layout.AI {

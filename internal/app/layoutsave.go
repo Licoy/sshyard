@@ -15,13 +15,14 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-// Version 1 keeps workspace structure only, never session content or directories.
+// Version 1 keeps sidebar sections and optional workspace structure, never
+// session content or directories.
 // The "panels" and "stackPct" an older build saved are ignored: those panels
 // are tool panes now, saved as panes on no host.
 type layoutSnap struct {
 	Version  int             `json:"version"`
-	Active   int             `json:"active"`
-	Tabs     []tabSnap       `json:"tabs"`
+	Active   int             `json:"active,omitempty"`
+	Tabs     []tabSnap       `json:"tabs,omitempty"`
 	Sections map[string]bool `json:"sections,omitempty"`
 	// Widths are the railWidths, by kind name.
 	Widths map[string]float32 `json:"widths,omitempty"`
@@ -57,8 +58,8 @@ func (a *App) layoutPath() string {
 	return filepath.Join(a.p.DataDir, "layout.json")
 }
 func (a *App) layoutSnapshot() layoutSnap {
-	snap := layoutSnap{Version: 1, Active: 0, Sections: map[string]bool{}}
-	for _, key := range a.sidebarSectionKeys() {
+	snap := a.groupLayoutSnapshot()
+	for _, key := range a.sidebarBuiltinSectionKeys() {
 		if p := a.sections[key]; p != nil {
 			snap.Sections[key] = *p
 		}
@@ -81,6 +82,17 @@ func (a *App) layoutSnapshot() layoutSnap {
 			snap.Active = len(snap.Tabs)
 		}
 		snap.Tabs = append(snap.Tabs, tabSnap{Title: t.Title, Color: t.Color, Focus: t.Focus, Root: root})
+	}
+	return snap
+}
+
+func (a *App) groupLayoutSnapshot() layoutSnap {
+	snap := layoutSnap{Version: 1, Sections: map[string]bool{}}
+	for _, group := range a.store.Groups() {
+		key := "g:" + group
+		if open := a.sections[key]; open != nil && !*open {
+			snap.Sections[key] = false
+		}
 	}
 	return snap
 }
@@ -125,17 +137,47 @@ func (a *App) snapNode(n *layout.Node) *nodeSnap {
 	}
 	return s
 }
-func (a *App) layoutBytes() ([]byte, error) {
-	b, err := json.MarshalIndent(a.layoutSnapshot(), "", "  ")
+func (a *App) layoutBytes(rememberWorkspace bool) ([]byte, error) {
+	var snap layoutSnap
+	if rememberWorkspace {
+		snap = a.layoutSnapshot()
+	} else {
+		snap = a.groupLayoutSnapshot()
+		if len(snap.Sections) == 0 {
+			return nil, nil
+		}
+	}
+	b, err := json.MarshalIndent(snap, "", "  ")
 	return append(b, '\n'), err
 }
+
+// writeLayout removes the snapshot when every saved group is open and
+// workspace memory is disabled.
+func writeLayout(path string, data []byte) error {
+	if data != nil {
+		return settings.WriteFileAtomic(path, data, 0o600)
+	}
+	err := os.Remove(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
+}
+
 func (a *App) saveLayout() {
-	if a.layoutPath() == "" || a.restoring || !a.ready() || !a.settings.RememberLayout || a.layoutBlocked {
+	if a.settings.RememberLayout {
+		a.flushLayout()
+	}
+}
+
+func (a *App) flushLayout() {
+	path := a.layoutPath()
+	if path == "" || a.restoring || !a.ready() || a.layoutBlocked {
 		return
 	}
-	b, err := a.layoutBytes()
+	b, err := a.layoutBytes(a.settings.RememberLayout)
 	if err == nil {
-		err = settings.WriteFileAtomic(a.layoutPath(), b, 0o600)
+		err = writeLayout(path, b)
 	}
 	if err != nil {
 		if !a.layoutSaveFailed {
@@ -152,10 +194,10 @@ func (a *App) saveLayout() {
 
 // Observing the safe snapshot captures focus, split drags and all shared controls.
 func (a *App) observeLayout(c *ui.Context) {
-	if !a.settings.RememberLayout || a.layoutBlocked || a.restoring {
+	if a.layoutPath() == "" || a.layoutBlocked || a.restoring {
 		return
 	}
-	b, err := a.layoutBytes()
+	b, err := a.layoutBytes(a.settings.RememberLayout)
 	if err != nil {
 		if !a.layoutSaveFailed {
 			a.layoutNotice(false)
@@ -164,6 +206,7 @@ func (a *App) observeLayout(c *ui.Context) {
 		return
 	}
 	if !bytes.Equal(b, a.layoutObserved) {
+		a.pruneGroupSections()
 		a.layoutObserved = b
 		a.layoutDue = c.Now().Add(300 * time.Millisecond)
 	}
@@ -175,7 +218,7 @@ func (a *App) observeLayout(c *ui.Context) {
 		return
 	}
 	a.layoutDue = time.Time{}
-	a.saveLayout()
+	a.flushLayout()
 }
 func (a *App) layoutNotice(read bool) {
 	a.toasts = append(a.toasts, func(m locales.Messages) ui.Toast {
@@ -225,15 +268,11 @@ func (a *App) saveSettingsLayout(s, old settings.Settings) error {
 		}
 		return err
 	}
-	if s.RememberLayout {
-		b, err := a.layoutBytes()
-		if err != nil {
-			return rollback(err)
-		}
-		if err = settings.WriteFileAtomic(path, b, 0o600); err != nil {
-			return rollback(err)
-		}
-	} else if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+	b, err := a.layoutBytes(s.RememberLayout)
+	if err != nil {
+		return rollback(err)
+	}
+	if err := writeLayout(path, b); err != nil {
 		return rollback(err)
 	}
 	if err := settings.Save(filepath.Join(a.p.DataDir, "settings.json"), s); err != nil {
@@ -241,7 +280,7 @@ func (a *App) saveSettingsLayout(s, old settings.Settings) error {
 	}
 	a.layoutBlocked = false
 	a.layoutSaveFailed = false
-	a.layoutObserved = nil
+	a.layoutObserved = b
 	a.layoutDue = time.Time{}
 	return nil
 }
