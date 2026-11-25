@@ -140,6 +140,8 @@ type Settings struct {
 	// KeepAwake keeps the computer from sleeping while files transfer:
 	// the display may still turn off.
 	KeepAwake bool `json:"keepAwake"`
+	// DownloadDir is this device's download folder; empty uses the default.
+	DownloadDir string `json:"downloadDir,omitempty"`
 	// OpenConfirmMB is the size, in MB, from which opening a remote file
 	// (in the editor or a local program) asks first, 1 to 1024.
 	OpenConfirmMB int `json:"openConfirmMB"`

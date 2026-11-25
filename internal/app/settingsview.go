@@ -728,6 +728,16 @@ func (a *App) prefMonitoring(c *ui.Context, m locales.Messages, tok theme.Tokens
 
 func (a *App) prefFiles(c *ui.Context, m locales.Messages, tok theme.Tokens, s *settings.Settings, changed *bool) {
 	a.settingsSection(c, tok, nil, "", func(g *settingsGroup) {
+		g.row(m.DefaultDownloadFolder(), m.DefaultDownloadFolderNote(), func() {
+			dir := a.downloadsDir()
+			ui.Text(c, dir).FontSize(theme.Footnote).TextColor(tok.TextMuted).SingleLine().MaxWidth(180).Tooltip(dir)
+			if (IconButton{Icon: icons.Edit, Label: m.ChangeDownloadFolder(), Disabled: a.p.PickFolder == nil, Size: Small}).Clicked(c, "download-dir:choose") {
+				a.chooseDownloadDir(m, dir)
+			}
+			if (IconButton{Icon: icons.Reset, Label: m.ResetDownloadFolder(), Disabled: s.DownloadDir == "", Size: Small}).Clicked(c, "download-dir:reset") {
+				s.DownloadDir, *changed = "", true
+			}
+		})
 		g.row(m.TransferConcurrency(), m.TransferConcurrencyHint(), func() {
 			if ui.NumberInput(c.Key("conc"), &a.concChoice, 1, 10, 1).Changed() {
 				s.TransferConcurrency = int(a.concChoice)
@@ -768,6 +778,26 @@ func (a *App) prefFiles(c *ui.Context, m locales.Messages, tok theme.Tokens, s *
 			}
 		})
 	})
+}
+
+func (a *App) chooseDownloadDir(m locales.Messages, start string) {
+	title := m.ChangeDownloadFolder()
+	go func() {
+		dir, err := a.p.PickFolder(title, start)
+		a.post(func() {
+			if err != nil {
+				a.toastError(m.ErrGeneric(err.Error()))
+				return
+			}
+			if dir != "" {
+				s := a.settings
+				s.DownloadDir = dir
+				if err := a.ApplySettings(s); err != nil {
+					a.toastError(m.ErrGeneric(err.Error()))
+				}
+			}
+		})
+	}()
 }
 
 // keyCaps are the caps of a shortcut: the modifiers as macOS draws them

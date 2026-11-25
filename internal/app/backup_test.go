@@ -303,6 +303,48 @@ func TestMergeSettings(t *testing.T) {
 	}
 }
 
+func TestRestoreKeepsLocalDownloadDir(t *testing.T) {
+	local, foreign := t.TempDir(), t.TempDir()
+	for _, tc := range []struct {
+		name     string
+		localDir string
+		incoming string
+	}{
+		{name: "configured", localDir: local, incoming: foreign},
+		{name: "default", incoming: foreign},
+		{name: "legacy", localDir: local},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			a, _ := newTestApp(t)
+			s := a.settings
+			s.DownloadDir = tc.localDir
+			if err := a.ApplySettings(s); err != nil {
+				t.Fatal(err)
+			}
+			incoming := settings.Default()
+			incoming.DownloadDir, incoming.KeepAliveSeconds = tc.incoming, 77
+			encoded, err := json.Marshal(backupPayload{Settings: incoming})
+			if err != nil {
+				t.Fatal(err)
+			}
+			p, err := unpackBackup(encoded)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := a.restoreBackup(en, p); err != nil {
+				t.Fatal(err)
+			}
+			saved, err := settings.Load(filepath.Join(a.p.DataDir, "settings.json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if saved.DownloadDir != tc.localDir || saved.KeepAliveSeconds != 77 {
+				t.Fatalf("saved directory %q, want %q; keep-alive %d, want 77", saved.DownloadDir, tc.localDir, saved.KeepAliveSeconds)
+			}
+		})
+	}
+}
+
 // TestRestoreKeepsLocalACP: a restore never adds or changes a program this
 // computer starts. The ACP agents, a legacy single agent and the default
 // agent of an older backup are ignored; other preferences still restore,

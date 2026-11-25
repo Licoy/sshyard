@@ -4657,6 +4657,46 @@ func (msgs Messages) TransferSummary(active string, done string, total string) s
 	return Catalog.Format(msgs.locale, "transferSummary", map[string]any{"active": active, "done": done, "total": total})
 }
 
+// DefaultDownloadFolder says "Default download folder"
+// in the language the app shows.
+func DefaultDownloadFolder() string { return In(i18n.Locale()).DefaultDownloadFolder() }
+
+// DefaultDownloadFolder says "Default download folder"
+// in the language of msgs.
+func (msgs Messages) DefaultDownloadFolder() string {
+	return Catalog.Format(msgs.locale, "defaultDownloadFolder", nil)
+}
+
+// DefaultDownloadFolderNote says "The local Files pane and download dialogs start here. Files received in the terminal are saved here by default."
+// in the language the app shows.
+func DefaultDownloadFolderNote() string { return In(i18n.Locale()).DefaultDownloadFolderNote() }
+
+// DefaultDownloadFolderNote says "The local Files pane and download dialogs start here. Files received in the terminal are saved here by default."
+// in the language of msgs.
+func (msgs Messages) DefaultDownloadFolderNote() string {
+	return Catalog.Format(msgs.locale, "defaultDownloadFolderNote", nil)
+}
+
+// ChangeDownloadFolder says "Change Download Folder"
+// in the language the app shows.
+func ChangeDownloadFolder() string { return In(i18n.Locale()).ChangeDownloadFolder() }
+
+// ChangeDownloadFolder says "Change Download Folder"
+// in the language of msgs.
+func (msgs Messages) ChangeDownloadFolder() string {
+	return Catalog.Format(msgs.locale, "changeDownloadFolder", nil)
+}
+
+// ResetDownloadFolder says "Restore the Default Download Folder"
+// in the language the app shows.
+func ResetDownloadFolder() string { return In(i18n.Locale()).ResetDownloadFolder() }
+
+// ResetDownloadFolder says "Restore the Default Download Folder"
+// in the language of msgs.
+func (msgs Messages) ResetDownloadFolder() string {
+	return Catalog.Format(msgs.locale, "resetDownloadFolder", nil)
+}
+
 // TransferConcurrency says "Transfers at once"
 // in the language the app shows.
 func TransferConcurrency() string { return In(i18n.Locale()).TransferConcurrency() }
@@ -19601,11 +19641,11 @@ func (msgs Messages) TermXferChooseFiles() string {
 	return Catalog.Format(msgs.locale, "termXferChooseFiles", nil)
 }
 
-// TermXferSaveDownloads says "Save to Downloads"
+// TermXferSaveDownloads says "Save to Download Folder"
 // in the language the app shows.
 func TermXferSaveDownloads() string { return In(i18n.Locale()).TermXferSaveDownloads() }
 
-// TermXferSaveDownloads says "Save to Downloads"
+// TermXferSaveDownloads says "Save to Download Folder"
 // in the language of msgs.
 func (msgs Messages) TermXferSaveDownloads() string {
 	return Catalog.Format(msgs.locale, "termXferSaveDownloads", nil)

@@ -109,8 +109,8 @@ type Platform struct {
 	OpenWindow func(spec WindowSpec) Window
 	// Dial replaces net.Dialer, for tests.
 	Dial func(ctx context.Context, network, addr string) (net.Conn, error)
-	// HomeDir is where the local side of a files pane starts, and whose
-	// .ssh/config the import reads; "" is the user's home.
+	// HomeDir overrides the user's home for tests, including where the
+	// app looks for Downloads and .ssh/config.
 	HomeDir string
 	// LocalUser is the login name a host without one defaults to, as ssh
 	// does; "" is the user running the app.

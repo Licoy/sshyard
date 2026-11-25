@@ -425,10 +425,14 @@ func (a *App) answerXfer(ask *xferAsk, r xferReply) {
 // pickXfer answers ask with what the user chooses in the system's
 // dialog: a folder to save in, the files or a folder to send.
 func (a *App) pickXfer(ask *xferAsk, m locales.Messages, folder bool) {
+	var start string
+	if ask.mode == xferDownload {
+		start = a.downloadsDir()
+	}
 	pick := func() ([]string, error) {
 		switch {
 		case ask.mode == xferDownload:
-			dir, err := a.p.PickFolder(m.ChooseDownloadFolder(), a.downloadsDir())
+			dir, err := a.p.PickFolder(m.ChooseDownloadFolder(), start)
 			if dir == "" {
 				return nil, err
 			}
