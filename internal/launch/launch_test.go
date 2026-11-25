@@ -18,6 +18,9 @@ func TestDir(t *testing.T) {
 		want string
 	}{
 		{"none", nil, ""},
+		{"relaunch", []string{RelaunchFlag}, ""},
+		{"path beside relaunch flag", []string{RelaunchFlag, "--path", "a/b"}, abs},
+		{"relaunch flag as folder", []string{"--", RelaunchFlag}, filepath.Join(wd, RelaunchFlag)},
 		{"path", []string{"--path", "a/b"}, abs},
 		{"path equals", []string{"--path=a/b"}, abs},
 		{"short", []string{"-p", "a/b"}, abs},

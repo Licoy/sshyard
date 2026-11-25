@@ -202,7 +202,7 @@ func (a *App) totpSecret(m locales.Messages) ([]byte, string) {
 // UI thread, the code on it once the store is unlocked.
 func (a *App) SubmitAppUnlock(m locales.Messages) bool {
 	l := &a.lock
-	if !l.locked || l.busy || l.broken {
+	if !l.locked || l.busy || l.broken || l.resetting {
 		return false
 	}
 	cfg := l.cfg
@@ -273,6 +273,7 @@ func (a *App) appUnlockDone(m locales.Messages, ok bool, err error, code string,
 	l.locked = false
 	l.input = a.lockClock()
 	l.password, l.code, l.err = "", "", ""
+	a.openLaunchDirs()
 	a.invalidate()
 }
 

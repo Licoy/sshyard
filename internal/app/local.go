@@ -92,18 +92,27 @@ func (a *App) OpenLocalTerminalAt(dir string) (int, error) {
 	return a.openShellAt(a.shell(localID).ID, dir, false)
 }
 
-// SetLaunchDir asks the app to open a local terminal in dir: now when it
-// is already running, else as it starts once its data is ready. An empty
-// dir does nothing.
+// SetLaunchDir queues a local terminal in dir from any goroutine.
+// Requests open in order once startup is complete and the app is unlocked.
 func (a *App) SetLaunchDir(dir string) {
 	if dir == "" {
 		return
 	}
-	if a.independentStarted.Load() {
-		a.OpenLocalTerminalAt(dir)
+	a.post(func() {
+		a.launchDirs = append(a.launchDirs, dir)
+		a.openLaunchDirs()
+	})
+}
+
+func (a *App) openLaunchDirs() {
+	if !a.launchReady || a.appLocked() {
 		return
 	}
-	a.launchDir = dir
+	dirs := a.launchDirs
+	a.launchDirs = nil
+	for _, dir := range dirs {
+		a.OpenLocalTerminalAt(dir)
+	}
 }
 
 // openShellAt opens the shell of id, in dir when set, in a new tab, or

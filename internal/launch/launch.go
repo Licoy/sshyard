@@ -8,11 +8,14 @@ import (
 	"strings"
 )
 
+// RelaunchFlag replaces the command line on an app-initiated restart.
+const RelaunchFlag = "--sshyard-relaunch"
+
 // Dir returns the folder args ask a local terminal to open in, "" for
 // none. It takes --path DIR, --path=DIR, -p DIR, or the first argument
 // that is not a flag; relative paths are relative to wd, and a leading
 // "~" is the user's home folder. Flags of the platform and the launcher
-// are ignored, such as macOS' -psn_0_….
+// are ignored, including RelaunchFlag and macOS' -psn_0_….
 func Dir(args []string, wd string) string {
 	raw := ""
 	afterFlags := false

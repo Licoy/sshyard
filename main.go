@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"time"
 
 	"github.com/Licoy/sshyard/internal/app"
@@ -137,10 +136,12 @@ func setupStorage() {
 			if err := portable.Request(dir, !here); err != nil {
 				return err
 			}
-			mygo.App.Relaunch()
+			relaunch()
 			return nil
 		}}
 }
+
+func relaunch() { mygo.App.Relaunch(launch.RelaunchFlag) }
 
 func storagePaths() (app.StoragePaths, error) {
 	canonical, err := mygo.App.Path(mygo.PathUserData)
@@ -201,29 +202,30 @@ func main() {
 	}
 	wd, _ := os.Getwd()
 	launchDir := launch.Dir(os.Args[1:], wd)
-	// macOS may deliver a folder opened with the app before MyGo is ready,
-	// so take open events from the start and hold them until there is an app
-	// to open them.
-	var opened struct {
-		sync.Mutex
-		paths []string
-		ready func(string)
-	}
-	mygo.App.OnOpenFile(func(path string) {
-		opened.Lock()
-		f := opened.ready
-		if f == nil {
-			opened.paths = append(opened.paths, path)
-		}
-		opened.Unlock()
-		if f != nil {
-			f(path)
-		}
-	})
+	// MyGo's updater relaunches with the current arguments by default.
+	// The command line belongs to this launch and has now been consumed.
+	os.Args = os.Args[:1]
 	setupStorage()
 	mygo.Use(updatePlugin())
 	if runtime.GOOS == "darwin" {
 		mygo.App.SetMenu(appMenu())
+	}
+	var a *app.App
+	var d *desktop
+	// MyGo delivers both open callbacks on the main thread. Hold only
+	// the directories that arrive before there is an App to receive them.
+	var earlyLaunchDirs []string
+	openLaunchDir := func(dir string) {
+		if a == nil {
+			if dir != "" {
+				earlyLaunchDirs = append(earlyLaunchDirs, dir)
+			}
+			return
+		}
+		a.SetLaunchDir(dir)
+		if d != nil {
+			d.show()
+		}
 	}
 	mygo.App.WhenReady(func() {
 		// Linux: size the window buttons' bar to its buttons, and keep text
@@ -231,12 +233,11 @@ func main() {
 		gtkfix.Apply()
 		gtkfix.TextColor()
 		// Startup failures are presented with safe, localized diagnostics in the UI.
-		var d *desktop
 		p := platform()
 		p.SetTrayIcon = func(style string) error { return d.setTrayIcon(style) }
 		p.SetRememberLayout = changeRememberLayout
 		p.Notify = showNotification
-		p.Relaunch = func() { mygo.App.Relaunch() }
+		p.Relaunch = relaunch
 		p.MainWindowBackground = func() bool {
 			return d != nil && (!mygo.App.IsActive() || !d.window.IsFocused() || !d.window.IsVisible() || d.window.IsMinimized())
 		}
@@ -244,16 +245,12 @@ func main() {
 			d.show()
 			d.window.Focus()
 		}
-		a, _ := app.New(p)
+		a, _ = app.New(p)
 		a.SetLaunchDir(launchDir)
-		opened.Lock()
-		opened.ready = a.SetLaunchDir
-		paths := opened.paths
-		opened.paths = nil
-		opened.Unlock()
-		for _, path := range paths {
-			a.SetLaunchDir(path)
+		for _, dir := range earlyLaunchDirs {
+			a.SetLaunchDir(dir)
 		}
+		earlyLaunchDirs = nil
 		installWindowStates(a)
 		mygo.App.OnQuit(a.Close)
 		prepareWindowState("main")
@@ -284,14 +281,6 @@ func main() {
 		// once the window has made MyGo's view class.
 		macfix.TitleBarClicks()
 		d = newDesktop(a, w)
-		mygo.App.OnSecondInstance(func(args []string, wd string) {
-			if d != nil {
-				d.show()
-			}
-			if dir := launch.Dir(args, wd); dir != "" {
-				a.SetLaunchDir(dir)
-			}
-		})
 		a.Start()
 		go updater.CleanLeftovers()
 		mygo.App.OnDidResignActive(a.NotifyPendingApprovals)
@@ -315,6 +304,10 @@ func main() {
 			w.OnMaximize(func() { a.SetMaximized(true) })
 			w.OnUnmaximize(func() { a.SetMaximized(false) })
 		}
+	})
+	mygo.App.OnOpenFile(openLaunchDir)
+	mygo.App.OnSecondInstance(func(args []string, wd string) {
+		openLaunchDir(launch.Dir(args, wd))
 	})
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)

@@ -627,11 +627,10 @@ type App struct {
 	// localName is what local terminals are called, in the language of
 	// the last frame.
 	localName string
-	// launchDir is the folder a launch asks a local terminal to open in,
-	// opened once the data is ready (SetLaunchDir); independentStarted is
-	// set once startIndependent has run, so a later launch opens at once.
-	launchDir          string
-	independentStarted atomic.Bool
+	// Launch requests wait for startup and the app lock. The UI thread
+	// owns this state.
+	launchDirs  []string
+	launchReady bool
 	// logs is the session logs pane's.
 	logs logsState
 	// toolNames are what the tool panes are called, in the language of
@@ -935,24 +934,20 @@ func (a *App) startIndependent() {
 		return
 	}
 	a.unlock.started = true
-	a.independentStarted.Store(true)
 	a.watchNetwork()
 	a.watchSleep()
 	a.loadLayout()
-	if dir := a.launchDir; dir != "" {
-		a.launchDir = ""
-		a.post(func() { a.OpenLocalTerminalAt(dir) })
-	} else if a.settings.OpenLocalOnStart {
-		a.post(func() {
-			if len(a.ws.Tabs) == 0 {
-				a.OpenLocalTerminal()
-			}
-		})
-	}
 	if root, err := a.cacheDir(); err == nil {
 		go cleanCache(root)
 	}
 	a.startRenewalReminders()
+	a.post(func() {
+		a.launchReady = true
+		if len(a.launchDirs) == 0 && a.settings.OpenLocalOnStart && len(a.ws.Tabs) == 0 {
+			a.OpenLocalTerminal()
+		}
+		a.openLaunchDirs()
+	})
 }
 
 // post runs fn on the UI thread, without requiring a visible window.
