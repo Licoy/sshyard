@@ -126,8 +126,13 @@ type Tokens struct {
 	Terminal   Terminal
 }
 
-// LightTokens are the tokens of the light appearance.
-func LightTokens() Tokens {
+// LightTokens are the tokens of the light appearance. They and
+// DarkTokens are made once: views ask for them many times a frame.
+func LightTokens() Tokens { return lightTokens }
+
+var lightTokens, darkTokens = makeLightTokens(), makeDarkTokens()
+
+func makeLightTokens() Tokens {
 	ink := ui.Hex("#1D1D1F")
 	return Tokens{
 		Background:     ui.Hex("#FFFFFF"),
@@ -184,7 +189,9 @@ func LightTokens() Tokens {
 }
 
 // DarkTokens are the tokens of the dark appearance.
-func DarkTokens() Tokens {
+func DarkTokens() Tokens { return darkTokens }
+
+func makeDarkTokens() Tokens {
 	ink := ui.Hex("#F5F5F7")
 	return Tokens{
 		Dark:           true,

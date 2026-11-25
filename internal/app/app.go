@@ -179,6 +179,10 @@ type conn struct {
 	tv             *termView   // terminal panes
 	fs             *filesState // files and editor panes (its SFTP client)
 	ed             *edWin      // editor windows
+	// wake is how a terminal's session asks for frames, drawn the main
+	// window's frame (App.frame) that last drew it (see paneWake)
+	wake  paneWake
+	drawn uint64
 	// handled is the failure a prompt was already shown for
 	handled error
 	// tried is, by a.typed key, the generation of the secret the last
@@ -398,6 +402,10 @@ type App struct {
 	searchOpen  bool // the search shows its field across the toolbar
 	// newTabQuery is the search of the "+" menu's hosts, while it shows.
 	newTabQuery string
+	// sideHosts are the hosts the sidebar shows; frame counts the main
+	// window's builds (paneWake).
+	sideHosts hostsView
+	frame     uint64
 	// ping is the hosts' latency the sidebar shows
 	ping pingState
 	// multi is the sidebar choosing several hosts and groups
@@ -1172,6 +1180,9 @@ func (a *App) makeConnIn(hostID string, kind layout.Kind, link int, dir string) 
 	}
 	c.s = session.New(cfg, opts, 80, 24)
 	c.s.OnChange = a.invalidate
+	if kind == layout.Terminal {
+		c.s.OnChange = func() { c.wake.ask(a.invalidateMain, afterFunc) }
+	}
 	if kind != layout.Terminal {
 		c.fs = a.newFiles()
 		c.fs.transfers.Client = a.transferClient(c)
@@ -1622,6 +1633,29 @@ func (a *App) focusedPane() *conn {
 		return a.conns[t.Focused().ID]
 	}
 	return nil
+}
+
+// hostsView keeps what hostsBy found for a store, at its Rev, and a
+// query, so that a frame does not sort and group every host again.
+type hostsView struct {
+	st      *assets.Store
+	rev     uint64
+	query   string
+	favs    []assets.Host
+	groups  []string
+	byGroup map[string][]assets.Host
+}
+
+// get is hostsBy(st, query), found again only once either changed. The
+// slices are shared from frame to frame: callers must not change them.
+func (v *hostsView) get(st *assets.Store, query string) (favorites []assets.Host, groups []string, byGroup map[string][]assets.Host) {
+	// Rev is read first: a change while hostsBy reads is found again
+	// next time.
+	if rev := st.Rev(); v.byGroup == nil || v.st != st || v.rev != rev || v.query != query {
+		v.favs, v.groups, v.byGroup = hostsBy(st, query)
+		v.st, v.rev, v.query = st, rev, query
+	}
+	return v.favs, v.groups, v.byGroup
 }
 
 // hostsBy groups the hosts the sidebar shows, filtered by the search.

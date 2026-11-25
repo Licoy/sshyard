@@ -610,6 +610,7 @@ func dropPreview(p *ui.Painter, r ui.Rect, edge layout.Edge, tok theme.Tokens) {
 
 func (a *App) termElement(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, pal *theme.Terminal, m locales.Messages) {
 	tv := cn.tv
+	cn.drawn = a.frame
 	term := ui.Box(c.Key("term")).Grow(1).FillWidth().Focusable().FocusRing(false).Clip().
 		Cursor(ui.CursorText).Label(m.Terminal() + " " + cn.host.Label())
 	if a.focusReq == cn.id && a.page == pageWorkspace {

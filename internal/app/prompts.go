@@ -58,11 +58,18 @@ func (a *App) failedHost(h assets.Host, err error) assets.Host {
 
 // proxyOf is the proxy the first hop to h goes through.
 func (a *App) proxyOf(h assets.Host) (assets.Proxy, bool) {
+	var path []assets.Host
+	if h.ProxyID == "" {
+		path, _ = a.store.JumpPath(h.ID)
+	}
+	return a.proxyOn(h, path)
+}
+
+// proxyOn is proxyOf for h dialed through path, its JumpPath.
+func (a *App) proxyOn(h assets.Host, path []assets.Host) (assets.Proxy, bool) {
 	id := h.ProxyID
-	if id == "" {
-		if path, _ := a.store.JumpPath(h.ID); len(path) > 0 {
-			id = path[0].ProxyID
-		}
+	if id == "" && len(path) > 0 {
+		id = path[0].ProxyID
 	}
 	return a.store.Proxy(id)
 }

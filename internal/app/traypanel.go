@@ -31,6 +31,7 @@ type TrayPanel struct {
 	app              *App
 	dispatch         func(TrayAction)
 	search, selected string
+	shown            hostsView // the hosts it shows
 	sections         map[string]*bool
 	ResizeHandle     func(*ui.Context)
 	SetMaterial      func(ui.Color)
@@ -139,7 +140,7 @@ func (p *TrayPanel) section(key string) *bool {
 }
 
 func (p *TrayPanel) hosts(c *ui.Context, m locales.Messages, tok theme.Tokens) {
-	favs, groups, byGroup := hostsBy(p.app.store, p.search)
+	favs, groups, byGroup := p.shown.get(p.app.store, p.search)
 	ui.Sidebar(c.Key("hosts"), &p.selected, func() {
 		if len(favs) > 0 {
 			ui.SidebarSection(c.Key("favorites"), m.Favorites(), p.section("fav"), func() {

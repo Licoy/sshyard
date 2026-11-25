@@ -97,6 +97,7 @@ func (s *Store) restoreLocked(in Snapshot) error {
 	h, c, p, f, g := slices.Clone(s.hosts), slices.Clone(s.creds), slices.Clone(s.proxies), slices.Clone(s.forwards), slices.Clone(s.groups)
 	n := slices.Clone(s.snippets)
 	order, looks := slices.Clone(s.groupOrder), maps.Clone(s.groupLooks)
+	s.rev++
 	undo := func() {
 		s.hosts, s.creds, s.proxies, s.forwards, s.groups, s.snippets = h, c, p, f, g, n
 		s.groupOrder, s.groupLooks = order, looks

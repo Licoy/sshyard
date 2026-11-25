@@ -14,6 +14,8 @@ func (a *App) View(c *ui.Context) {
 	a.mu.Lock()
 	a.svc, a.live = c.Services(), true
 	a.mu.Unlock()
+	a.frame++
+	defer a.markShown()
 	// Native callbacks run between frames and use the real clock; the Tester
 	// uses its frame clock so clipboard snapshots and toast Undo expire together.
 	if a.p.Post == nil {

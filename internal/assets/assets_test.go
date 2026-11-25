@@ -465,3 +465,78 @@ func TestIconAndColor(t *testing.T) {
 		t.Fatalf("%q %q", h.Icon, h.Color)
 	}
 }
+
+// Hosts are found by ID however their places in the store change: a host
+// deleted, one added, a change undone as saving fails and a restore; and
+// each of those changes Rev.
+func TestStoreLookupAfterChanges(t *testing.T) {
+	s, err := Open("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, name := range []string{"a", "b", "c", "d"} {
+		h, err := s.Add(Host{Name: name, Address: "10.0.0.1", User: "u"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, h.ID)
+	}
+	found := func(want ...string) {
+		t.Helper()
+		for _, id := range want {
+			if h, ok := s.Get(id); !ok || h.ID != id {
+				t.Fatalf("Get(%s) = %+v, %v", id, h, ok)
+			}
+		}
+	}
+	changed := func(rev uint64) {
+		t.Helper()
+		if s.Rev() == rev {
+			t.Fatal("Rev did not change")
+		}
+	}
+	found(ids...)
+
+	rev := s.Rev()
+	if err := s.Delete(ids[1]); err != nil {
+		t.Fatal(err)
+	}
+	changed(rev)
+	if _, ok := s.Get(ids[1]); ok {
+		t.Fatal("a deleted host is found")
+	}
+	found(ids[0], ids[2], ids[3])
+	e, err := s.Add(Host{Name: "e", Address: "10.0.0.2", User: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found(ids[0], ids[2], ids[3], e.ID)
+
+	// Saving fails: a directory is where the file would go.
+	s.path = t.TempDir()
+	rev = s.Rev()
+	if err := s.Delete(ids[0]); err == nil {
+		t.Fatal("deleted without saving")
+	}
+	changed(rev)
+	found(ids[0], ids[2], ids[3], e.ID)
+	s.path = ""
+
+	rev = s.Rev()
+	f := Host{ID: NewID(), Name: "f", Address: "10.0.0.3", User: "u", JumpChain: []string{e.ID}}
+	if err := s.Restore(Snapshot{Hosts: []Host{f}}); err != nil {
+		t.Fatal(err)
+	}
+	changed(rev)
+	found(ids[0], ids[2], ids[3], e.ID, f.ID)
+	if path, err := s.JumpPath(f.ID); err != nil || len(path) != 1 || path[0].ID != e.ID {
+		t.Fatalf("JumpPath = %v, %v", path, err)
+	}
+	if path, err := s.JumpPath(e.ID); err != nil || len(path) != 0 {
+		t.Fatalf("JumpPath of a direct host = %v, %v", path, err)
+	}
+	if _, err := s.JumpPath(ids[1]); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("JumpPath of a deleted host: %v", err)
+	}
+}

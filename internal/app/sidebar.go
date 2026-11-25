@@ -83,7 +83,7 @@ func (a *App) sidebarView(c *ui.Context, m locales.Messages, tok theme.Tokens) {
 			})
 			ui.Spacer(c)
 		} else {
-			favs, groups, byGroup := hostsBy(a.store, a.search)
+			favs, groups, byGroup := a.sideHosts.get(a.store, a.search)
 			sb := ui.Sidebar(c.Key("hosts"), &a.selected, func() {
 				if len(favs) > 0 {
 					ui.SidebarSection(c.Key("s:fav"), m.Favorites(), a.section("fav"), func() {
@@ -428,10 +428,10 @@ func (a *App) hostState(id string) (session.State, bool) {
 // and jump hosts it is reached through ("via A → B").
 func (a *App) hostTip(m locales.Messages, h assets.Host) string {
 	var chain []string
-	if px, ok := a.proxyOf(h); ok {
+	path, _ := a.store.JumpPath(h.ID)
+	if px, ok := a.proxyOn(h, path); ok {
 		chain = append(chain, px.Name)
 	}
-	path, _ := a.store.JumpPath(h.ID)
 	for _, j := range path {
 		chain = append(chain, j.Label())
 	}
