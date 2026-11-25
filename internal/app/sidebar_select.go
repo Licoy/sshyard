@@ -265,7 +265,7 @@ func (a *App) DeletePicked() error {
 		return err
 	}
 	for _, g := range tops {
-		if gerr := a.store.DeleteGroup(g); gerr != nil && !errors.Is(gerr, assets.ErrNotFound) && err == nil {
+		if gerr := a.deleteGroup(g); gerr != nil && !errors.Is(gerr, assets.ErrNotFound) && err == nil {
 			err = gerr
 		}
 	}

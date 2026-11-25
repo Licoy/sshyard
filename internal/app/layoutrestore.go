@@ -16,7 +16,7 @@ import (
 
 func (a *App) loadLayout() {
 	file := a.layoutPath()
-	if file == "" || !a.settings.RememberLayout || len(a.ws.Tabs) > 0 {
+	if file == "" || len(a.ws.Tabs) > 0 {
 		return
 	}
 	b, err := os.ReadFile(file)
@@ -36,6 +36,11 @@ func (a *App) loadLayout() {
 		a.layoutBlocked = true
 		a.layoutNotice(true)
 		log.Printf("sshyard: workspace layout read failed or unsupported version")
+		return
+	}
+	a.restoreGroupSections(snap.Sections)
+	if !a.settings.RememberLayout {
+		a.rememberLayoutBaseline()
 		return
 	}
 	a.restoring = true
@@ -76,9 +81,10 @@ func (a *App) loadLayout() {
 			}
 		}
 	}
-	for k, v := range snap.Sections {
-		value := v
-		a.sections[k] = &value
+	for _, key := range []string{"fav", "none", "fwd"} {
+		if open, ok := snap.Sections[key]; ok {
+			a.sections[key] = &open
+		}
 	}
 	for name, w := range snap.Widths {
 		if k, ok := railKind(name); ok && w > 0 && w < 1e5 {
@@ -108,9 +114,18 @@ func (a *App) loadLayout() {
 	a.rememberLayoutBaseline()
 }
 
+func (a *App) restoreGroupSections(sections map[string]bool) {
+	for _, group := range a.store.Groups() {
+		key := "g:" + group
+		if open, ok := sections[key]; ok {
+			a.sections[key] = &open
+		}
+	}
+}
+
 // Establish a baseline only when serialization succeeds, retaining diagnostics on failure.
 func (a *App) rememberLayoutBaseline() {
-	b, err := a.layoutBytes()
+	b, err := a.layoutBytes(a.settings.RememberLayout)
 	if err != nil {
 		if !a.layoutSaveFailed {
 			a.layoutNotice(false)

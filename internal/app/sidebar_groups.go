@@ -259,6 +259,11 @@ func (a *App) sidebarSectionKeys() []string {
 	for _, g := range a.store.Groups() {
 		keys = append(keys, "g:"+g)
 	}
+	return append(keys, a.sidebarBuiltinSectionKeys()...)
+}
+
+func (a *App) sidebarBuiltinSectionKeys() []string {
+	var keys []string
 	if len(a.store.Favorites()) > 0 {
 		keys = append(keys, "fav")
 	}

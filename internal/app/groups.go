@@ -63,6 +63,7 @@ func (a *App) SaveGroup(m locales.Messages) bool {
 	if f.parent != "" {
 		path = assets.SubGroup(f.parent, strings.TrimSpace(f.name))
 	}
+	a.pruneGroupSections()
 	var err error
 	if f.old == "" {
 		err = a.store.AddGroupLook(path, f.look())
@@ -102,13 +103,39 @@ func (a *App) SaveGroup(m locales.Messages) bool {
 // moveSections keeps the sections of group old, its subgroups' too, as
 // open or closed as they were once it is name.
 func (a *App) moveSections(old, name string) {
+	if old == name {
+		return
+	}
 	moved := map[string]*bool{}
 	for key, open := range a.sections {
 		if g, ok := strings.CutPrefix(key, "g:"); ok && assets.InGroupTree(g, old) {
 			moved["g:"+name+strings.TrimPrefix(g, old)] = open
+			delete(a.sections, key)
 		}
 	}
 	maps.Copy(a.sections, moved)
+}
+
+// pruneGroupSections forgets groups that no longer exist, including an
+// implicit group that lost its last host.
+func (a *App) pruneGroupSections() {
+	groups := a.store.Groups()
+	live := make(map[string]bool, len(groups))
+	for _, group := range groups {
+		live[group] = true
+	}
+	maps.DeleteFunc(a.sections, func(key string, _ *bool) bool {
+		group, ok := strings.CutPrefix(key, "g:")
+		return ok && !live[group]
+	})
+}
+
+func (a *App) deleteGroup(name string) error {
+	err := a.store.DeleteGroup(name)
+	if err == nil || errors.Is(err, assets.ErrNotFound) {
+		a.pruneGroupSections()
+	}
+	return err
 }
 
 func (a *App) groupView(c *ui.Context, m locales.Messages) {
@@ -172,7 +199,7 @@ func (a *App) groupView(c *ui.Context, m locales.Messages) {
 		}
 		switch ui.AlertDialog(c, &a.groupDeleting, m.DeleteGroup(), msg, m.Cancel(), m.Delete()) {
 		case 1:
-			if err := a.store.DeleteGroup(a.groupDelete); err != nil {
+			if err := a.deleteGroup(a.groupDelete); err != nil {
 				c.AddToast(ui.Toast{Title: m.ErrGeneric(err.Error()), Type: "error"})
 			}
 		}
