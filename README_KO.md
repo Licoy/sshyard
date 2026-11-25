@@ -80,7 +80,7 @@ SSHYard는 macOS, Windows 및 Linux용 네이티브 데스크톱 SSH / SFTP 클�
 
 - **백업 및 복원**
   - 호스트, 자격 증명, 스니펫 및 설정을 비밀번호로 암호화하여 백업하고 다른 기기에서 복원
-  - 로컬, WebDAV, S3 호환 스토리지 및 비밀 GitHub Gist에 저장
+  - 로컬, WebDAV, S3 호환 스토리지, 비밀 GitHub Gist 또는 iCloud Drive, OneDrive, Dropbox 같은 동기화 폴더에 저장
   - 수동 또는 예약 백업과 보관 개수 설정
 
 - **네트워크**

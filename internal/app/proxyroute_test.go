@@ -215,6 +215,7 @@ func TestProxySelectNewComesBack(t *testing.T) {
 	// The backup location sheet.
 	a.openTargetForm(nil)
 	g := a.target
+	g.kind = slices.Index(targetKinds, settings.BackupWebDAV)
 	tt.Frame()
 	g.proxy = proxyNew
 	tt.Frame()

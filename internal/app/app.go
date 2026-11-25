@@ -28,6 +28,7 @@ import (
 	"github.com/Licoy/sshyard/internal/ai/policy"
 	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/awake"
+	"github.com/Licoy/sshyard/internal/backup/folder"
 	"github.com/Licoy/sshyard/internal/forward"
 	"github.com/Licoy/sshyard/internal/highlight"
 	"github.com/Licoy/sshyard/internal/keychain"
@@ -683,7 +684,9 @@ type App struct {
 	// cloud is what this device knows of the places it backs up to, read
 	// once; cloudCtx ends their requests when the app closes. target is
 	// the backup location sheet open, remotes the sheet of a place's
-	// backups. gistAPI replaces GitHub's API, for tests.
+	// backups. gistAPI replaces GitHub's API, for tests. places are the
+	// sync clients' folders found here, once placesOK says they were
+	// looked for.
 	cloud         *cloudState
 	cloudCtx      context.Context
 	cloudStop     context.CancelFunc
@@ -693,6 +696,8 @@ type App struct {
 	remotes       *remoteList
 	listingRemote bool
 	gistAPI       string
+	places        []folder.Place
+	placesOK      bool
 }
 
 // New opens the app's data.

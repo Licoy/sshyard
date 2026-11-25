@@ -80,7 +80,7 @@ SSHYard is a native desktop SSH / SFTP client for macOS, Windows and Linux, brin
 
 - **Backup and restore**
   - Password-encrypted backups of hosts, credentials, snippets and settings, with restore on another device
-  - Save locally or to WebDAV, S3-compatible storage and private GitHub Gists
+  - Save locally or to WebDAV, S3-compatible storage, private GitHub Gists or a sync folder such as iCloud Drive, OneDrive or Dropbox
   - Manual or scheduled backups, with configurable retention
 
 - **Networking**

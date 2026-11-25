@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/Licoy/sshyard/internal/keychain"
@@ -98,6 +99,7 @@ func TestDefaultBackupPassword(t *testing.T) {
 	if tf.source != pwDefault {
 		t.Fatalf("new location source %d", tf.source)
 	}
+	tf.kind = slices.Index(targetKinds, settings.BackupWebDAV)
 	tf.name, tf.url, tf.dir, tf.user, tf.secret = "NAS", srv.URL, "b", "me", "dav-secret-1"
 	if !a.SaveTargetForm(en) || a.target != nil {
 		t.Fatalf("save refused: %q", tf.err)

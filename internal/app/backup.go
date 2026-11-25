@@ -16,6 +16,7 @@ import (
 
 	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/backup"
+	"github.com/Licoy/sshyard/internal/backup/folder"
 	"github.com/Licoy/sshyard/internal/backup/gist"
 	"github.com/Licoy/sshyard/internal/icons"
 	"github.com/Licoy/sshyard/internal/keychain"
@@ -459,6 +460,10 @@ func backupErrText(m locales.Messages, err error) string {
 		return m.ErrCloudTooLarge()
 	case errors.Is(err, backup.ErrAuth), errors.Is(err, gist.ErrToken):
 		return m.ErrCloudAuth()
+	case errors.Is(err, folder.ErrPath):
+		return m.ErrTargetFolder()
+	case errors.Is(err, folder.ErrDenied):
+		return m.ErrFolderDenied()
 	case errors.Is(err, backup.ErrNotFound):
 		return m.ErrCloudNotFound()
 	case errors.Is(err, errBackupKey):

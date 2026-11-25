@@ -223,6 +223,7 @@ var (
 	BackupWebDAV  = Host
 	BackupS3      = load("database-2-line")
 	BackupGist    = GitHub
+	BackupFolder  = MoveTo
 )
 
 // HostIcon is an icon a host can be given, by the key it is saved under.

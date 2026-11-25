@@ -1,8 +1,9 @@
 // Package backup is what SSHYard's backups are made of and where they are
 // kept: the archive a backup seals (package vault does the sealing), the
 // names of sealed files, and the places that keep them, a folder on a
-// WebDAV server (package webdav), an S3 bucket (package s3) or a GitHub
-// gist (package gist). A place only ever sees sealed files.
+// WebDAV server (package webdav), an S3 bucket (package s3), a GitHub
+// gist (package gist) or a folder of this computer that a sync client may
+// carry elsewhere (package folder). A place only ever sees sealed files.
 package backup
 
 import (

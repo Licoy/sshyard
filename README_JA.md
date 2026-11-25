@@ -80,7 +80,7 @@ SSHYardは、macOS、Windows、Linux向けのネイティブデスクトップSS
 
 - **バックアップと復元**
   - ホスト、認証情報、スニペット、設定をパスワードで暗号化してバックアップし、別のデバイスで復元
-  - ローカル、WebDAV、S3互換ストレージ、シークレットGitHub Gistに保存
+  - ローカル、WebDAV、S3互換ストレージ、シークレットGitHub Gist、またはiCloud Drive・OneDrive・Dropboxなどの同期フォルダーに保存
   - 手動・定期バックアップと、保持数の設定
 
 - **ネットワーク**

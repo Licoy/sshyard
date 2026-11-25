@@ -145,6 +145,10 @@ func TestCloudTargetForm(t *testing.T) {
 		t.Fatalf("typed into the name field, it holds %q", f.name)
 	}
 
+	if targetKinds[f.kind] != settings.BackupFolder {
+		t.Fatalf("a new place is a %s, not a sync folder", targetKinds[f.kind])
+	}
+	f.kind = slices.Index(targetKinds, settings.BackupWebDAV)
 	f.url = "ftp://dav.example.com/"
 	if a.SaveTargetForm(en) || f.err != en.ErrTargetURL() {
 		t.Fatalf("bad URL: %q", f.err)

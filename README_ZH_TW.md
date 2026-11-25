@@ -80,7 +80,7 @@ SSHYard 是一款原生桌面 SSH / SFTP 用戶端，支援 macOS、Windows 和 
 
 - **備份與還原**
   - 密碼加密備份主機、憑證、快速指令和設定，支援跨裝置還原
-  - 儲存到本地、WebDAV、S3 相容儲存或 GitHub 私密 Gist
+  - 儲存到本地、WebDAV、S3 相容儲存、GitHub 私密 Gist，或 iCloud 雲碟、OneDrive、Dropbox 等同步資料夾
   - 支援手動與定時備份，可設定保留份數
 
 - **網路連線**

@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/backup"
+	"github.com/Licoy/sshyard/internal/backup/folder"
 	"github.com/Licoy/sshyard/internal/backup/gist"
 	"github.com/Licoy/sshyard/internal/backup/s3"
 	"github.com/Licoy/sshyard/internal/backup/webdav"
@@ -32,7 +34,9 @@ import (
 )
 
 // Cloud backup: the places this device backs up to (settings.BackupTarget),
-// a folder on a WebDAV server, an S3 bucket or a GitHub gist. A backup goes
+// a folder on a WebDAV server, an S3 bucket, a GitHub gist or a folder of
+// this computer that a sync client such as iCloud Drive carries to the
+// user's other devices. A backup goes
 // there as a backup file does to disk, sealed here first with the key
 // derived from the place's backup password, kept in the encrypted local
 // store, so that neither a backup by hand nor the automatic ones, when
@@ -143,6 +147,9 @@ func (a *App) saveCloud() {
 // remote is the place t, reached with secret through its proxy. bound is
 // given, off the UI thread, the gist a Gist place finds or makes.
 func (a *App) remote(t settings.BackupTarget, secret string, bound func(id string)) (backup.Remote, error) {
+	if t.Kind == settings.BackupFolder {
+		return &folder.Folder{Dir: t.Dir}, nil
+	}
 	dial := a.p.Dial
 	if t.ProxyID != "" {
 		px, ok := a.store.Proxy(t.ProxyID)
@@ -377,7 +384,89 @@ func (a *App) DeleteBackupTarget(id string) error {
 }
 
 // targetKinds are the kinds of place, in the editor's order.
-var targetKinds = []string{settings.BackupWebDAV, settings.BackupS3, settings.BackupGist}
+var targetKinds = []string{settings.BackupWebDAV, settings.BackupS3, settings.BackupGist, settings.BackupFolder}
+
+// knownPlaces are the sync clients' folders on this computer, looked for
+// once or again when fresh.
+func (a *App) knownPlaces(fresh bool) []folder.Place {
+	if fresh || !a.placesOK {
+		a.places, a.placesOK = folder.Known(runtime.GOOS, a.localHome(), os.Getenv), true
+	}
+	return a.places
+}
+
+// targetOption is a choice of the editor's type select: a kind of place
+// and, for a folder, the sync client's folder it starts in.
+type targetOption struct {
+	label, kind string
+	place       folder.Place
+}
+
+// targetOptions are the type select's choices: the sync clients' folders
+// found, any other folder, then the kinds reached over the network.
+func targetOptions(m locales.Messages, places []folder.Place) []targetOption {
+	var out []targetOption
+	seen := map[string]bool{}
+	for _, p := range places {
+		label := p.Name
+		if seen[label] {
+			label += " (" + filepath.Base(p.Path) + ")"
+		}
+		seen[p.Name] = true
+		out = append(out, targetOption{label, settings.BackupFolder, p})
+	}
+	other := m.BackupKindFolder()
+	if len(places) > 0 {
+		other = m.BackupKindOtherFolder()
+	}
+	return append(out,
+		targetOption{label: other, kind: settings.BackupFolder},
+		targetOption{label: "WebDAV", kind: settings.BackupWebDAV},
+		targetOption{label: "S3", kind: settings.BackupS3},
+		targetOption{label: "GitHub Gist", kind: settings.BackupGist})
+}
+
+// optionOf is the option that shows f's kind and, for a folder, the sync
+// client's folder its path is in: the one chosen while it still does.
+func optionOf(opts []targetOption, f *targetForm) targetOption {
+	kind := targetKinds[f.kind]
+	if i := slices.IndexFunc(opts, func(o targetOption) bool { return o.label == f.choice }); i >= 0 && opts[i].kind == kind {
+		return opts[i]
+	}
+	var places []folder.Place
+	for _, o := range opts {
+		if o.place.Path != "" {
+			places = append(places, o.place)
+		}
+	}
+	p, inPlace := folder.PlaceOf(places, f.path)
+	for _, o := range opts {
+		if o.kind == kind && (kind != settings.BackupFolder || o.place.Path == p.Path || !inPlace && o.place.Path == "") {
+			return o
+		}
+	}
+	return opts[0]
+}
+
+// chooseOption makes o f's kind; a sync client's folder starts the path
+// in it, unless the path already is.
+func chooseOption(f *targetForm, o targetOption) {
+	f.choice, f.kind = o.label, slices.Index(targetKinds, o.kind)
+	if o.place.Path != "" {
+		if _, ok := folder.PlaceOf([]folder.Place{o.place}, f.path); !ok {
+			f.path = filepath.Join(o.place.Path, "SSHYard")
+		}
+	}
+}
+
+// defaultFolder is where a new folder place keeps its backups: an SSHYard
+// folder in the first sync client's folder found, iCloud Drive first.
+func defaultFolder(places []folder.Place) string {
+	if len(places) == 0 {
+		return ""
+	}
+	return filepath.Join(places[0].Path, "SSHYard")
+}
 
 // targetForm is the backup location editor's fields. The place's secret
 // and own backup password live here only while the sheet is open: saving
@@ -388,11 +477,15 @@ type targetForm struct {
 	// orig is the place edited; a new one has its ID already
 	orig settings.BackupTarget
 	name string
-	// kind is the index in targetKinds
+	// kind is the index in targetKinds, choice the type select's option
 	kind                                   int
+	choice                                 string
 	url, dir, user, bucket, region, gistID string
-	pathStyle                              bool
-	secret                                 string
+	// path is a folder place's full path, apart from dir so that another
+	// kind's folder is not taken for it
+	path      string
+	pathStyle bool
+	secret    string
 	// proxy is the proxy select's ID, "" none
 	proxy string
 	keep  float64
@@ -414,7 +507,7 @@ type targetForm struct {
 }
 
 func (a *App) openTargetForm(t *settings.BackupTarget) {
-	f := &targetForm{isNew: t == nil, orig: settings.BackupTarget{ID: assets.NewID(), Kind: settings.BackupWebDAV}, keep: settings.BackupKeepDefault, secrets: true, every: 1, source: pwCustom}
+	f := &targetForm{isNew: t == nil, orig: settings.BackupTarget{ID: assets.NewID(), Kind: settings.BackupFolder}, keep: settings.BackupKeepDefault, secrets: true, every: 1, source: pwCustom}
 	if a.settings.DefaultBackupPassword {
 		f.source = pwDefault
 	}
@@ -429,6 +522,12 @@ func (a *App) openTargetForm(t *settings.BackupTarget) {
 		f.proxy = t.ProxyID
 	}
 	f.kind = max(slices.Index(targetKinds, f.orig.Kind), 0)
+	if t != nil && t.Kind == settings.BackupFolder {
+		f.path, f.dir = t.Dir, ""
+		a.knownPlaces(true)
+	} else {
+		f.path = defaultFolder(a.knownPlaces(true))
+	}
 	if i := slices.Index(settings.BackupAutoHours, f.orig.AutoHours); i >= 0 {
 		f.every = i
 	}
@@ -477,6 +576,12 @@ func (a *App) targetDraft(m locales.Messages, f *targetForm) (settings.BackupTar
 		t.GistID = ""
 	case settings.BackupGist:
 		t.URL, t.Dir, t.User, t.Bucket, t.Region, t.PathStyle = "", "", "", "", "", false
+	case settings.BackupFolder:
+		t.URL, t.User, t.Bucket, t.Region, t.GistID, t.PathStyle, t.ProxyID = "", "", "", "", "", false, ""
+		t.Dir = strings.TrimSpace(f.path)
+		if filepath.IsAbs(t.Dir) {
+			t.Dir = filepath.Clean(t.Dir)
+		}
 	}
 	needSecret := f.secret == "" && !f.keepsSecret()
 	switch {
@@ -494,6 +599,10 @@ func (a *App) targetDraft(m locales.Messages, f *targetForm) (settings.BackupTar
 		return t, m.RequiredField(m.S3SecretKey())
 	case t.Kind == settings.BackupGist && needSecret:
 		return t, m.RequiredField(m.GistToken())
+	case t.Kind == settings.BackupFolder && t.Dir == "":
+		return t, m.RequiredField(m.SyncFolderPath())
+	case t.Kind == settings.BackupFolder && !filepath.IsAbs(t.Dir):
+		return t, m.ErrTargetFolder()
 	}
 	return t, ""
 }
@@ -661,7 +770,7 @@ func (a *App) TestTarget(m locales.Messages) bool {
 		return false
 	}
 	secret := f.secret
-	if secret == "" && f.keepsSecret() {
+	if secret == "" && f.keepsSecret() && t.Kind != settings.BackupFolder {
 		if !a.unlocked() {
 			draft := a.target
 			a.withSecrets(func() {
@@ -776,13 +885,18 @@ func targetIcon(kind string) *icons.Icon {
 		return icons.BackupS3
 	case settings.BackupGist:
 		return icons.BackupGist
+	case settings.BackupFolder:
+		return icons.BackupFolder
 	}
 	return icons.BackupWebDAV
 }
 
-// targetKindText names a kind of place; the names are not translated.
-func targetKindText(kind string) string {
+// targetKindText names a kind of place; the names are not translated,
+// but for a folder's.
+func targetKindText(m locales.Messages, kind string) string {
 	switch kind {
+	case settings.BackupFolder:
+		return m.BackupKindFolder()
 	case settings.BackupS3:
 		return "S3"
 	case settings.BackupGist:
@@ -805,8 +919,13 @@ func autoText(m locales.Messages, hours int) string {
 // targetNote is a place's row note: its kind, where it is, how its last
 // backup went and how often it backs up by itself.
 func (a *App) targetNote(m locales.Messages, t settings.BackupTarget) string {
-	parts := []string{targetKindText(t.Kind)}
+	parts := []string{targetKindText(m, t.Kind)}
 	switch t.Kind {
+	case settings.BackupFolder:
+		if p, ok := folder.PlaceOf(a.knownPlaces(false), t.Dir); ok {
+			parts[0] = m.BackupKindFolderVia(p.Name)
+		}
+		parts = append(parts, a.pv(filepath.Base(t.Dir)))
 	case settings.BackupWebDAV:
 		if u, err := url.Parse(t.URL); err == nil && u.Host != "" {
 			parts = append(parts, a.pv(u.Host))
@@ -977,7 +1096,18 @@ func (a *App) targetFields(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 			a.targetHold.apply(c, f, in)
 		})
 		ui.Field(c, m.FieldType(), func() {
-			formSegmented(c.Key("bt:kind"), &f.kind, false, "WebDAV", "S3", "Gist").Label(m.FieldType())
+			opts := targetOptions(m, a.knownPlaces(false))
+			cur := optionOf(opts, f)
+			f.choice = cur.label
+			labels := make([]string, len(opts))
+			for i, o := range opts {
+				labels[i] = o.label
+			}
+			if formSelect(c.Key("bt:kind"), &f.choice, labels).Label(m.FieldType()).Changed() {
+				if i := slices.Index(labels, f.choice); i >= 0 {
+					chooseOption(f, opts[i])
+				}
+			}
 		})
 		switch kind {
 		case settings.BackupWebDAV:
@@ -997,17 +1127,28 @@ func (a *App) targetFields(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 		case settings.BackupGist:
 			ui.Field(c, m.GistToken(), func() { formTextInput(c.Key("bt:secret"), &f.secret).Password().Placeholder(unchanged) })
 			ui.Field(c, m.GistID(), func() { formTextInput(c.Key("bt:gist"), &f.gistID).Placeholder(m.GistIDPlaceholder()) })
-		}
-		ui.Field(c, m.FieldProxy(), func() {
-			a.proxySelect(c.Key("bt:proxy"), m, &f.proxy, proxyPick{owner: f,
-				leave: func() { a.targetEditing = false },
-				back: func(id string) {
-					a.target, a.targetEditing = f, true
-					if id != "" {
-						f.proxy = id
+		case settings.BackupFolder:
+			ui.Field(c, m.SyncFolderPath(), func() {
+				ui.Row(c).Gap(8).AlignItems(ui.Center).FillWidth().Children(func() {
+					formTextInput(c.Key("bt:path"), &f.path).Placeholder(m.SyncFolderPlaceholder()).Label(m.SyncFolderPath()).Grow(1).Shrink(1)
+					if (IconButton{Icon: icons.OpenFile, Label: m.ChooseSyncFolder(), Disabled: a.p.PickFolder == nil}).Clicked(c, "bt:pick") {
+						a.pickTargetFolder(m, f)
 					}
-				}})
-		})
+				})
+			})
+		}
+		if kind != settings.BackupFolder {
+			ui.Field(c, m.FieldProxy(), func() {
+				a.proxySelect(c.Key("bt:proxy"), m, &f.proxy, proxyPick{owner: f,
+					leave: func() { a.targetEditing = false },
+					back: func(id string) {
+						a.target, a.targetEditing = f, true
+						if id != "" {
+							f.proxy = id
+						}
+					}})
+			})
+		}
 		ui.Field(c, m.BackupKeep(), func() {
 			ui.NumberInput(c.Key("bt:keep"), &f.keep, 0, settings.BackupKeepMax, 1).Label(m.BackupKeep())
 		})
@@ -1019,8 +1160,10 @@ func (a *App) targetFields(c *ui.Context, m locales.Messages, tok theme.Tokens, 
 	case settings.BackupGist:
 		ui.Text(c, m.GistTokenNote()).FontSize(theme.Footnote).TextColor(tok.TextMuted)
 		notice(c, "bt:gistnote", icons.Info, tok.Accent, m.GistNotice())
+	case settings.BackupFolder:
+		a.folderNotes(c, m, tok, f)
 	}
-	if kind != settings.BackupGist && plainHTTP(f.url) {
+	if (kind == settings.BackupWebDAV || kind == settings.BackupS3) && plainHTTP(f.url) {
 		notice(c, "bt:http", icons.Warning, tok.Warning, m.WarnPlainHTTP())
 	}
 	ui.Box(c).Height(1).FillWidth().Background(tok.Line)
@@ -1127,5 +1270,36 @@ func (a *App) remoteListView(c *ui.Context, m locales.Messages) {
 	}), tok)
 	if !a.listingRemote && a.remotes == l {
 		a.remotes = nil
+	}
+}
+
+// pickTargetFolder has the folder place's path chosen in the system's
+// dialog.
+func (a *App) pickTargetFolder(m locales.Messages, f *targetForm) {
+	start := f.path
+	if !filepath.IsAbs(start) {
+		start = a.localHome()
+	}
+	title := m.ChooseSyncFolder()
+	go func() {
+		dir, err := a.p.PickFolder(title, start)
+		a.post(func() {
+			switch {
+			case a.target != f:
+			case err != nil:
+				f.err = m.ErrGeneric(err.Error())
+			case dir != "":
+				f.path, f.err, f.tested = dir, "", ""
+			}
+		})
+	}()
+}
+
+// folderNotes are what to know of a folder place.
+func (a *App) folderNotes(c *ui.Context, m locales.Messages, tok theme.Tokens, f *targetForm) {
+	places := a.knownPlaces(false)
+	ui.Text(c, m.SyncFolderNote()).FontSize(theme.Footnote).TextColor(tok.TextMuted)
+	if runtime.GOOS == "darwin" && !slices.ContainsFunc(places, func(p folder.Place) bool { return p.Name == folder.ICloudDrive }) {
+		notice(c, "bt:icloud", icons.Info, tok.Accent, m.ICloudDriveOff())
 	}
 }
