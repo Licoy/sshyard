@@ -864,6 +864,7 @@
   "defaultShellNote": "새 로컬 터미널에서 실행할 셸입니다. 다른 셸은 로컬 터미널 메뉴에서 선택할 수 있습니다.",
   "shellDefault": "기본",
   "localTerminalWith": "로컬 터미널: {name}",
+  "localTerminalDirFailed": "{path}에서 로컬 터미널을 열지 못했습니다.",
   "newGroup": "새 그룹",
   "newGroupEllipsis": "새 그룹…",
   "editGroup": "그룹 편집",

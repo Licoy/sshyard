@@ -3,6 +3,8 @@
 package session
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -39,4 +41,31 @@ func TestLocalClose(t *testing.T) {
 	waitState(t, s, Connected)
 	s.Close()
 	<-s.Done()
+}
+
+// TestLocalShellStartsInDir: a local shell runs in the folder asked for,
+// not the user's home.
+func TestLocalShellStartsInDir(t *testing.T) {
+	dir := t.TempDir()
+	out := filepath.Join(t.TempDir(), "cwd")
+	sh := Shell{Path: "/bin/sh", Args: []string{"-c", `pwd -P > "$SSHYARD_TEST_CWD"`}, Env: []string{"SSHYARD_TEST_CWD=" + out}}
+	p, err := startLocal(sh, dir, 80, 24, "xterm")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+	if err := p.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := dir
+	if real, err := filepath.EvalSymlinks(dir); err == nil {
+		want = real
+	}
+	if got := strings.TrimSpace(string(b)); got != want {
+		t.Errorf("shell started in %q, want %q", got, want)
+	}
 }

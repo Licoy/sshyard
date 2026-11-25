@@ -15,6 +15,16 @@
     "webview": false
   },
   "macos": {
-    "icon": "icon/Assets.car"
+    "icon": "icon/Assets.car",
+    "infoPlist": {
+      "CFBundleDocumentTypes": [
+        {
+          "CFBundleTypeName": "Folder",
+          "CFBundleTypeRole": "Viewer",
+          "LSHandlerRank": "Alternate",
+          "LSItemContentTypes": ["public.folder"]
+        }
+      ]
+    }
   }
 }

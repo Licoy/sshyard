@@ -37,7 +37,7 @@ func TestLocalExitDrainsOutputBeforeNextStream(t *testing.T) {
 	p := &drainingPTY{closed: make(chan struct{}), resume: make(chan struct{})}
 	previous := startPTY
 	t.Cleanup(func() { startPTY = previous })
-	startPTY = func(Shell, int, int, string) (localPTY, error) { return p, nil }
+	startPTY = func(Shell, string, int, int, string) (localPTY, error) { return p, nil }
 	defer close(p.resume)
 	s := New(Config{}, Options{Local: true}, 80, 24)
 	defer s.Close()
@@ -93,7 +93,7 @@ func TestLocalOutputEncodingStream(t *testing.T) {
 		t.Run(string(tc.encoding), func(t *testing.T) {
 			previous := startPTY
 			t.Cleanup(func() { startPTY = previous })
-			startPTY = func(Shell, int, int, string) (localPTY, error) {
+			startPTY = func(Shell, string, int, int, string) (localPTY, error) {
 				return &encodingPTY{strings.NewReader("@" + tc.wire)}, nil
 			}
 			s := New(Config{}, Options{Local: true}, 80, 24)

@@ -8747,6 +8747,18 @@ func (msgs Messages) LocalTerminalWith(name string) string {
 	return Catalog.Format(msgs.locale, "localTerminalWith", map[string]any{"name": name})
 }
 
+// LocalTerminalDirFailed says "Could not open a local terminal in {path}."
+// in the language the app shows.
+func LocalTerminalDirFailed(path string) string {
+	return In(i18n.Locale()).LocalTerminalDirFailed(path)
+}
+
+// LocalTerminalDirFailed says "Could not open a local terminal in {path}."
+// in the language of msgs.
+func (msgs Messages) LocalTerminalDirFailed(path string) string {
+	return Catalog.Format(msgs.locale, "localTerminalDirFailed", map[string]any{"path": path})
+}
+
 // NewGroup says "New group"
 // in the language the app shows.
 func NewGroup() string { return In(i18n.Locale()).NewGroup() }

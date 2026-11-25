@@ -864,6 +864,7 @@
   "defaultShellNote": "新增本地終端機時執行的 shell，其他 shell 可在本地終端機選單中選擇。",
   "shellDefault": "預設",
   "localTerminalWith": "本地終端機：{name}",
+  "localTerminalDirFailed": "無法在 {path} 開啟本地終端機。",
   "newGroup": "新建群組",
   "newGroupEllipsis": "新建群組…",
   "editGroup": "編輯群組",

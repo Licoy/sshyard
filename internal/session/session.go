@@ -76,9 +76,10 @@ type Options struct {
 	// BackspaceBS makes Backspace send BS (^H) rather than DEL
 	// (vt.Modes.BackspaceBS).
 	BackspaceBS bool
-	// Dir is the folder an SSH shell goes to each time it starts: a cd
-	// typed once the shell has gone quiet (enterShell). "~" or "~/…" is
-	// under the home folder.
+	// Dir is the folder a shell starts in: for an SSH shell, a cd typed
+	// once the shell has gone quiet (enterShell), with "~" or "~/…" under
+	// the home folder; for a local shell, its working folder, empty for
+	// the user's home folder.
 	Dir string
 	// Start, when set, is asked each time an SSH shell starts for a
 	// command to type after the cd to Dir, as an attach to a tmux
@@ -202,6 +203,9 @@ func New(cfg Config, opts Options, cols, rows int) *Session {
 
 // Config returns the session's configuration.
 func (s *Session) Config() Config { return s.cfg }
+
+// Dir is the folder a shell starts in, "" for the user's home folder.
+func (s *Session) Dir() string { return s.opts.Dir }
 
 // Status returns the session's status.
 func (s *Session) Status() Status {

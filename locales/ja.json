@@ -864,6 +864,7 @@
   "defaultShellNote": "新しいローカルターミナルで実行するシェルです。ほかのシェルはローカルターミナルのメニューから選べます。",
   "shellDefault": "既定",
   "localTerminalWith": "ローカルターミナル: {name}",
+  "localTerminalDirFailed": "{path} でローカルターミナルを開けませんでした。",
   "newGroup": "新しいグループ",
   "newGroupEllipsis": "新しいグループ…",
   "editGroup": "グループを編集",

@@ -102,3 +102,19 @@ func TestGitRoot(t *testing.T) {
 		}
 	}
 }
+
+// TestArgsAt: WSL's --cd takes the folder asked for, and other shells keep
+// their arguments.
+func TestArgsAt(t *testing.T) {
+	wsl := Shell{ID: "wsl:Ubuntu", Args: []string{"-d", "Ubuntu", "--cd", "~"}}
+	if got, want := argsAt(wsl, `C:\work`), []string{"-d", "Ubuntu", "--cd", `C:\work`}; !slices.Equal(got, want) {
+		t.Errorf("WSL args = %q, want %q", got, want)
+	}
+	if got, want := argsAt(wsl, ""), wsl.Args; !slices.Equal(got, want) {
+		t.Errorf("empty dir args = %q, want %q", got, want)
+	}
+	bash := Shell{ID: "gitbash", Args: []string{"--login", "-i"}}
+	if got := argsAt(bash, `C:\work`); !slices.Equal(got, bash.Args) {
+		t.Errorf("Git Bash args = %q, want %q", got, bash.Args)
+	}
+}

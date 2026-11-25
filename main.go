@@ -9,12 +9,14 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/Licoy/sshyard/internal/app"
 	"github.com/Licoy/sshyard/internal/awake"
 	"github.com/Licoy/sshyard/internal/gtkfix"
 	"github.com/Licoy/sshyard/internal/keychain"
+	"github.com/Licoy/sshyard/internal/launch"
 	"github.com/Licoy/sshyard/internal/macfix"
 	"github.com/Licoy/sshyard/internal/netwatch"
 	"github.com/Licoy/sshyard/internal/portable"
@@ -194,6 +196,30 @@ func appMenu() *mygo.Menu {
 }
 
 func main() {
+	if !mygo.App.RequestSingleInstanceLock() {
+		return
+	}
+	wd, _ := os.Getwd()
+	launchDir := launch.Dir(os.Args[1:], wd)
+	// macOS may deliver a folder opened with the app before MyGo is ready,
+	// so take open events from the start and hold them until there is an app
+	// to open them.
+	var opened struct {
+		sync.Mutex
+		paths []string
+		ready func(string)
+	}
+	mygo.App.OnOpenFile(func(path string) {
+		opened.Lock()
+		f := opened.ready
+		if f == nil {
+			opened.paths = append(opened.paths, path)
+		}
+		opened.Unlock()
+		if f != nil {
+			f(path)
+		}
+	})
 	setupStorage()
 	mygo.Use(updatePlugin())
 	if runtime.GOOS == "darwin" {
@@ -219,6 +245,15 @@ func main() {
 			d.window.Focus()
 		}
 		a, _ := app.New(p)
+		a.SetLaunchDir(launchDir)
+		opened.Lock()
+		opened.ready = a.SetLaunchDir
+		paths := opened.paths
+		opened.paths = nil
+		opened.Unlock()
+		for _, path := range paths {
+			a.SetLaunchDir(path)
+		}
 		installWindowStates(a)
 		mygo.App.OnQuit(a.Close)
 		prepareWindowState("main")
@@ -249,6 +284,14 @@ func main() {
 		// once the window has made MyGo's view class.
 		macfix.TitleBarClicks()
 		d = newDesktop(a, w)
+		mygo.App.OnSecondInstance(func(args []string, wd string) {
+			if d != nil {
+				d.show()
+			}
+			if dir := launch.Dir(args, wd); dir != "" {
+				a.SetLaunchDir(dir)
+			}
+		})
 		a.Start()
 		go updater.CleanLeftovers()
 		mygo.App.OnDidResignActive(a.NotifyPendingApprovals)

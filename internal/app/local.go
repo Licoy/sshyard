@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"os"
 	"strings"
 
 	"github.com/Licoy/sshyard/internal/assets"
@@ -9,6 +10,7 @@ import (
 	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/locales"
+	"github.com/egoist/mygo/ui"
 )
 
 // localID is the host of local terminal panes: this computer, never
@@ -49,6 +51,10 @@ func (a *App) shell(id string) session.Shell {
 // assistant that types into it, on this computer.
 var errLocalTerminalOnly = errors.New("app: this computer opens terminals only")
 
+// errLocalDirNotDir is opening a local terminal at a file rather than a
+// folder.
+var errLocalDirNotDir = errors.New("app: the local terminal folder is not a folder")
+
 // localHost is the local host id: named in the app's language, or for
 // its shell when there are several.
 func (a *App) localHost(id string) assets.Host {
@@ -68,16 +74,46 @@ func (a *App) localHost(id string) assets.Host {
 func (a *App) OpenLocalTerminal() (int, error) { return a.OpenLocalShell(a.shell(localID).ID) }
 
 // OpenLocalShell opens the shell of id as OpenLocalTerminal does.
-func (a *App) OpenLocalShell(id string) (int, error) { return a.openShell(id, true) }
+func (a *App) OpenLocalShell(id string) (int, error) { return a.openShellAt(id, "", true) }
 
-// openShell opens the shell of id in a new tab, or with split under the
-// focused pane when there is one.
-func (a *App) openShell(id string, split bool) (int, error) {
+// OpenLocalTerminalAt opens the default shell of this computer in dir, in
+// a new tab, and says why it could not when dir is not a folder.
+func (a *App) OpenLocalTerminalAt(dir string) (int, error) {
+	info, err := os.Stat(dir)
+	if err == nil && !info.IsDir() {
+		err = errLocalDirNotDir
+	}
+	if err != nil {
+		a.toast(func(m locales.Messages) ui.Toast {
+			return ui.Toast{Title: m.LocalTerminalDirFailed(dir), Type: "error"}
+		})
+		return 0, err
+	}
+	return a.openShellAt(a.shell(localID).ID, dir, false)
+}
+
+// SetLaunchDir asks the app to open a local terminal in dir: now when it
+// is already running, else as it starts once its data is ready. An empty
+// dir does nothing.
+func (a *App) SetLaunchDir(dir string) {
+	if dir == "" {
+		return
+	}
+	if a.independentStarted.Load() {
+		a.OpenLocalTerminalAt(dir)
+		return
+	}
+	a.launchDir = dir
+}
+
+// openShellAt opens the shell of id, in dir when set, in a new tab, or
+// with split under the focused pane when there is one.
+func (a *App) openShellAt(id, dir string, split bool) (int, error) {
 	var at openAt
 	if t := a.ws.ActiveTab(); split && t != nil && t.Focus != 0 {
 		at = openAt{pane: t.Focus, edge: layout.Bottom}
 	}
-	return a.open(localID+id, layout.Terminal, at, nil)
+	return a.openIn(localID+id, layout.Terminal, at, nil, dir)
 }
 
 // openLocal opens the shell of id, "" the default one, in a new tab or
@@ -86,7 +122,7 @@ func (a *App) openLocal(m locales.Messages, id string, split bool) {
 	if id == "" {
 		id = a.shell(localID).ID
 	}
-	if _, err := a.openShell(id, split); err != nil {
+	if _, err := a.openShellAt(id, "", split); err != nil {
 		a.toastError(m.ErrGeneric(err.Error()))
 	}
 }
