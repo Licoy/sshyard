@@ -119,6 +119,7 @@ var settingEntries = []settingEntry{
 	{prefMonitoring, locales.Messages.MetricsBar, locales.Messages.MetricsBarNote},
 	{prefMonitoring, locales.Messages.MetricsInterval, nil},
 	{prefMonitoring, locales.Messages.MetricsMount, locales.Messages.MetricsMountNote},
+	{prefFiles, locales.Messages.DefaultDownloadFolder, locales.Messages.DefaultDownloadFolderNote},
 	{prefFiles, locales.Messages.TransferConcurrency, locales.Messages.TransferConcurrencyHint},
 	{prefFiles, locales.Messages.KeepAwake, locales.Messages.KeepAwakeNote},
 	{prefFiles, locales.Messages.OpenConfirmMB, locales.Messages.OpenConfirmHint},

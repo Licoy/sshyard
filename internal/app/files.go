@@ -672,7 +672,7 @@ func localStart(home, dir string) string {
 }
 
 // listLocalFirst lists the local side of the files pane cn for the first
-// time: in its host's LocalDir, or home when that cannot be listed.
+// time: in its host's LocalDir, or the download folder when unset or unavailable.
 func (a *App) listLocalFirst(cn *conn) {
 	l := &cn.fs.local
 	if l.dir == "" && cn.host.LocalDir != "" {
@@ -683,7 +683,11 @@ func (a *App) listLocalFirst(cn *conn) {
 			return
 		}
 	}
-	a.listLocal(l, l.dir)
+	dir := l.dir
+	if dir == "" {
+		dir = a.downloadsDir()
+	}
+	a.listLocal(l, dir)
 }
 
 func (a *App) listLocal(l *localSide, dir string) {
@@ -1649,25 +1653,13 @@ func (a *App) downloadTo(cn *conn, paths []string, m locales.Messages) {
 	}()
 }
 
-// localHome is where the local side of a files pane starts.
+// localHome is the base for host-relative local paths.
 func (a *App) localHome() string {
 	if a.p.HomeDir != "" {
 		return a.p.HomeDir
 	}
 	dir, _ := os.UserHomeDir()
 	return dir
-}
-
-// downloadsDir is where a download is asked to go first: the user's
-// Downloads folder, when there is one.
-func (a *App) downloadsDir() string {
-	home := a.localHome()
-	if d := filepath.Join(home, "Downloads"); home != "" {
-		if fi, err := os.Stat(d); err == nil && fi.IsDir() {
-			return d
-		}
-	}
-	return home
 }
 
 // selected is the entry of row sel of es, if any.

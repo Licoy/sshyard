@@ -70,7 +70,8 @@ func TestHostDefaultDirs(t *testing.T) {
 	tc := a.focused()
 	waitFor(t, tt, "the cd", func() bool { return strings.Contains(tc.s.Term.ScreenText(), "you said: cd ~/'www'") })
 
-	// Folders that cannot be listed start at home.
+	// An unavailable remote folder falls back to the remote home. Here the
+	// local download folder also resolves to home because Downloads is absent.
 	h.RemoteDir, h.LocalDir = "/nowhere/at/all", "~/missing"
 	if _, err := a.Store().Update(h); err != nil {
 		t.Fatal(err)
