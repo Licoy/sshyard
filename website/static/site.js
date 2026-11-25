@@ -145,7 +145,10 @@
 
   function onScroll() {
     var y = window.scrollY || 0;
-    if (nav) nav.classList.toggle("scrolled", y > 4);
+    if (nav) {
+      nav.classList.toggle("scrolled", y > 2);
+      nav.style.setProperty("--nav-glass", clamp(y / 56, 0, 1).toFixed(4));
+    }
     if (progressBar) {
       var max = Math.max(1, doc.scrollHeight - window.innerHeight);
       progressBar.style.setProperty("--scroll-p", clamp(y / max, 0, 1).toFixed(4));
@@ -293,10 +296,13 @@
     }
     function kick() { if (!raf && active && !document.hidden && !reduced.matches) raf = requestAnimationFrame(loop); }
 
-    hero.addEventListener("pointermove", function (e) {
-      if (reduced.matches) return;
+    document.addEventListener("pointermove", function (e) {
+      if (reduced.matches || !active) return;
+      if (e.target.closest && !e.target.closest(".hero, .nav")) return;
       var r = hero.getBoundingClientRect();
-      var x = e.clientX - r.left, y = e.clientY - r.top, sec = (performance.now() - t0) / 1000;
+      var x = e.clientX - r.left, y = e.clientY - r.top;
+      if (y < 0 || y > r.height) return;
+      var sec = (performance.now() - t0) / 1000;
       hover = { x: x, y: y, at: sec };
       var prev = trail[trail.length - 1];
       if (!prev || Math.hypot(x - prev.x, y - prev.y) >= 16) {
@@ -307,7 +313,7 @@
     }, { passive: true });
 
     hero.addEventListener("pointerdown", function (e) {
-      if (reduced.matches || e.target.closest(".win, a, button, input")) return;
+      if (reduced.matches || e.target.closest(".win, .nav, a, button, input")) return;
       var r = hero.getBoundingClientRect();
       rings.push({ x: e.clientX - r.left, y: e.clientY - r.top, at: (performance.now() - t0) / 1000 });
       if (rings.length > 4) rings.shift();

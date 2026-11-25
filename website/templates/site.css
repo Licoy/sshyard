@@ -29,6 +29,7 @@
   --success: #30D158;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, .38);
   --shadow-lift: 0 20px 54px rgba(0, 0, 0, .55), 0 2px 10px rgba(0, 0, 0, .35);
+  --nav-shadow: 0 6px 24px rgba(0, 0, 0, .28);
   --term-bg: #161618;
   --term-fg: #D8DEE9;
   --t-red: #F0626A;
@@ -80,6 +81,7 @@
   --success: #24A148;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, .07), 0 1px 2px rgba(0, 0, 0, .04);
   --shadow-lift: 0 20px 52px rgba(15, 23, 42, .16), 0 4px 14px rgba(15, 23, 42, .08);
+  --nav-shadow: 0 4px 20px rgba(0, 0, 0, .05);
   --term-bg: #FFFFFF;
   --term-fg: #1F2328;
   --t-red: #CF222E;
@@ -432,29 +434,29 @@ button { font: inherit; color: inherit; }
 /* ---------------------------------------------------------------- nav */
 
 .nav {
-  position: sticky; top: 0; z-index: 50;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   height: var(--nav-h);
-  background: color-mix(in srgb, var(--canvas) 76%, transparent);
-  -webkit-backdrop-filter: saturate(180%) blur(22px);
-  backdrop-filter: saturate(180%) blur(22px);
-  box-shadow: 0 .5px 0 transparent;
-  transition: box-shadow .2s, background-color .2s;
 }
-.nav.scrolled {
-  background: color-mix(in srgb, var(--canvas) 86%, transparent);
-  box-shadow: 0 .5px 0 var(--glass-edge);
+.nav::before {
+  content: "";
+  position: absolute; inset: 0; z-index: -1;
+  background: color-mix(in srgb, var(--canvas) 68%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 .5px 0 var(--glass-edge), var(--nav-shadow);
+  opacity: var(--nav-glass, 0);
+  pointer-events: none;
 }
+.nav:not(.scrolled)::before { opacity: 0; visibility: hidden; }
 .nav-progress {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 2px;
   background: linear-gradient(90deg, var(--accent), var(--tint-teal));
   transform-origin: left center;
   transform: scaleX(var(--scroll-p, 0));
-  opacity: 0;
-  transition: opacity .25s;
+  opacity: calc(var(--nav-glass, 0) * .85);
   pointer-events: none;
 }
-.nav.scrolled .nav-progress { opacity: .85; }
-.nav-in { display: flex; align-items: center; gap: var(--s4); height: 100%; }
+.nav-in { position: relative; z-index: 1; display: flex; align-items: center; gap: var(--s4); height: 100%; }
 .brand {
   display: inline-flex; align-items: center; gap: var(--s2);
   color: var(--text); font-weight: 700; font-size: 17px; letter-spacing: -0.01em;
@@ -465,7 +467,7 @@ button { font: inherit; color: inherit; }
 .nav-links { display: none; gap: var(--s1); margin-inline-start: var(--s4); }
 .nav-links a {
   padding: var(--s2) var(--s3); border-radius: var(--r-capsule);
-  color: var(--muted); font-size: 14px; font-weight: 500;
+  color: color-mix(in srgb, var(--text) 76%, transparent); font-size: 14px; font-weight: 500;
   text-decoration: none; transition: color .18s, background-color .18s;
 }
 .nav-links a:hover, .nav-links a[aria-current], .nav-links a.spy { color: var(--text); background: var(--hover); }
@@ -481,7 +483,7 @@ button { font: inherit; color: inherit; }
 }
 
 .lang { position: relative; }
-.lang summary { color: var(--muted); font-size: 14px; font-weight: 500; }
+.lang summary { color: color-mix(in srgb, var(--text) 76%, transparent); font-size: 14px; font-weight: 500; }
 .lang summary .i:last-child { width: 14px; height: 14px; transition: transform .2s; }
 .lang[open] summary .i:last-child { transform: rotate(180deg); }
 .lang-cur { display: none; }
@@ -490,7 +492,9 @@ button { font: inherit; color: inherit; }
   position: absolute; right: 0; top: calc(100% + var(--s2));
   min-width: 180px; margin: 0; padding: var(--s1);
   list-style: none;
-  background: var(--inset);
+  background: color-mix(in srgb, var(--inset) 84%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-lift), inset 0 0 0 .5px var(--glass-edge);
   animation: pop .18s var(--ease);
@@ -512,7 +516,9 @@ button { font: inherit; color: inherit; }
   position: fixed; left: var(--s2); right: var(--s2); top: calc(var(--nav-h) + var(--s1));
   max-height: calc(100dvh - var(--nav-h) - var(--s4)); overflow: auto;
   padding: var(--s3);
-  background: var(--inset);
+  background: color-mix(in srgb, var(--inset) 86%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+  backdrop-filter: saturate(180%) blur(22px);
   border-radius: var(--r-sheet);
   box-shadow: var(--shadow-lift), inset 0 0 0 .5px var(--glass-edge);
   animation: pop .2s var(--ease);
@@ -533,7 +539,7 @@ button { font: inherit; color: inherit; }
 
 .hero {
   position: relative;
-  padding-top: clamp(40px, 7.5vw, 88px);
+  padding-top: calc(var(--nav-h) + clamp(40px, 7.5vw, 88px));
   overflow: clip;
   isolation: isolate;
 }
@@ -2027,7 +2033,7 @@ html[data-os="linux"] [data-platform="linux"] .dl-rec { display: inline-flex; }
 
 /* ---------------------------------------------------------------- download page */
 
-.page-head { padding-top: clamp(32px, 6vw, 72px); text-align: center; }
+.page-head { padding-top: calc(var(--nav-h) + clamp(32px, 6vw, 72px)); text-align: center; }
 .page-head h1 { font-size: clamp(32px, 5.6vw, 60px); letter-spacing: var(--track-title); }
 .page-head .lead { max-width: 640px; margin-inline: auto; }
 .crumbs { margin-bottom: var(--s5); font-size: 14px; }
@@ -2076,7 +2082,7 @@ html[data-os="linux"] [data-platform="linux"] .dl-rec { display: inline-flex; }
 .copy.done .i:last-child { display: block; }
 .dl-block .dl-links { justify-content: flex-start; margin-top: var(--s6); }
 
-.notfound { padding-block: clamp(80px, 14vw, 160px); text-align: center; }
+.notfound { padding-block: calc(var(--nav-h) + clamp(80px, 14vw, 160px)) clamp(80px, 14vw, 160px); text-align: center; }
 .nf-code { font-size: clamp(64px, 12vw, 120px); font-weight: 700; line-height: 1; color: var(--accent); letter-spacing: -0.04em; }
 .notfound h1 { margin-top: var(--s4); font-size: clamp(28px, 4vw, 40px); }
 .notfound .lead { margin-bottom: var(--s8); }
