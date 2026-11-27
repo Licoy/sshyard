@@ -199,7 +199,14 @@ func TestReconnectSecurityGates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(lockedApp.Close)
+	t.Cleanup(func() {
+		// This test marks an unlock busy without starting its cleanup worker:
+		// Close would leave the store, and on Windows its lock file, open.
+		lockedApp.unlock.mu.Lock()
+		lockedApp.unlock.busy = false
+		lockedApp.unlock.mu.Unlock()
+		lockedApp.Close()
+	})
 	waitConn := &conn{
 		id:             1,
 		kind:           layout.Terminal,
