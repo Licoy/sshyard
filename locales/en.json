@@ -82,6 +82,7 @@
   "stateDisconnected": "Disconnected",
   "stateFailed": "Connection failed",
   "reconnect": "Reconnect",
+  "bannerReconnectHint": "Press {key} or {shortcut} to reconnect",
   "errAuth": "Authentication failed for {user}@{host}.",
   "errNetwork": "Cannot reach {host}: {detail}",
   "errHostKeyChanged": "The host key of {host} has changed. This could mean someone is intercepting the connection, so SSHYard refused to connect.",
