@@ -82,6 +82,7 @@
   "stateDisconnected": "已断开",
   "stateFailed": "连接失败",
   "reconnect": "重新连接",
+  "bannerReconnectHint": "按 {key} 或 {shortcut} 重新连接",
   "errAuth": "{user}@{host} 认证失败。",
   "errNetwork": "无法连接 {host}：{detail}",
   "errHostKeyChanged": "{host} 的主机密钥已变更。这可能意味着连接被劫持，SSHYard 已拒绝连接。",

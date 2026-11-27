@@ -686,6 +686,9 @@ func (a *App) termElement(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn
 		if a.xferKey(cn, ev) {
 			return true
 		}
+		if a.disconnectedTermKey(cn, ev) {
+			return true
+		}
 		// A program reading the mouse takes the right click too.
 		return tv.input(ev, svc) || a.contextPress(tb, ev, entries)
 	})
@@ -729,6 +732,9 @@ func (a *App) termEntries(t *layout.Tab, n *layout.Node, cn *conn, tv *termView,
 		a.bound(actFind, menuEntry{Icon: icons.Search, Label: m.Find(), Do: focus(func() { a.finding = true })}),
 		a.bound(actClearScreen, menuEntry{Icon: icons.Clear, Label: m.ClearScreen(), Do: focus(func() { tv.clearScreen() })}),
 	}
+	if a.canReconnect(cn) {
+		entries = append(entries, a.bound(actReconnect, menuEntry{Icon: icons.Reconnect, Label: m.Reconnect(), Do: focus(func() { a.reconnectPane(cn) })}))
+	}
 	if isStream(cn.host) {
 		entries = append(entries, a.bound(actSendBreak, menuEntry{Icon: icons.SendBreak, Label: m.SendBreak(), Disabled: !canBreak(cn), Do: func() { a.sendBreak(cn) }}))
 	}
@@ -754,11 +760,101 @@ func (a *App) termEntries(t *layout.Tab, n *layout.Node, cn *conn, tv *termView,
 	}...)...)
 }
 
+// canReconnect reports whether pane cn can be reconnected (or unlocked to
+// start) right now. A session that failed because its host key changed
+// stays gated behind host-key review until the user reviews it.
+func (a *App) canReconnect(cn *conn) bool {
+	if cn == nil || cn.s == nil {
+		return false
+	}
+	st := cn.s.Status()
+	if st.State == session.Idle && cn.waitingSecrets {
+		return !a.unlock.busy
+	}
+	switch st.State {
+	case session.Failed:
+		if session.Classify(st.Err) == session.KindHostChanged && !cn.restoredQuiet {
+			return false
+		}
+		return true
+	case session.Disconnected, session.Exited, session.Reconnecting:
+		return true
+	}
+	return false
+}
+
+// reconnectPane reconnects pane cn, or unlocks secrets to start it when it
+// was waiting on the encrypted store. It returns whether a reconnect or
+// unlock was started.
+func (a *App) reconnectPane(cn *conn) bool {
+	if !a.canReconnect(cn) {
+		return false
+	}
+	if cn.kind == layout.Terminal {
+		a.focusReq = cn.id
+	}
+	st := cn.s.Status()
+	if st.State == session.Idle && cn.waitingSecrets {
+		a.withSecrets(func() {
+			if a.conns[cn.id] == cn {
+				cn.waitingSecrets = false
+				cn.restorePending = false
+				cn.restoredQuiet = false
+				cn.s.Start()
+			}
+		})
+		return true
+	}
+	cn.handled = nil
+	cn.restoredQuiet = false
+	if a.connectionNeedsSecrets(cn.host) {
+		a.withSecrets(func() {
+			if a.conns[cn.id] == cn {
+				cn.s.Reconnect()
+			}
+		})
+	} else {
+		cn.s.Reconnect()
+	}
+	return true
+}
+
+// disconnectedTermKey handles Enter on a focused, reconnectable terminal
+// pane so the user can reconnect without reaching for the mouse. It leaves
+// modifiers, app shortcuts, IME composition and live sessions untouched.
+func (a *App) disconnectedTermKey(cn *conn, ev ui.InputEvent) bool {
+	if cn == nil || cn.kind != layout.Terminal || cn.tv == nil || cn.tv.preedit != "" {
+		return false
+	}
+	if ev.Kind != ui.InputKeyDown || ev.Mods != 0 || ev.Key != ui.KeyEnter {
+		return false
+	}
+	if isAppShortcut(a.settings.Shortcuts, ev.Key, ev.Mods) {
+		return false
+	}
+	return a.reconnectPane(cn)
+}
+
+// bannerKeyCap draws a compact keycap tinted with a banner's accent color.
+func bannerKeyCap(c *ui.Context, col ui.Color, s string) {
+	ui.Box(c).MinWidth(20).Height(18).Padding(0, 5).Radius(theme.RadiusSmall).
+		Background(col.Alpha(0.14)).Border(1, col.Alpha(0.28)).Center().Children(func() {
+		ui.Text(c, s).FontSize(theme.Caption).FontWeight(600).SingleLine()
+	})
+}
+
 func (a *App) banner(c *ui.Context, cn *conn, st session.Status, tok theme.Tokens, m locales.Messages) {
 	waiting := st.State == session.Idle && cn.waitingSecrets
 	col := tok.Warning
 	if st.State == session.Failed {
 		col = tok.Danger
+	}
+	actionLabel := m.Reconnect()
+	if waiting {
+		actionLabel = m.SecretsRetry()
+		if a.unlocked() {
+			actionLabel = m.Connect()
+		}
 	}
 	// A rounded notice floating inside the bottom of the pane card.
 	ui.Row(c.Key("banner")).Margin(0, 8, 8, 8).Padding(6, 8, 6, 12).MinHeight(36).Gap(8).AlignItems(ui.Center).
@@ -776,43 +872,38 @@ func (a *App) banner(c *ui.Context, cn *conn, st session.Status, tok theme.Token
 			}
 		}
 		ui.Text(c, text).FontSize(theme.Footnote).Grow(1).Shrink(1)
-		if waiting {
-			label := m.SecretsRetry()
-			if a.unlocked() {
-				label = m.Connect()
+		if cn.kind == layout.Terminal && a.canReconnect(cn) {
+			enterKey := shortcutText(runtime.GOOS, 0, ui.KeyEnter)
+			tip := actionLabel
+			if !waiting {
+				k := a.keyOf(actReconnect)
+				tip = m.BannerReconnectHint(enterKey, shortcutText(runtime.GOOS, k.Mods, k.Key))
 			}
-			if (IconButton{Icon: icons.Key, Label: label, Size: Small, Disabled: a.unlock.busy}).Clicked(c, "unlock-connection") {
-				a.withSecrets(func() {
-					if a.conns[cn.id] == cn {
-						cn.waitingSecrets = false
-						cn.restorePending = false
-						cn.restoredQuiet = false
-						cn.s.Start()
-					}
-				})
+			ui.Row(c.Key("banner-key")).Shrink(0).Gap(theme.Space(1)).AlignItems(ui.Center).Tooltip(tip).Children(func() {
+				bannerKeyCap(c, col, enterKey)
+				ui.Text(c, actionLabel).FontSize(theme.Caption).TextColor(tok.TextMuted).SingleLine()
+			})
+		}
+		if waiting {
+			if (IconButton{Icon: icons.Key, Label: actionLabel, Size: Small, Disabled: a.unlock.busy}).Clicked(c, "unlock-connection") {
+				a.reconnectPane(cn)
 			}
 		}
 		switch st.State {
 		case session.Failed, session.Disconnected, session.Exited, session.Reconnecting:
+			if cn.kind == layout.Terminal {
+				if (IconButton{Icon: icons.Save, Label: m.LogSaveOutput(), Disabled: a.p.SaveFile == nil, Size: Small}).Clicked(c, "save-output") {
+					a.saveBuffer(cn, m)
+				}
+			}
 			if session.Classify(st.Err) == session.KindHostChanged {
 				if (IconButton{Icon: icons.HostKey, Label: m.HostKeyReview(), Size: Small}).Clicked(c, "review-host-key") {
 					a.reviewHostKey(cn)
 				}
-				if !cn.restoredQuiet {
-					break
-				}
 			}
-			if (IconButton{Icon: icons.Reconnect, Label: m.Reconnect(), Size: Small}).Clicked(c, "reconnect") {
-				cn.handled = nil
-				cn.restoredQuiet = false
-				if a.connectionNeedsSecrets(cn.host) {
-					a.withSecrets(func() {
-						if a.conns[cn.id] == cn {
-							cn.s.Reconnect()
-						}
-					})
-				} else {
-					cn.s.Reconnect()
+			if a.canReconnect(cn) {
+				if (IconButton{Icon: icons.Reconnect, Label: m.Reconnect(), Size: Small}).Clicked(c, "reconnect") {
+					a.reconnectPane(cn)
 				}
 			}
 		}

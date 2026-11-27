@@ -82,6 +82,7 @@
   "stateDisconnected": "已中斷",
   "stateFailed": "連線失敗",
   "reconnect": "重新連線",
+  "bannerReconnectHint": "按 {key} 或 {shortcut} 重新連線",
   "errAuth": "{user}@{host} 驗證失敗。",
   "errNetwork": "無法連線 {host}：{detail}",
   "errHostKeyChanged": "{host} 的主機金鑰已變更。這可能意味著連線被劫持，SSHYard 已拒絕連線。",

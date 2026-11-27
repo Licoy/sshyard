@@ -859,6 +859,18 @@ func (msgs Messages) Reconnect() string {
 	return Catalog.Format(msgs.locale, "reconnect", nil)
 }
 
+// BannerReconnectHint says "Press {key} or {shortcut} to reconnect"
+// in the language the app shows.
+func BannerReconnectHint(key string, shortcut string) string {
+	return In(i18n.Locale()).BannerReconnectHint(key, shortcut)
+}
+
+// BannerReconnectHint says "Press {key} or {shortcut} to reconnect"
+// in the language of msgs.
+func (msgs Messages) BannerReconnectHint(key string, shortcut string) string {
+	return Catalog.Format(msgs.locale, "bannerReconnectHint", map[string]any{"key": key, "shortcut": shortcut})
+}
+
 // ErrAuth says "Authentication failed for {user}@{host}."
 // in the language the app shows.
 func ErrAuth(user string, host string) string { return In(i18n.Locale()).ErrAuth(user, host) }
