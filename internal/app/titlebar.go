@@ -16,11 +16,11 @@ type WindowControls struct {
 }
 
 // SetWindow gives the title bar the window's buttons.
-func (a *App) SetWindow(w WindowControls) { a.post(func() { a.win = &w }) }
+func (a *App) SetWindow(w WindowControls) { a.post(func() { a.main.win = &w }) }
 
 // SetMaximized says whether the window is maximized, for the button that
 // maximizes or restores it.
-func (a *App) SetMaximized(on bool) { a.post(func() { a.maximized = on }) }
+func (a *App) SetMaximized(on bool) { a.post(func() { a.main.maximized = on }) }
 
 // titleBar is the window's one band across the top, which drags it: over
 // the sidebar room for the traffic lights (macOS); over the content the

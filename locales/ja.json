@@ -2238,5 +2238,14 @@
   "appLockResetDone": "アプリロックをリセットし、SSHYardのデータを削除しました。",
   "appLockResetPending": "アプリロックをリセットしました。データの削除を完了するためにSSHYardを再起動します。",
   "appLockResetRestart": "今すぐ再起動",
-  "appLockRestored": "SSHYardの外部でアプリロックが変更されたため、元に戻しました。"
+  "appLockRestored": "SSHYardの外部でアプリロックが変更されたため、元に戻しました。",
+  "newWindow": "新規ウィンドウ",
+  "moveToNewWindow": "新規ウィンドウに移動",
+  "moveToWindow": "ウィンドウに移動",
+  "mainWindow": "メインウィンドウ",
+  "windowNumber": "ウィンドウ {n}",
+  "closeWindowTitle": "このウィンドウを閉じますか？",
+  "closeWindowBody": "このウィンドウの {count} 件のセッションが切断されます。代わりにメインウィンドウへ移すこともできます。",
+  "closeWindowSessions": "セッションを閉じる",
+  "moveToMainWindow": "メインウィンドウに移動"
 }

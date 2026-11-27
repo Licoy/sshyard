@@ -120,9 +120,16 @@ func (a *App) paneName(c *conn) string {
 // or every tab's.
 func (a *App) broadcastPanes() []*conn {
 	if a.bc.all {
-		return a.terminalPanes(a.ws.Tabs)
+		return a.terminalPanes(a.allTabs())
 	}
-	if t := a.ws.ActiveTab(); t != nil {
+	// The active tab of the window the broadcast pane is in.
+	ws := a.ws
+	if c := a.toolPane(layout.Broadcast); c != nil {
+		if w := a.winOf(c.id); w != nil {
+			ws = w.ws
+		}
+	}
+	if t := ws.ActiveTab(); t != nil {
 		return a.terminalPanes([]*layout.Tab{t})
 	}
 	return nil

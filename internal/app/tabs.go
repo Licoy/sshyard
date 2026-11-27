@@ -256,6 +256,7 @@ func (a *App) tab(c *ui.Context, m locales.Messages, tok theme.Tokens, fill ui.C
 		AlignItems(ui.Center).Radius(tabRadius, tabRadius, 0, 0).Cursor(ui.CursorPointer)
 	if cn != nil {
 		chip.Drag(dragSession{ID: cn.id, Tab: t.ID})
+		a.tearTab(c, chip, t)
 	}
 	over := a.tabDrops(c, chip, t, tok, foot)
 	hovered[j] = chip.Hovered() && !over
@@ -599,13 +600,15 @@ func (a *App) tabEntries(m locales.Messages, i int) []menuEntry {
 	}
 	t := a.ws.Tabs[i]
 	_, saved := a.store.Get(host)
-	return []menuEntry{
+	return append(append([]menuEntry{
 		{Icon: icons.Rename, Label: m.RenameTabEllipsis(), Do: func() { a.openTabRename(t) }},
 		{Icon: icons.Appearance, Label: m.TabColor(), Sub: a.tabColorEntries(m, t)},
 		menuSep,
 		{Icon: icons.Duplicate, Label: m.DuplicateSession(), Disabled: host == "", Do: func() { a.duplicateTab(m, t) }},
 		{Icon: icons.Copy, Label: m.CopyHostIP(), Disabled: a.tabAddress(t) == "", Do: func() { a.copyTabAddress(t) }},
-		{Icon: icons.Locate, Label: m.RevealHostInSidebar(), Disabled: !saved, Do: func() { a.locateHost(host) }},
+		{Icon: icons.Locate, Label: m.RevealHostInSidebar(), Disabled: !saved || a.winState != a.main, Do: func() { a.locateHost(host) }},
+		menuSep,
+	}, a.windowEntries(m, t.ID, 0)...), []menuEntry{
 		menuSep,
 		{Icon: icons.Close, Label: m.CloseTab(), Do: closing(func(j int, _ *layout.Tab) bool { return j == i })},
 		{Label: m.CloseOtherTabs(), Disabled: n < 2, Do: closing(func(j int, _ *layout.Tab) bool { return j != i })},
@@ -616,7 +619,7 @@ func (a *App) tabEntries(m locales.Messages, i int) []menuEntry {
 		{Label: m.CloseOtherHostTabs(), Disabled: others == 0, Do: closing(func(_ int, t *layout.Tab) bool { return a.tabHost(t) != host })},
 		menuSep,
 		{Icon: icons.Clear, Label: m.CloseAllTabs(), Danger: true, Do: closing(func(int, *layout.Tab) bool { return true })},
-	}
+	}...)
 }
 
 // tabColorEntries are the entries of tab t's color submenu: none, then
@@ -636,7 +639,7 @@ func (a *App) SetTabColor(id int, name string) {
 	if !slices.Contains(theme.TintNames, name) {
 		name = ""
 	}
-	for _, t := range a.ws.Tabs {
+	for _, t := range a.allTabs() {
 		if t.ID == id {
 			t.Color = name
 		}
@@ -708,7 +711,7 @@ func (a *App) openTabRename(t *layout.Tab) {
 // RenameTab names the tab of id for as long as it is open; "" gives it
 // back its host's name.
 func (a *App) RenameTab(id int, name string) {
-	for _, t := range a.ws.Tabs {
+	for _, t := range a.allTabs() {
 		if t.ID == id {
 			t.Title = strings.TrimSpace(name)
 		}

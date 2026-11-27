@@ -80,7 +80,7 @@ func followDir(d string) string {
 // for a frame then, notice or none.
 func (a *App) followCwd(c *ui.Context) {
 	now := c.Now()
-	for _, t := range a.ws.Tabs {
+	for _, t := range a.allTabs() {
 		items := t.Items()
 		for _, it := range items {
 			tc := a.conns[it.ID]

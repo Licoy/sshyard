@@ -37,6 +37,8 @@ func newDesktop(a *app.App, w *mygo.Window) *desktop {
 	d.createTray()
 	w.OnClose(d.close)
 	mygo.App.OnBeforeQuit(d.beforeQuit)
+	// The workspace's windows closed for the quit open again.
+	mygo.App.OnQuitCanceled(func() { d.app.SetQuitting(false) })
 	mygo.App.OnActivate(func(bool) { d.activate() })
 	if d.trayErr != nil {
 		log.Printf("create tray: %v", d.trayErr)
@@ -106,6 +108,7 @@ func (d *desktop) menu() *mygo.Menu {
 		{locales.QuickConnect(), app.TrayQuickConnect},
 		{locales.LocalTerminal(), app.TrayLocalTerminal},
 		{locales.NewHost(), app.TrayNewHost},
+		{locales.NewWindow(), app.TrayNewWindow},
 		{locales.AppLockAction(), app.TrayLock},
 	} {
 		items = append(items, &mygo.MenuItem{Label: item.label, Click: func(*mygo.MenuItem, *mygo.Window) { d.trayAction(item.action) }})
@@ -142,6 +145,9 @@ func (d *desktop) show() {
 	}
 	d.window.Restore()
 	d.window.Show()
+	for w := range workspaceWindows {
+		w.Show()
+	}
 	d.app.SetMinimized(false)
 }
 
@@ -164,6 +170,9 @@ func (d *desktop) close(e *mygo.CloseEvent) {
 	d.changingVisibility = true
 	defer func() { d.changingVisibility = false }()
 	d.window.Hide()
+	for w := range workspaceWindows {
+		w.Hide()
+	}
 	if runtime.GOOS == "darwin" {
 		mygo.App.Dock.Hide()
 	} else {
@@ -176,7 +185,8 @@ func (d *desktop) beforeQuit(e *mygo.QuitEvent) {
 	// MyGo closes windows in map order and exposes no quit-cancel callback,
 	// so ask editors first, while the main window can still be retained.
 	for _, w := range mygo.Windows() {
-		if w == d.window || w.IsFlyout() {
+		// The workspace's windows keep their tabs for the layout.
+		if w == d.window || w.IsFlyout() || workspaceWindows[w] {
 			continue
 		}
 		w.Close()
@@ -187,6 +197,7 @@ func (d *desktop) beforeQuit(e *mygo.QuitEvent) {
 		}
 	}
 	d.quitting = true
+	d.app.SetQuitting(true)
 	// A later before/will-quit listener may cancel; reset after this native
 	// quit sequence rather than leaving future window closes in quit mode.
 	postUI(func() { d.quitting = false })

@@ -42,7 +42,7 @@ func TestTrayHostGroupingAndSearch(t *testing.T) {
 }
 
 func TestTrayConnectionRejectsUnavailableHosts(t *testing.T) {
-	a := &App{}
+	a := &App{winState: testWin()}
 	if err := a.ConnectFromTray("missing"); !errors.Is(err, keychain.ErrLocked) {
 		t.Fatalf("storage unavailable: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestTrayConnectionDeferredAndOpensMainFirst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a := &App{p: Platform{Post: pump.post}, store: st}
+	a := &App{winState: testWin(), p: Platform{Post: pump.post}, store: st}
 	a.unlock.ready.Store(true)
 	calls := 0
 	panel := a.NewTrayPanel(func(action TrayAction) {

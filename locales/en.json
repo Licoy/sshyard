@@ -2961,5 +2961,14 @@
   "appLockResetDone": "The app lock was reset and SSHYard's data was deleted.",
   "appLockResetPending": "The app lock was reset. SSHYard restarts to finish deleting its data.",
   "appLockResetRestart": "Restart Now",
-  "appLockRestored": "The app lock was changed outside SSHYard and has been restored."
+  "appLockRestored": "The app lock was changed outside SSHYard and has been restored.",
+  "newWindow": "New Window",
+  "moveToNewWindow": "Move to New Window",
+  "moveToWindow": "Move to Window",
+  "mainWindow": "Main Window",
+  "windowNumber": "Window {n}",
+  "closeWindowTitle": "Close This Window?",
+  "closeWindowBody": "{count} sessions in this window will be disconnected. You can move them to the main window instead.",
+  "closeWindowSessions": "Close Sessions",
+  "moveToMainWindow": "Move to Main Window"
 }

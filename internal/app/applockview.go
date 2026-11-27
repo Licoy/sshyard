@@ -146,17 +146,25 @@ func (a *App) lockView(c *ui.Context) {
 // lockedWindowView is an editor's window while the app is locked: it
 // opens in the main window, and the window's title names no file.
 func (a *App) lockedWindowView(c *ui.Context, cn *conn) {
-	base := *c.Theme()
-	base.Font = a.fonts.ui
-	tok := theme.For(a.settings.Theme, base.Dark)
-	c.SetTheme(tok.Apply(base))
-	c.Root().Background(tok.Canvas)
 	m := locales.In(c.Locale())
 	if ew := cn.ed; ew.win != nil && ew.title != m.AppName() {
 		ew.title = m.AppName()
 		w, title := ew.win, ew.title
 		go w.SetTitle(title)
 	}
+	a.lockedBody(c)
+}
+
+// lockedBody is what a window but the main one shows while the app is
+// locked, or its secrets are: no more than the way to the main window,
+// whose lock screen opens it.
+func (a *App) lockedBody(c *ui.Context) {
+	base := *c.Theme()
+	base.Font = a.fonts.ui
+	tok := theme.For(a.settings.Theme, base.Dark)
+	c.SetTheme(tok.Apply(base))
+	c.Root().Background(tok.Canvas)
+	m := locales.In(c.Locale())
 	ui.Column(c).Fill().TextColor(tok.Text).AlignItems(ui.Center).Justify(ui.Center).Gap(theme.Space(4)).Children(func() {
 		glyph(c, icons.Lock, tok.TextMuted, 32)
 		sheetTitle(c, m.AppLockedTitle())

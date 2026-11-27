@@ -11,7 +11,7 @@ import (
 
 func attachmentTester(t *testing.T, width int, files *[]*aiAttach, removable bool) (*App, *ui.Tester) {
 	t.Helper()
-	a := &App{}
+	a := &App{winState: testWin()}
 	tt := ui.NewTester(func(c *ui.Context) {
 		tok := theme.For(theme.Auto, c.Theme().Dark)
 		c.SetTheme(tok.Apply(*c.Theme()))

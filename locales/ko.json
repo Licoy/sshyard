@@ -2961,5 +2961,14 @@
   "appLockResetDone": "앱 잠금을 재설정했으며 SSHYard 데이터를 삭제했습니다.",
   "appLockResetPending": "앱 잠금을 재설정했습니다. 데이터 삭제를 마치기 위해 SSHYard를 다시 시작합니다.",
   "appLockResetRestart": "지금 다시 시작",
-  "appLockRestored": "SSHYard 외부에서 앱 잠금이 변경되어 복원했습니다."
+  "appLockRestored": "SSHYard 외부에서 앱 잠금이 변경되어 복원했습니다.",
+  "newWindow": "새 창",
+  "moveToNewWindow": "새 창으로 이동",
+  "moveToWindow": "창으로 이동",
+  "mainWindow": "기본 창",
+  "windowNumber": "창 {n}",
+  "closeWindowTitle": "이 창을 닫을까요?",
+  "closeWindowBody": "이 창의 세션 {count}개의 연결이 끊어집니다. 대신 기본 창으로 옮길 수 있습니다.",
+  "closeWindowSessions": "세션 닫기",
+  "moveToMainWindow": "기본 창으로 이동"
 }

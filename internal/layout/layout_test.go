@@ -353,3 +353,50 @@ func TestReplaceKeepsThePane(t *testing.T) {
 		t.Fatal("replaced a missing item, or with one already shown")
 	}
 }
+
+// TestSiblingMoves moves a tab and a pane between two windows' workspaces:
+// the IDs stay unique across both and the items keep their panes.
+func TestSiblingMoves(t *testing.T) {
+	a := New()
+	b := a.Sibling()
+	a.Open(T(1))
+	a.SplitFocused(Row, T(2))
+	a.Open(T(3))
+	b.Open(T(4))
+	ids := map[int]bool{}
+	for _, w := range []*Workspace{a, b} {
+		for _, tab := range w.Tabs {
+			for _, n := range append(tab.Panes(), &Node{ID: tab.ID}) {
+				if ids[n.ID] {
+					t.Fatalf("id %d used twice", n.ID)
+				}
+				ids[n.ID] = true
+			}
+		}
+	}
+	tab := a.TakeTab(a.Tabs[0].ID)
+	if tab == nil || len(a.Tabs) != 1 || a.Active != 0 || !slices.Equal(sessions(tab), []int{1, 2}) {
+		t.Fatal("take tab")
+	}
+	if !b.AdoptTab(tab) || b.ActiveTab() != tab || b.AdoptTab(tab) || b.AdoptTab(nil) {
+		t.Fatal("adopt tab")
+	}
+	if a.TakeTab(tab.ID) != nil {
+		t.Fatal("took a tab it no longer has")
+	}
+	item, ok := b.Take(2)
+	if !ok || item != T(2) || !slices.Equal(sessions(tab), []int{1}) {
+		t.Fatal("take pane")
+	}
+	if _, ok := b.Take(2); ok {
+		t.Fatal("took a pane twice")
+	}
+	if !a.Place(item, a.Tabs[0].Root.ID, Right) || !slices.Equal(sessions(a.Tabs[0]), []int{3, 2}) {
+		t.Fatal("place on the other workspace")
+	}
+	b.Take(4)
+	b.Take(1)
+	if len(b.Tabs) != 0 || b.Active != -1 {
+		t.Fatal("last pane taken leaves the tab")
+	}
+}

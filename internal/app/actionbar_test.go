@@ -12,7 +12,7 @@ import (
 // menu; a narrow one keeps the first, and the others run from its More
 // menu, a disabled one staying disabled there.
 func TestActionBarOverflow(t *testing.T) {
-	a := &App{}
+	a := &App{winState: testWin()}
 	width := float32(400)
 	var splits, finds, files int
 	view := func(c *ui.Context) {

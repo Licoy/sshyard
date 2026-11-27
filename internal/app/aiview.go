@@ -1221,8 +1221,12 @@ func (a *App) askElsewhere(c *ui.Context, m locales.Messages) {
 
 func askToastID(id int) string { return "aiask:" + strconv.Itoa(id) }
 
-// paneShown reports whether pane id is in the workspace's tab on screen.
+// paneShown reports whether pane id is in the tab its window shows.
 func (a *App) paneShown(id int) bool {
-	t, _ := a.ws.Locate(id)
-	return a.page == pageWorkspace && t != nil && t == a.ws.ActiveTab()
+	w := a.winOf(id)
+	if w == nil {
+		return false
+	}
+	t, _ := w.ws.Locate(id)
+	return w.page == pageWorkspace && !w.gone && t == w.ws.ActiveTab()
 }

@@ -71,6 +71,9 @@ type Platform struct {
 	// MainWindowBackground and ActivateMainWindow run on the UI thread.
 	MainWindowBackground func() bool
 	ActivateMainWindow   func()
+	// MainWindowPosition is where the main window's top-left corner is on
+	// the screen, for a tab torn out of it; nil can't tell.
+	MainWindowPosition func() (x, y int)
 	// CacheDir is where files opened in another app are copied, the
 	// user's cache folder when "".
 	CacheDir string
@@ -143,6 +146,18 @@ type WindowSpec struct {
 	Closing func() bool
 	// Closed is told once the window is gone.
 	Closed func()
+	// Workspace makes it a window of the workspace, as the main one is:
+	// its view draws the title bar, on the window's material, and the
+	// window's buttons where the system's are hidden, which Controls
+	// hands over; Maximized is told each time it is maximized or
+	// restored.
+	Workspace bool
+	Controls  func(WindowControls)
+	Maximized func(bool)
+	// X and Y are where its top-left corner goes on the screen, when
+	// Placed; else the system places it.
+	X, Y   int
+	Placed bool
 }
 
 // Window is a window OpenWindow opened. Its methods may be called on no
@@ -183,6 +198,9 @@ type conn struct {
 	// window's frame (App.frame) that last drew it (see paneWake)
 	wake  paneWake
 	drawn uint64
+	// wid is the id of the workspace window that last drew the pane, whose
+	// frames its session asks for (0 for the main one).
+	wid atomic.Int32
 	// handled is the failure a prompt was already shown for
 	handled error
 	// tried is, by a.typed key, the generation of the secret the last
@@ -306,6 +324,10 @@ func (t sessTarget) Write(p []byte) (int, error) {
 // App is the interface's state. Its View runs on the UI thread; work in
 // the background posts its results with post.
 type App struct {
+	// winState is the workspace window being drawn, or between frames
+	// the one last focused (see windows.go): its tabs, its menus, its
+	// focus.
+	*winState
 	p          Platform
 	logo       *ui.Bitmap
 	settings   settings.Settings
@@ -315,7 +337,6 @@ type App struct {
 	keychainOK bool
 	unlock     unlockState
 	known      *session.KnownHosts
-	ws         *layout.Workspace
 	conns      map[int]*conn
 	// cwdSeq counts the directory reports of terminals
 	cwdSeq   int
@@ -356,30 +377,12 @@ type App struct {
 
 	attachmentPreview *aiAttachmentPreview
 
-	// interface state
-	page page
 	// pref is the settings page showing, prefSearch the settings' search
 	pref       prefPage
 	prefSearch prefSearchState
 	snippets   snippetState
 	// bc is the broadcast panel's state.
 	bc broadcastState
-	// tabStart is the first tab the title bar shows when not all fit, the
-	// others in its menu of more tabs; tabRoom the width they had
-	tabStart int
-	tabRoom  float32
-	// tabWheeled is set once the wheel moves the tabs shown, which then
-	// stay where it left them until another tab than tabKept is active;
-	// tabWheel is what of a touchpad's scroll has yet to move them by one
-	tabWheeled bool
-	tabKept    int
-	tabWheel   float32
-	// tabsOpen shows the popover of the tabs that do not fit
-	tabsOpen bool
-	// menu is the drop-down or context menu open (menuButton,
-	// contextMenu), ctx the context menu's place and entries
-	menu dropMenu
-	ctx  ctxMenu
 	// card is the sidebar host whose card shows, or soon will
 	card cardHover
 	// clearContent is set while the content shows the window's material,
@@ -455,11 +458,6 @@ type App struct {
 	changingKey  bool
 	khQuery      string
 	askingKey    bool
-	field        welcomeField // the welcome page's dots
-	finding      bool
-	query        string
-	match        int
-	focusReq     int // session whose terminal takes the focus next frame
 	pct          map[int]*float32
 	langChoice   string
 	fontChoice   float64
@@ -501,10 +499,18 @@ type App struct {
 	// winSvc are the services of the editor windows, by their conn,
 	// which invalidate redraws too. Under mu.
 	winSvc map[int]ui.Services
-	// win is the window's buttons where the app draws them (see
-	// WindowControls), maximized whether the window is
-	win         *WindowControls
-	maximized   bool
+	// wins are the workspace windows, the main one first, which is main;
+	// focusWin is the one last focused, nextWin the number of the last
+	// one opened. wsSvc are the services of the others, by their id,
+	// which invalidate redraws too. Under mu. quitting is set while the
+	// app quits: the windows close without asking, keeping their tabs; the
+	// system's thread reads it as a window closes.
+	wins        []*winState
+	main        *winState
+	focusWin    *winState
+	nextWin     int
+	wsSvc       map[int]ui.Services
+	quitting    atomic.Bool
 	updateCheck bool
 	// updEvery is the index of the update interval in its control;
 	// updProxy the updates' proxy choice in its select.
@@ -526,13 +532,9 @@ type App struct {
 	hlForm    *hlRuleForm
 	hlEditing bool
 	hlHold    focusHold
-	// paneBounds are where the panes were last frame, by session
-	paneBounds map[int]ui.Rect
 	// barWidths are how wide the actions an actionBar keeps drew last
 	// frame, by bar and action
 	barWidths map[string]float32
-	// dropPreview is where a drag in progress would land, nil for none
-	dropPreview *dropTarget
 	// temps are the temporary hosts of quick connect, by ID, kept while a
 	// pane uses them and never saved; nextTemp numbers them
 	temps         map[string]assets.Host
@@ -710,7 +712,8 @@ type App struct {
 
 // New opens the app's data.
 func New(p Platform) (*App, error) {
-	a := &App{p: p, ws: layout.New(), conns: map[int]*conn{}, pool: session.NewPool(), typed: map[string]string{}, typedGen: map[string]int{}, skipKeys: map[string]bool{}, rememberKeys: map[string]localkeys.Remembered{}, lk: localkeys.Open(""), sections: map[string]*bool{}, temps: map[string]assets.Host{}, pct: map[int]*float32{}, fwds: map[string]*fwdRun{}, fwdOpen: map[string]bool{}, paneBounds: map[int]ui.Rect{}, metrics: map[string]*session.Collector{}, aiRecent: map[string]int{}}
+	a := &App{p: p, conns: map[int]*conn{}, pool: session.NewPool(), typed: map[string]string{}, typedGen: map[string]int{}, skipKeys: map[string]bool{}, rememberKeys: map[string]localkeys.Remembered{}, lk: localkeys.Open(""), sections: map[string]*bool{}, temps: map[string]assets.Host{}, pct: map[int]*float32{}, fwds: map[string]*fwdRun{}, fwdOpen: map[string]bool{}, metrics: map[string]*session.Collector{}, aiRecent: map[string]int{}}
+	a.initWindows()
 	a.logo = appicon.Bitmap()
 	a.awake = awake.New(p.Awake)
 	a.settings = settings.Default()
@@ -991,8 +994,11 @@ func (a *App) post(fn func()) {
 func (a *App) invalidate() {
 	a.mu.Lock()
 	svc, live := a.svc, a.live
-	wins := make([]ui.Services, 0, len(a.winSvc))
+	wins := make([]ui.Services, 0, len(a.winSvc)+len(a.wsSvc))
 	for _, w := range a.winSvc {
+		wins = append(wins, w)
+	}
+	for _, w := range a.wsSvc {
 		wins = append(wins, w)
 	}
 	a.mu.Unlock()
@@ -1181,7 +1187,7 @@ func (a *App) makeConnIn(hostID string, kind layout.Kind, link int, dir string) 
 	c.s = session.New(cfg, opts, 80, 24)
 	c.s.OnChange = a.invalidate
 	if kind == layout.Terminal {
-		c.s.OnChange = func() { c.wake.ask(a.invalidateMain, afterFunc) }
+		c.s.OnChange = func() { c.wake.ask(func() { a.invalidateWin(int(c.wid.Load())) }, afterFunc) }
 	}
 	if kind != layout.Terminal {
 		c.fs = a.newFiles()
@@ -1553,6 +1559,7 @@ func (a *App) CloseSession(id int) {
 // finishCloseSession removes a pane after its history has been saved.
 func (a *App) finishCloseSession(c *conn) {
 	id := c.id
+	defer a.enterOf(id)()
 	a.clip.forget(id)
 	if a.clipAsk != nil && a.clipAsk.pane == id {
 		a.clipAsk = nil

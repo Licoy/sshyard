@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/layout"
@@ -16,7 +18,7 @@ import (
 
 func (a *App) loadLayout() {
 	file := a.layoutPath()
-	if file == "" || len(a.ws.Tabs) > 0 {
+	if file == "" || len(a.allTabs()) > 0 {
 		return
 	}
 	b, err := os.ReadFile(file)
@@ -48,29 +50,19 @@ func (a *App) loadLayout() {
 	mapping := map[int]*layout.Node{}
 	links := map[int]int{}
 	skipped := false
-	active := 0
-	for i, t := range snap.Tabs {
-		seen := map[string]bool{}
-		root := a.restoreLayoutNode(t.Root, mapping, links, seen, &skipped)
-		if root == nil {
-			continue
+	a.restoreTabs(a.main, snap.Tabs, snap.Active, mapping, links, &skipped)
+	var opened []*winState
+	for _, ws := range snap.Windows {
+		a.nextWin++
+		w := newWinState(a.nextWin, a.main.ws.Sibling())
+		if id, ok := windowID(ws.Key); ok && !slices.ContainsFunc(a.wins, func(x *winState) bool { return x.id == id }) {
+			w = newWinState(id, w.ws)
+			a.nextWin = max(a.nextWin, id)
 		}
-		focus := 0
-		if p := mapping[t.Focus]; p != nil {
-			focus = p.ID
+		if a.restoreTabs(w, ws.Tabs, ws.Active, mapping, links, &skipped) {
+			a.wins = append(a.wins, w)
+			opened = append(opened, w)
 		}
-		if i == snap.Active {
-			active = len(a.ws.Tabs)
-		}
-		a.ws.AddTab(root, focus)
-		a.ws.ActiveTab().Title = t.Title
-		if slices.Contains(theme.TintNames, t.Color) {
-			a.ws.ActiveTab().Color = t.Color
-		}
-	}
-	if len(a.ws.Tabs) > 0 {
-		a.ws.Active = active
-		a.focusReq = a.ws.ActiveTab().Focused().ID
 	}
 	for id, link := range links {
 		ai := a.conns[id]
@@ -110,8 +102,53 @@ func (a *App) loadLayout() {
 		}
 		c.s.Start()
 	}
+	for _, w := range opened {
+		a.openNative(w, 0, 0, false)
+	}
 	// Establish the restored baseline, without rewriting the file on launch.
 	a.rememberLayoutBaseline()
+}
+
+// restoreTabs opens the saved tabs in window w, and reports whether it
+// opened any.
+func (a *App) restoreTabs(w *winState, tabs []tabSnap, active int, mapping map[int]*layout.Node, links map[int]int, skipped *bool) bool {
+	shown := 0
+	for i, t := range tabs {
+		seen := map[string]bool{}
+		root := a.restoreLayoutNode(t.Root, mapping, links, seen, skipped)
+		if root == nil {
+			continue
+		}
+		focus := 0
+		if p := mapping[t.Focus]; p != nil {
+			focus = p.ID
+		}
+		if i == active {
+			shown = len(w.ws.Tabs)
+		}
+		w.ws.AddTab(root, focus)
+		w.ws.ActiveTab().Title = t.Title
+		if slices.Contains(theme.TintNames, t.Color) {
+			w.ws.ActiveTab().Color = t.Color
+		}
+	}
+	if len(w.ws.Tabs) == 0 {
+		return false
+	}
+	w.ws.Active = shown
+	w.focusReq = w.ws.ActiveTab().Focused().ID
+	return true
+}
+
+// windowID is the number a window's saved key gives it, for a key of
+// another window than the main one.
+func windowID(key string) (int, bool) {
+	n, ok := strings.CutPrefix(key, "window-")
+	if !ok {
+		return 0, false
+	}
+	id, err := strconv.Atoi(n)
+	return id, err == nil && id > 1 && id < 1<<16
 }
 
 func (a *App) restoreGroupSections(sections map[string]bool) {
@@ -156,7 +193,16 @@ func legacyLayout(b []byte) bool {
 
 // Validate the complete tree before allocating sessions; unknown versions remain untouched.
 func validLayout(s layoutSnap) bool {
-	if s.Version != 1 || len(s.Tabs) > 256 {
+	tabs := slices.Clone(s.Tabs)
+	keys := map[string]bool{}
+	for _, w := range s.Windows {
+		if _, ok := windowID(w.Key); !ok || keys[w.Key] {
+			return false
+		}
+		keys[w.Key] = true
+		tabs = append(tabs, w.Tabs...)
+	}
+	if s.Version != 1 || len(tabs) > 256 || len(s.Windows) > 32 {
 		return false
 	}
 	ids := map[int]bool{}
@@ -179,7 +225,7 @@ func validLayout(s layoutSnap) bool {
 		}
 		return n.Host != "" && (n.Kind == "terminal" || n.Kind == "files" || n.Kind == "ai" || n.Kind == "editor")
 	}
-	for _, t := range s.Tabs {
+	for _, t := range tabs {
 		if !valid(t.Root, 0) {
 			return false
 		}

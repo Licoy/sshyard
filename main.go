@@ -245,6 +245,10 @@ func main() {
 			d.show()
 			d.window.Focus()
 		}
+		p.MainWindowPosition = func() (x, y int) {
+			mygo.RunOnMain(func() { x, y = d.window.Position() })
+			return x, y
+		}
 		a, _ = app.New(p)
 		a.SetLaunchDir(launchDir)
 		for _, dir := range earlyLaunchDirs {

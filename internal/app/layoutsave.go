@@ -26,6 +26,17 @@ type layoutSnap struct {
 	Sections map[string]bool `json:"sections,omitempty"`
 	// Widths are the railWidths, by kind name.
 	Widths map[string]float32 `json:"widths,omitempty"`
+	// Windows are the workspace windows but the main one, whose tabs are
+	// Tabs. A build before them reads the main window alone.
+	Windows []windowSnap `json:"windows,omitempty"`
+}
+
+// windowSnap is a workspace window but the main one: its tabs, and the
+// key its place and size are kept under.
+type windowSnap struct {
+	Key    string    `json:"key"`
+	Active int       `json:"active,omitempty"`
+	Tabs   []tabSnap `json:"tabs"`
 }
 type tabSnap struct {
 	Title string    `json:"title,omitempty"`
@@ -70,7 +81,19 @@ func (a *App) layoutSnapshot() layoutSnap {
 		}
 		snap.Widths[k.String()] = w
 	}
-	for i, t := range a.ws.Tabs {
+	snap.Tabs, snap.Active = a.snapTabs(a.main.ws)
+	for _, w := range a.wins[1:] {
+		if tabs, active := a.snapTabs(w.ws); len(tabs) > 0 {
+			snap.Windows = append(snap.Windows, windowSnap{Key: w.key, Active: active, Tabs: tabs})
+		}
+	}
+	return snap
+}
+
+// snapTabs are the tabs of ws as saved, and the place of its active one
+// among them.
+func (a *App) snapTabs(ws *layout.Workspace) (tabs []tabSnap, active int) {
+	for i, t := range ws.Tabs {
 		if t == nil {
 			continue
 		}
@@ -78,12 +101,12 @@ func (a *App) layoutSnapshot() layoutSnap {
 		if root == nil {
 			continue
 		}
-		if i == a.ws.Active {
-			snap.Active = len(snap.Tabs)
+		if i == ws.Active {
+			active = len(tabs)
 		}
-		snap.Tabs = append(snap.Tabs, tabSnap{Title: t.Title, Color: t.Color, Focus: t.Focus, Root: root})
+		tabs = append(tabs, tabSnap{Title: t.Title, Color: t.Color, Focus: t.Focus, Root: root})
 	}
-	return snap
+	return tabs, active
 }
 
 func (a *App) groupLayoutSnapshot() layoutSnap {
@@ -131,7 +154,8 @@ func (a *App) snapNode(n *layout.Node) *nodeSnap {
 		if s.Mode == "full" {
 			s.Mode = ""
 		}
-		if _, p := a.ws.Locate(c.ai.link); p != nil {
+		if w := a.winOf(c.ai.link); w != nil {
+			_, p := w.ws.Locate(c.ai.link)
 			s.Link = p.ID
 		}
 	}

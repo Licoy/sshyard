@@ -192,17 +192,34 @@ func parent(root, n *Node) *Node {
 	return parent(root.B, n)
 }
 
-// Workspace is the set of tabs.
+// Workspace is the set of tabs of one window. Workspaces made with
+// Sibling share their IDs, so a tab or a pane moves from one to another
+// (TakeTab, AdoptTab, Take) without clashing with the IDs there.
 type Workspace struct {
 	Tabs   []*Tab
 	Active int // index into Tabs, -1 when empty
-	next   int
+	next   *int
 }
 
 // New makes an empty workspace.
-func New() *Workspace { return &Workspace{Active: -1} }
+func New() *Workspace { return &Workspace{Active: -1, next: new(int)} }
 
-func (w *Workspace) id() int { w.next++; return w.next }
+// Sibling makes an empty workspace whose IDs never clash with w's, for
+// another window.
+func (w *Workspace) Sibling() *Workspace {
+	if w.next == nil {
+		w.next = new(int)
+	}
+	return &Workspace{Active: -1, next: w.next}
+}
+
+func (w *Workspace) id() int {
+	if w.next == nil {
+		w.next = new(int)
+	}
+	*w.next++
+	return *w.next
+}
 
 // FreshID is a new id for a node a caller builds itself (layout restore).
 func (w *Workspace) FreshID() int { return w.id() }
@@ -478,4 +495,39 @@ func (w *Workspace) Place(item Item, targetPane int, edge Edge) bool {
 		return true
 	}
 	return false
+}
+
+// TakeTab takes the tab of ID tabID out of the workspace, its items
+// still in it, for AdoptTab on a Sibling; nil when there is none.
+func (w *Workspace) TakeTab(tabID int) *Tab {
+	for _, t := range w.Tabs {
+		if t.ID == tabID {
+			w.remove(t, t.Root)
+			return t
+		}
+	}
+	return nil
+}
+
+// AdoptTab adds a tab taken from a Sibling (TakeTab) at the end, and shows
+// it. A tab that is already here, or holds no pane, is left.
+func (w *Workspace) AdoptTab(t *Tab) bool {
+	if t == nil || t.Root == nil || slices.Contains(w.Tabs, t) {
+		return false
+	}
+	w.Tabs = append(w.Tabs, t)
+	w.Active = len(w.Tabs) - 1
+	return true
+}
+
+// Take takes the pane showing the item with ID id out of its tab, as
+// Close does, and returns the item, to Open or Place it on a Sibling.
+func (w *Workspace) Take(id int) (Item, bool) {
+	t, p := w.Locate(id)
+	if t == nil {
+		return Item{}, false
+	}
+	item := p.Item
+	w.remove(t, p)
+	return item, true
 }

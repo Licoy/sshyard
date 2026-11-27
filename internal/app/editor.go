@@ -346,8 +346,8 @@ func (a *App) closeEditorWindow(cn *conn) {
 	a.mu.Lock()
 	delete(a.winSvc, cn.id)
 	a.mu.Unlock()
-	if a.ctx.win == cn.id && a.menu.key == ctxMenuKey {
-		a.menu, a.ctx.entries = dropMenu{}, nil
+	if mw := a.main; mw.ctx.win == cn.id && mw.menu.key == ctxMenuKey {
+		mw.menu, mw.ctx.entries = dropMenu{}, nil
 	}
 	for _, ed := range cn.ed.tabs {
 		if ed.img != nil && ed.img.cancel != nil {
@@ -508,6 +508,9 @@ func (a *App) editorWindowView(c *ui.Context, cn *conn) {
 	if a.conns[cn.id] != cn {
 		return
 	}
+	// Its menus are the main window's (contextMenuIn).
+	a.winState = a.main
+	defer a.settle()
 	c.Root().ObserveInput(a.noteInput)
 	if a.lockGate(c) {
 		a.lockedWindowView(c, cn)

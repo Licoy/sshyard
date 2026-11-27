@@ -96,6 +96,15 @@ func (a *App) ToggleTool(k layout.Kind) {
 		at = t.Focus
 	}
 	if c := a.toolPane(k); c != nil {
+		// One of each in the app: from another window it comes here.
+		if src := a.winOf(c.id); src != nil && src != a.winState {
+			back := a.enter(src)
+			a.keepRailWidth(c)
+			back()
+			src.ws.Take(c.id)
+			a.placeTool(c, t, at, old, under)
+			return
+		}
 		if ct, _ := a.ws.Locate(c.id); ct == t || t == nil {
 			a.CloseSession(c.id)
 			return
@@ -116,6 +125,12 @@ func (a *App) ToggleTool(k layout.Kind) {
 	a.nextConn++
 	c := &conn{id: a.nextConn, kind: k}
 	a.conns[c.id] = c
+	a.placeTool(c, t, at, old, under)
+}
+
+// placeTool puts tool pane c, in no pane, beside the pane at of the active
+// tab t, or in a tab of its own when there is none.
+func (a *App) placeTool(c *conn, t *layout.Tab, at int, old, under *conn) {
 	if t == nil || !a.ws.Place(c.item(), at, layout.Right) {
 		a.ws.Open(c.item())
 	} else {

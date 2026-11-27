@@ -113,8 +113,13 @@ func (a *App) syncMetrics() {
 	var order []string
 
 	active := map[int]bool{}
-	if !a.minimizedNow() && a.page == pageWorkspace {
-		if t := a.ws.ActiveTab(); t != nil {
+	// The active tab of each window showing its sessions; the main one
+	// shows none while minimized.
+	for _, w := range a.wins {
+		if w.page != pageWorkspace || w.gone || w == a.main && a.minimizedNow() {
+			continue
+		}
+		if t := w.ws.ActiveTab(); t != nil {
 			for _, p := range t.Panes() {
 				active[p.Item.ID] = true
 			}

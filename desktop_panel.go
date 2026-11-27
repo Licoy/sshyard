@@ -109,8 +109,8 @@ func (d *desktop) trayAction(action app.TrayAction) {
 		mygo.App.Quit()
 		return
 	}
-	// Locking needs no window.
-	if action == app.TrayLock {
+	// Locking needs no window, nor does a new one.
+	if action == app.TrayLock || action == app.TrayNewWindow {
 		d.app.RunTrayAction(action)
 		return
 	}

@@ -27,7 +27,7 @@ func (p *dispatchPump) next(t *testing.T) {
 
 func TestPostDispatchesWithoutFrames(t *testing.T) {
 	p := newDispatchPump()
-	a := &App{p: Platform{Post: p.post}}
+	a := &App{winState: testWin(), p: Platform{Post: p.post}}
 	var got []int
 	a.post(func() {
 		got = append(got, 1)

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"slices"
 	"time"
 
 	"github.com/Licoy/sshyard/internal/settings"
@@ -9,35 +10,65 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-// View builds the window.
-func (a *App) View(c *ui.Context) {
+// View builds the main window.
+func (a *App) View(c *ui.Context) { a.frameView(c, a.main) }
+
+// frameView builds workspace window w (see windows.go): the main one, or
+// another without the sidebar and the settings.
+func (a *App) frameView(c *ui.Context, w *winState) {
 	a.mu.Lock()
-	a.svc, a.live = c.Services(), true
+	if w == a.main {
+		a.svc, a.live = c.Services(), true
+	} else {
+		if a.wsSvc == nil {
+			a.wsSvc = map[int]ui.Services{}
+		}
+		a.wsSvc[w.id] = c.Services()
+	}
 	a.mu.Unlock()
 	a.frame++
-	defer a.markShown()
 	// Native callbacks run between frames and use the real clock; the Tester
 	// uses its frame clock so clipboard snapshots and toast Undo expire together.
 	if a.p.Post == nil {
 		a.clip.now = func() time.Time { return c.Now() }
 	}
+	// What was posted runs in the window last focused, as between frames.
 	a.drain()
-	a.applyZoom(c, true)
-	c.Root().ObserveInput(a.noteInput)
+	if !slices.Contains(a.wins, w) {
+		return
+	}
+	a.winState = w
+	if c.WindowActive() {
+		a.focusWin = w
+	}
+	defer a.settle()
+	defer a.noteHeld()
+	defer a.markShown(w)
+	a.closeEmpty(w)
+	a.applyZoom(c, w == a.main)
+	c.Root().ObserveInput(func(ev ui.InputEvent) {
+		a.noteInput(ev)
+		a.focusWin = w
+	})
+	sheets := w == a.sheetWin()
+	m := locales.In(c.Locale())
 	// What toasts would tell, which may name hosts, waits for the unlock.
 	locked := a.ready() && a.lockGate(c)
-	if !locked {
+	if !locked && sheets {
 		for _, t := range a.toasts {
-			c.AddToast(t(locales.In(c.Locale())))
+			c.AddToast(t(m))
 		}
 		a.toasts = nil
 	}
-	if !a.ready() {
-		a.unlockView(c)
-		return
-	}
-	if locked {
-		a.lockView(c)
+	if !a.ready() || locked {
+		switch {
+		case w != a.main:
+			a.lockedBody(c)
+		case !a.ready():
+			a.unlockView(c)
+		default:
+			a.lockView(c)
+		}
 		return
 	}
 	a.commitMetricsMount()
@@ -56,7 +87,6 @@ func (a *App) View(c *ui.Context) {
 	base.Font = a.fonts.ui
 	tok := theme.For(a.settings.Theme, base.Dark)
 	c.SetTheme(tok.Apply(base))
-	m := locales.In(c.Locale())
 	a.localName = m.LocalTerminal()
 	a.nameTools(m)
 	a.bc.synced = a.syncSet()
@@ -139,6 +169,12 @@ func (a *App) View(c *ui.Context) {
 		ui.Split(c.Key("frame"), &a.sbWidth, sidebar, content).Grow(1).Shrink(1).MinHeight(0).FillWidth()
 		a.saveSidebarWidth(c)
 	})
+	a.observeLayout(c)
+	a.closeAskView(c, m, w)
+	if !sheets {
+		a.contextMenuView(c)
+		return
+	}
 	a.editorView(c, m)
 	a.groupView(c, m)
 	a.multiSelectView(c, m)
@@ -169,7 +205,6 @@ func (a *App) View(c *ui.Context) {
 	a.unlockModal(c, m, tok)
 	a.masterPasswordView(c, m)
 	a.lockFormView(c, m)
-	a.observeLayout(c)
 }
 
 // sidebarMin and sidebarMax bound the width the sidebar is dragged to.
@@ -178,7 +213,7 @@ const sidebarMin, sidebarMax = 160, 480
 // sidebarHidden reports whether the hosts' sidebar is hidden: the
 // settings' pages always show theirs.
 func (a *App) sidebarHidden() bool {
-	return a.settings.SidebarHidden && a.page != pageSettings
+	return a.winState != a.main || a.settings.SidebarHidden && a.page != pageSettings
 }
 
 // setSidebarHidden hides the hosts' sidebar, or shows it again.

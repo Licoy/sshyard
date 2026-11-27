@@ -37,7 +37,7 @@ func waitHeld(t *testing.T, h *awakeHold, want bool, what string) {
 // over.
 func TestTransfersKeepAwake(t *testing.T) {
 	h := &awakeHold{}
-	a := &App{awake: awake.New(h)}
+	a := &App{winState: testWin(), awake: awake.New(h)}
 	defer a.awake.Close()
 	fs := a.newFiles()
 	ts := fs.transfers

@@ -149,5 +149,6 @@ func (a *App) paneHead(c *ui.Context, cn *conn, m locales.Messages, lead func(),
 			a.closeSoon(cn.id)
 		}
 	})
+	a.tearPane(c, row, cn.id)
 	return row
 }

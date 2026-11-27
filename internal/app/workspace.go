@@ -732,7 +732,7 @@ func (a *App) termEntries(t *layout.Tab, n *layout.Node, cn *conn, tv *termView,
 	if isStream(cn.host) {
 		entries = append(entries, a.bound(actSendBreak, menuEntry{Icon: icons.SendBreak, Label: m.SendBreak(), Disabled: !canBreak(cn), Do: func() { a.sendBreak(cn) }}))
 	}
-	return append(entries, []menuEntry{
+	return append(append(entries, []menuEntry{
 		menuSep,
 		a.bound(actSplitRight, menuEntry{Icon: icons.SplitRight, Label: m.SplitRight(), Do: focus(func() { a.SplitFocused(layout.Right) })}),
 		a.bound(actSplitDown, menuEntry{Icon: icons.SplitDown, Label: m.SplitDown(), Do: focus(func() { a.SplitFocused(layout.Bottom) })}),
@@ -748,8 +748,10 @@ func (a *App) termEntries(t *layout.Tab, n *layout.Node, cn *conn, tv *termView,
 		})},
 		{Icon: icons.Robot, Label: m.AskAI(), Disabled: sel == "" || noAI, Do: func() { a.AskAI(cn, sel) }},
 		menuSep,
+	}...), append(a.windowEntries(m, 0, cn.id), []menuEntry{
+		menuSep,
 		a.bound(actClosePane, menuEntry{Icon: icons.Close, Label: m.ClosePane(), Do: func() { a.closeSoon(cn.id) }}),
-	}...)
+	}...)...)
 }
 
 func (a *App) banner(c *ui.Context, cn *conn, st session.Status, tok theme.Tokens, m locales.Messages) {

@@ -29,7 +29,7 @@ func TestStorageMoveErrorNamesWhereTheMoveWent(t *testing.T) {
 }
 
 func TestReportStorageMoveOnlyAfterAFailedMove(t *testing.T) {
-	a := &App{p: Platform{Storage: &Storage{}}}
+	a := &App{winState: testWin(), p: Platform{Storage: &Storage{}}}
 	a.reportStorageMove()
 	if len(a.toasts) != 0 {
 		t.Fatal("reported a move that did not fail")

@@ -2238,5 +2238,14 @@
   "appLockResetDone": "應用程式鎖已重設，SSHYard 的資料已刪除。",
   "appLockResetPending": "應用程式鎖已重設。SSHYard 將重新啟動以完成資料刪除。",
   "appLockResetRestart": "立即重新啟動",
-  "appLockRestored": "應用程式鎖在 SSHYard 之外被變更，現已復原。"
+  "appLockRestored": "應用程式鎖在 SSHYard 之外被變更，現已復原。",
+  "newWindow": "新增視窗",
+  "moveToNewWindow": "移至新視窗",
+  "moveToWindow": "移至視窗",
+  "mainWindow": "主視窗",
+  "windowNumber": "視窗 {n}",
+  "closeWindowTitle": "關閉此視窗？",
+  "closeWindowBody": "此視窗中的 {count} 個工作階段將中斷。也可以將它們移至主視窗。",
+  "closeWindowSessions": "關閉工作階段",
+  "moveToMainWindow": "移至主視窗"
 }

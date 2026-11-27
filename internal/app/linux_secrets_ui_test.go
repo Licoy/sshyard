@@ -30,7 +30,7 @@ func (b *linuxAuthorizationBackend) Get(k string) ([]byte, error) {
 // failed without the raw diagnostic, and Cancel dismisses it.
 func TestLinuxUnlockModalReasons(t *testing.T) {
 	m := locales.In("en")
-	a := &App{}
+	a := &App{winState: testWin()}
 	tt := ui.NewTester(func(c *ui.Context) { a.unlockModal(c, locales.In(c.Locale()), currentTokens(c)) }, 700, 500)
 	tt.SetLocale("en")
 	for _, tc := range linuxSecretReasons(m) {

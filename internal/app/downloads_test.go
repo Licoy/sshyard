@@ -36,7 +36,7 @@ func TestDownloadsDir(t *testing.T) {
 			}
 		})
 	}
-	a := &App{p: Platform{HomeDir: home}}
+	a := &App{winState: testWin(), p: Platform{HomeDir: home}}
 	for _, tt := range []struct{ name, custom, want string }{
 		{"selected directory", custom, custom},
 		{"missing custom directory", missing, downloads},
@@ -60,7 +60,7 @@ func TestFilesLocalStartsInDownloads(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	a := &App{p: Platform{HomeDir: home}}
+	a := &App{winState: testWin(), p: Platform{HomeDir: home}}
 	for _, tt := range []struct{ name, hostDir, custom, want string }{
 		{"unconfigured host", "", "", downloads},
 		{"configured downloads", "", custom, custom},
@@ -87,7 +87,7 @@ func TestFilesLocalStartsInDownloads(t *testing.T) {
 func TestDownloadPickersUseDefaultDir(t *testing.T) {
 	preferred, chosen := t.TempDir(), t.TempDir()
 	starts := make(chan string, 1)
-	a := &App{p: Platform{HomeDir: t.TempDir(), PickFolder: func(_, start string) (string, error) {
+	a := &App{winState: testWin(), p: Platform{HomeDir: t.TempDir(), PickFolder: func(_, start string) (string, error) {
 		starts <- start
 		return chosen, nil
 	}}}

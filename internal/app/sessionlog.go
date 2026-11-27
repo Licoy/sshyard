@@ -294,7 +294,7 @@ func (a *App) setLogDir(dir string) error {
 // are written, then the terminals, each with its log, and the logs
 // written last.
 func (a *App) logPanel(c *ui.Context, m locales.Messages, tok theme.Tokens) {
-	panes := a.terminalPanes(a.ws.Tabs)
+	panes := a.terminalPanes(a.allTabs())
 	n, _ := a.logCount()
 	st := a.settings.SessionLog
 	ui.Column(c.Key("logs")).Fill().Children(func() {

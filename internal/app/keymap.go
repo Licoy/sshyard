@@ -20,6 +20,7 @@ const (
 	actQuickConnect   = "quickConnect"
 	actCommandPalette = "commandPalette"
 	actNewTab         = "newTab"
+	actNewWindow      = "newWindow"
 	actClosePane      = "closePane"
 	actSplitRight     = "splitRight"
 	actSplitDown      = "splitDown"
@@ -117,6 +118,7 @@ var actions = append([]action{
 	{actCommandPalette, locales.Messages.CommandPalette, icons.Command, keymap.Combo{Mods: aiMods, Key: ui.KeyP}, false},
 	{actQuickConnect, locales.Messages.QuickConnect, icons.Quick, keymap.Combo{Mods: appMods, Key: ui.KeyK}, false},
 	{actNewTab, locales.Messages.NewTab, icons.Add, keymap.Combo{Mods: appMods, Key: ui.KeyT}, false},
+	{actNewWindow, locales.Messages.NewWindow, icons.NewWindow, keymap.Combo{Mods: appMods, Key: ui.KeyN}, false},
 	{actClosePane, locales.Messages.ClosePane, icons.Close, keymap.Combo{Mods: appMods, Key: ui.KeyW}, false},
 	{actSplitRight, locales.Messages.SplitRight, icons.SplitRight, keymap.Combo{Mods: appMods, Key: ui.KeyD}, false},
 	{actSplitDown, locales.Messages.SplitDown, icons.SplitDown, keymap.Combo{Mods: appMods, Key: ui.KeyE}, false},
@@ -361,6 +363,8 @@ func (a *App) runAction(id string) {
 		} else if id := a.selectedHost(); id != "" {
 			a.Connect(id, openAt{})
 		}
+	case actNewWindow:
+		a.NewWindow()
 	case actClosePane:
 		if a.page == pageWorkspace {
 			a.CloseFocused()

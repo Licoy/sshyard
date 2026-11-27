@@ -2238,5 +2238,14 @@
   "appLockResetDone": "应用锁已重置，SSHYard 的数据已删除。",
   "appLockResetPending": "应用锁已重置。SSHYard 将重启以完成数据删除。",
   "appLockResetRestart": "立即重启",
-  "appLockRestored": "应用锁在 SSHYard 之外被改动，现已恢复。"
+  "appLockRestored": "应用锁在 SSHYard 之外被改动，现已恢复。",
+  "newWindow": "新建窗口",
+  "moveToNewWindow": "移到新窗口",
+  "moveToWindow": "移到窗口",
+  "mainWindow": "主窗口",
+  "windowNumber": "窗口 {n}",
+  "closeWindowTitle": "关闭此窗口？",
+  "closeWindowBody": "此窗口中的 {count} 个会话将断开。也可以把它们移到主窗口。",
+  "closeWindowSessions": "关闭会话",
+  "moveToMainWindow": "移到主窗口"
 }

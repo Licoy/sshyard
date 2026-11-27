@@ -53,7 +53,7 @@ func fwdKind(k assets.ForwardKind) forward.Kind {
 // the panes', then the port forwards'.
 func (a *App) promptConns() []int {
 	var ids []int
-	for _, it := range a.ws.Items() {
+	for _, it := range a.allItems() {
 		ids = append(ids, it.ID)
 	}
 	var fw []int

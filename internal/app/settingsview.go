@@ -99,7 +99,11 @@ func (a *App) prefNow() prefPage {
 // openSettings shows the settings on page p.
 func (a *App) openSettings(p prefPage) {
 	a.clearOutputEncodingMenu("")
-	a.page, a.pref = pageSettings, p
+	a.main.page, a.pref = pageSettings, p
+	if a.winState != a.main {
+		// Only the main window shows the settings.
+		a.focusWindow(a.main)
+	}
 }
 
 // closeSettings goes back to the sessions, the focused terminal taking

@@ -20714,3 +20714,93 @@ func AppLockRestored() string { return In(i18n.Locale()).AppLockRestored() }
 func (msgs Messages) AppLockRestored() string {
 	return Catalog.Format(msgs.locale, "appLockRestored", nil)
 }
+
+// NewWindow says "New Window"
+// in the language the app shows.
+func NewWindow() string { return In(i18n.Locale()).NewWindow() }
+
+// NewWindow says "New Window"
+// in the language of msgs.
+func (msgs Messages) NewWindow() string {
+	return Catalog.Format(msgs.locale, "newWindow", nil)
+}
+
+// MoveToNewWindow says "Move to New Window"
+// in the language the app shows.
+func MoveToNewWindow() string { return In(i18n.Locale()).MoveToNewWindow() }
+
+// MoveToNewWindow says "Move to New Window"
+// in the language of msgs.
+func (msgs Messages) MoveToNewWindow() string {
+	return Catalog.Format(msgs.locale, "moveToNewWindow", nil)
+}
+
+// MoveToWindow says "Move to Window"
+// in the language the app shows.
+func MoveToWindow() string { return In(i18n.Locale()).MoveToWindow() }
+
+// MoveToWindow says "Move to Window"
+// in the language of msgs.
+func (msgs Messages) MoveToWindow() string {
+	return Catalog.Format(msgs.locale, "moveToWindow", nil)
+}
+
+// MainWindow says "Main Window"
+// in the language the app shows.
+func MainWindow() string { return In(i18n.Locale()).MainWindow() }
+
+// MainWindow says "Main Window"
+// in the language of msgs.
+func (msgs Messages) MainWindow() string {
+	return Catalog.Format(msgs.locale, "mainWindow", nil)
+}
+
+// WindowNumber says "Window {n}"
+// in the language the app shows.
+func WindowNumber(n string) string { return In(i18n.Locale()).WindowNumber(n) }
+
+// WindowNumber says "Window {n}"
+// in the language of msgs.
+func (msgs Messages) WindowNumber(n string) string {
+	return Catalog.Format(msgs.locale, "windowNumber", map[string]any{"n": n})
+}
+
+// CloseWindowTitle says "Close This Window?"
+// in the language the app shows.
+func CloseWindowTitle() string { return In(i18n.Locale()).CloseWindowTitle() }
+
+// CloseWindowTitle says "Close This Window?"
+// in the language of msgs.
+func (msgs Messages) CloseWindowTitle() string {
+	return Catalog.Format(msgs.locale, "closeWindowTitle", nil)
+}
+
+// CloseWindowBody says "{count} sessions in this window will be disconnected. You can move them to the main window instead."
+// in the language the app shows.
+func CloseWindowBody(count string) string { return In(i18n.Locale()).CloseWindowBody(count) }
+
+// CloseWindowBody says "{count} sessions in this window will be disconnected. You can move them to the main window instead."
+// in the language of msgs.
+func (msgs Messages) CloseWindowBody(count string) string {
+	return Catalog.Format(msgs.locale, "closeWindowBody", map[string]any{"count": count})
+}
+
+// CloseWindowSessions says "Close Sessions"
+// in the language the app shows.
+func CloseWindowSessions() string { return In(i18n.Locale()).CloseWindowSessions() }
+
+// CloseWindowSessions says "Close Sessions"
+// in the language of msgs.
+func (msgs Messages) CloseWindowSessions() string {
+	return Catalog.Format(msgs.locale, "closeWindowSessions", nil)
+}
+
+// MoveToMainWindow says "Move to Main Window"
+// in the language the app shows.
+func MoveToMainWindow() string { return In(i18n.Locale()).MoveToMainWindow() }
+
+// MoveToMainWindow says "Move to Main Window"
+// in the language of msgs.
+func (msgs Messages) MoveToMainWindow() string {
+	return Catalog.Format(msgs.locale, "moveToMainWindow", nil)
+}

@@ -22,6 +22,7 @@ const (
 	TrayQuickConnect  TrayAction = "quick-connect"
 	TrayLocalTerminal TrayAction = "local-terminal"
 	TrayNewHost       TrayAction = "new-host"
+	TrayNewWindow     TrayAction = "new-window"
 	TrayLock          TrayAction = "lock"
 	TrayQuit          TrayAction = "quit"
 )
@@ -250,8 +251,11 @@ func (a *App) ConnectFromTray(hostID string) error {
 	return err
 }
 
-// RunTrayAction runs after the desktop owner has shown the main window.
+// RunTrayAction runs after the desktop owner has shown the main window,
+// which it works in; a new window shows no other.
 func (a *App) RunTrayAction(action TrayAction) {
+	a.focusWin = a.main
+	a.settle()
 	// The main window shows the lock screen; nothing runs behind it.
 	if a.checkIdle(); a.appLocked() {
 		a.invalidate()
@@ -262,7 +266,7 @@ func (a *App) RunTrayAction(action TrayAction) {
 		a.invalidate()
 		return
 	}
-	if !a.ready() && (action == TrayQuickConnect || action == TrayLocalTerminal || action == TrayNewHost) {
+	if !a.ready() && (action == TrayQuickConnect || action == TrayLocalTerminal || action == TrayNewHost || action == TrayNewWindow) {
 		a.trayError(keychain.ErrLocked)
 		return
 	}
@@ -279,6 +283,8 @@ func (a *App) RunTrayAction(action TrayAction) {
 		}
 	case TrayNewHost:
 		a.openEditor(nil)
+	case TrayNewWindow:
+		a.NewWindow()
 	}
 	a.invalidate()
 }

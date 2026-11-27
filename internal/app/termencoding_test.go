@@ -59,7 +59,7 @@ func TestOutputEncodingToolbar(t *testing.T) {
 // the keyboard chooses across a separator, and a choice reached by
 // scrolling applies with a single checkmark.
 func TestOutputEncodingMenuChoices(t *testing.T) {
-	a := &App{menu: dropMenu{focus: 0, sub: -1}}
+	a := &App{winState: &winState{menu: dropMenu{focus: 0, sub: -1}}}
 	cn := &conn{id: 1, s: &session.Session{Term: vt.New(80, 24)}}
 	m := locales.In("en")
 	open := true

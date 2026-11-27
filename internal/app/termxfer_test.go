@@ -233,7 +233,7 @@ func TestDroppedFiles(t *testing.T) {
 		t.Fatalf("taken twice: %v", got)
 	}
 	// An upload with files dropped for it asks nothing.
-	a := &App{}
+	a := &App{winState: testWin()}
 	x.drop([]string{"/b"}, protoTrzsz, time.Now().Add(time.Minute))
 	r := a.askXfer(context.Background(), x, 1, protoTrzsz, xferUpload)
 	if !slices.Equal(r.paths, []string{"/b"}) {
@@ -296,7 +296,7 @@ func TestFindTransfer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a := &App{store: st}
+	a := &App{winState: testWin(), store: st}
 	sz := []byte("$ sz f\r\n**\x18B00000000000000\r\x8a\x11")
 	tsz := []byte("$ tsz f\r\n::TRZSZ:TRANSFER:S:1.1.6:1700000000100\r\n")
 	x := &xferPane{seen: map[string]bool{}}
