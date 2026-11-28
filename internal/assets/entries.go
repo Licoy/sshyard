@@ -291,7 +291,7 @@ func (s *Store) saveCredential(c Credential, add bool) (Credential, error) {
 	now := s.now()
 	i := s.credIndex(c.ID)
 	if i >= 0 && c.Kind != CredPassword {
-		// Telnet and serial hosts using it type its password.
+		// Only SSH supports key credentials.
 		for _, h := range s.hosts {
 			if !h.SSH() && h.Auth == AuthCredential && h.CredentialID == c.ID {
 				return Credential{}, &FieldError{"kind", "password only"}

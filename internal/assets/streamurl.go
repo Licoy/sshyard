@@ -10,12 +10,12 @@ import (
 	"github.com/Licoy/sshyard/internal/serial"
 )
 
-// ErrStreamURL is a telnet:// or serial:// destination that cannot be
+// ErrStreamURL is a telnet://, serial:// or rdp:// destination that cannot be
 // read.
-var ErrStreamURL = errors.New("assets: bad telnet:// or serial:// destination")
+var ErrStreamURL = errors.New("assets: bad telnet://, serial:// or rdp:// destination")
 
-// ParseStreamURL reads a quick connect destination naming a Telnet or
-// serial host: telnet://[user@]host[:port], or
+// ParseStreamURL reads a quick connect destination: telnet://[user@]host[:port],
+// rdp://[user@]host[:port], or
 // serial://DEVICE[?baud=9600&data=8&parity=none&stop=1], DEVICE being a
 // path such as /dev/ttyUSB0 or a port such as COM3. ok is false for any
 // other destination, which is left to SSH. The host has no ID.
@@ -27,7 +27,9 @@ func ParseStreamURL(s string) (h Host, ok bool, err error) {
 	}
 	switch strings.ToLower(scheme) {
 	case "telnet":
-		h, err = parseTelnetURL(rest)
+		h, err = parseNetworkURL(ProtoTelnet, rest)
+	case "rdp":
+		h, err = parseNetworkURL(ProtoRDP, rest)
 	case "serial":
 		h, err = parseSerialURL(rest)
 	default:
@@ -36,12 +38,19 @@ func ParseStreamURL(s string) (h Host, ok bool, err error) {
 	return h, true, err
 }
 
-func parseTelnetURL(rest string) (Host, error) {
-	u, err := url.Parse("telnet://" + strings.TrimSuffix(rest, "/"))
+func parseNetworkURL(p Protocol, rest string) (Host, error) {
+	u, err := url.Parse(string(p) + "://" + strings.TrimSuffix(rest, "/"))
 	if err != nil || u.Hostname() == "" || (u.Path != "" && u.Path != "/") || u.RawQuery != "" {
 		return Host{}, ErrStreamURL
 	}
-	h := Host{Protocol: ProtoTelnet, Address: u.Hostname(), Port: ProtoTelnet.DefaultPort(), Auth: AuthNone}
+	h := Host{Protocol: p, Address: u.Hostname(), Port: p.DefaultPort(), Auth: AuthNone}
+	if p == ProtoRDP {
+		if u.Fragment != "" || u.ForceQuery {
+			return Host{}, ErrStreamURL
+		}
+		h.Auth = AuthAsk
+		h.RDP = &RDPOptions{}
+	}
 	if p := u.Port(); p != "" {
 		n, err := strconv.Atoi(p)
 		if err != nil || n < 1 || n > 65535 {

@@ -62,7 +62,7 @@ const (
 	AuthNone AuthMethod = "none"
 )
 
-// Host is a saved host, an SSH or Telnet server or a serial device:
+// Host is a saved SSH, Telnet or RDP server or a serial device:
 // where it is and how to reach it. It holds no secret; host-owned and
 // reusable secrets live in the encrypted store.
 type Host struct {
@@ -133,6 +133,8 @@ type Host struct {
 	AIPolicy AIPolicy `json:"aiPolicy,omitempty"`
 	// Serial is a serial host's port and its settings.
 	Serial *SerialLine `json:"serial,omitempty"`
+	// RDP holds the desktop session options for an RDP host.
+	RDP *RDPOptions `json:"rdp,omitempty"`
 	// NewLine is what Enter sends to a Telnet or serial host.
 	NewLine NewLine `json:"newline,omitempty"`
 	// LocalEcho shows what is typed to a Telnet or serial host that
@@ -180,8 +182,8 @@ func (h Host) Label() string {
 	return h.Address
 }
 
-// Target is user@address, with :port when it is not 22; a Telnet URL,
-// or a serial port with its speed and frame.
+// Target is an SSH destination, a Telnet or RDP URL, or a serial port
+// with its speed and frame.
 func (h Host) Target() string {
 	if !h.SSH() {
 		return h.streamTarget()
@@ -239,6 +241,9 @@ func (h *Host) Normalize() {
 	h.FileProtocol = FileProtocol(strings.TrimSpace(string(h.FileProtocol)))
 	if h.Port == 0 {
 		h.Port = h.Protocol.DefaultPort()
+	}
+	if !h.IsRDP() {
+		h.RDP = nil
 	}
 	if !h.SSH() {
 		h.normalizeStream()
@@ -544,7 +549,7 @@ func (s *Store) Rev() uint64 {
 }
 
 func sorted(hs []Host) []Host {
-	out := slices.Clone(hs)
+	out := cloneHosts(hs)
 	slices.SortStableFunc(out, func(a, b Host) int {
 		if c := strings.Compare(strings.ToLower(a.Label()), strings.ToLower(b.Label())); c != 0 {
 			return c
@@ -573,7 +578,7 @@ func (s *Store) Get(id string) (Host, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if i := s.index(id); i >= 0 {
-		return s.hosts[i], true
+		return s.hosts[i].copyRDP(), true
 	}
 	return Host{}, false
 }
@@ -586,7 +591,7 @@ func (s *Store) checkRefs(h Host) error {
 		if i < 0 {
 			return &FieldError{"credential", "unknown"}
 		}
-		// A Telnet or serial host types a password; it has no use for a key.
+		// Only SSH supports key credentials.
 		if !h.SSH() && s.creds[i].Kind != CredPassword {
 			return &FieldError{"credential", "password only"}
 		}
@@ -704,7 +709,7 @@ func (s *Store) AddHost(h Host) (Host, error) {
 	if err := s.commit(func() { s.hosts = append(s.hosts, h) }); err != nil {
 		return Host{}, err
 	}
-	return h, nil
+	return h.copyRDP(), nil
 }
 
 // Update replaces the host with h's ID.
@@ -736,7 +741,7 @@ func (s *Store) Update(h Host) (Host, error) {
 	if err := s.commit(func() { s.hosts[i] = h }); err != nil {
 		return Host{}, err
 	}
-	return h, nil
+	return h.copyRDP(), nil
 }
 
 // Delete removes the host of id. A host other hosts jump through, or

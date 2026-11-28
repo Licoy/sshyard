@@ -33,7 +33,7 @@ func (s *Store) Snapshot() Snapshot {
 	if len(s.groupOrder) > 0 {
 		order = s.groupNames()
 	}
-	return Snapshot{Hosts: slices.Clone(s.hosts), Credentials: slices.Clone(s.creds), Proxies: slices.Clone(s.proxies), Forwards: slices.Clone(s.forwards), Groups: slices.Clone(s.groups), GroupOrder: order, GroupLooks: maps.Clone(s.groupLooks), Snippets: slices.Clone(s.snippets)}
+	return Snapshot{Hosts: cloneHosts(s.hosts), Credentials: slices.Clone(s.creds), Proxies: slices.Clone(s.proxies), Forwards: slices.Clone(s.forwards), Groups: slices.Clone(s.groups), GroupOrder: order, GroupLooks: maps.Clone(s.groupLooks), Snippets: slices.Clone(s.snippets)}
 }
 
 // ValidID reports whether id can name an entry: what NewID makes, and no
@@ -168,10 +168,17 @@ func (s *Store) merge(in Snapshot) error {
 		if err := x.Validate(); err != nil {
 			return err
 		}
-		if s.index(x.HostID) < 0 {
+		i := s.index(x.HostID)
+		if i < 0 {
 			return &FieldError{"host", "unknown"}
 		}
+		if s.hosts[i].IsRDP() {
+			return &FieldError{"host", "not ssh"}
+		}
 		s.forwards = upsert(s.forwards, x, func(f Forward) string { return f.ID })
+	}
+	if err := s.checkRestoredRDPRefs(in.Hosts); err != nil {
+		return err
 	}
 	for _, x := range in.Snippets {
 		x.Normalize()
@@ -198,4 +205,22 @@ func (s *Store) merge(in Snapshot) error {
 		}
 	}
 	return s.restoreGroupOrder(in.GroupOrder)
+}
+
+func (s *Store) checkRestoredRDPRefs(restored []Host) error {
+	for _, h := range restored {
+		if i := s.index(h.ID); i >= 0 && s.hosts[i].IsRDP() {
+			if use := s.users(h.ID); use != nil {
+				return use
+			}
+		}
+	}
+	for _, h := range s.hosts {
+		if h.IsRDP() {
+			if err := s.checkRefs(h); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

@@ -17,6 +17,8 @@ const (
 	ProtoTelnet Protocol = "telnet"
 	// ProtoSerial is a device on a serial port of this computer.
 	ProtoSerial Protocol = "serial"
+	// ProtoRDP is a Remote Desktop Protocol server.
+	ProtoRDP Protocol = "rdp"
 )
 
 // DefaultPort is the port a host of p listens on unless told otherwise;
@@ -27,6 +29,8 @@ func (p Protocol) DefaultPort() int {
 		return 23
 	case ProtoSerial:
 		return 0
+	case ProtoRDP:
+		return 3389
 	}
 	return 22
 }
@@ -94,16 +98,20 @@ func serialLine(c serial.Config) SerialLine {
 	return SerialLine{Device: c.Device, Baud: c.Baud, DataBits: c.DataBits, Parity: string(c.Parity), StopBits: string(c.StopBits)}
 }
 
-// SSH reports whether the host is an SSH server, with files, AI, metrics,
-// port forwards and jump hosts; Telnet and serial hosts have a terminal
-// only.
+// SSH reports whether the host supports SSH features such as files,
+// metrics, port forwards and acting as a jump host.
 func (h Host) SSH() bool { return h.Protocol == ProtoSSH }
+
+// IsRDP reports whether the host opens a desktop session.
+func (h Host) IsRDP() bool { return h.Protocol == ProtoRDP }
 
 // LogsIn reports whether a Telnet or serial host answers its login
 // prompts with its user and password.
-func (h Host) LogsIn() bool { return !h.SSH() && h.Auth != AuthNone }
+func (h Host) LogsIn() bool {
+	return (h.Protocol == ProtoTelnet || h.Protocol == ProtoSerial) && h.Auth != AuthNone
+}
 
-// streamTarget is Target for a Telnet or serial host.
+// streamTarget is Target for a non-SSH host.
 func (h Host) streamTarget() string {
 	if h.Protocol == ProtoSerial {
 		if h.Serial == nil {
@@ -118,27 +126,33 @@ func (h Host) streamTarget() string {
 	}
 	if h.User != "" {
 		s = h.User + "@" + s
+		if h.IsRDP() && h.RDP != nil && h.RDP.Domain != "" {
+			s = h.RDP.Domain + `\` + s
+		}
 	}
-	if h.Port != 0 && h.Port != ProtoTelnet.DefaultPort() {
+	if h.Port != 0 && h.Port != h.Protocol.DefaultPort() {
 		s += ":" + strconv.Itoa(h.Port)
 	}
-	return "telnet://" + s
+	return string(h.Protocol) + "://" + s
 }
 
-// normalizeStream is Normalize for a Telnet or serial host: what only
-// SSH has is dropped.
+// normalizeStream removes options the host's protocol does not use.
 func (h *Host) normalizeStream() {
 	if h.Auth == "" {
 		h.Auth = AuthNone
 	}
 	h.AskPassphrase, h.Certificate = false, ""
-	h.JumpChain = nil
 	h.CwdFollow = false
 	h.TerminalDir, h.RemoteDir, h.LocalDir, h.Tmux = "", "", "", ""
 	h.Startup = false
 	h.SFTPSudo, h.FileProtocol = false, FileAuto
 	h.Metrics = MetricsFollow
 	h.AIPolicy = AIPolicy{}
+	if h.IsRDP() {
+		h.normalizeRDP()
+		return
+	}
+	h.JumpChain = nil
 	if h.Protocol == ProtoSerial {
 		h.Address, h.Port, h.ProxyID = "", 0, ""
 		if h.Serial == nil {
@@ -151,10 +165,10 @@ func (h *Host) normalizeStream() {
 	}
 }
 
-// validateStream is Validate for a normalized Telnet or serial host.
+// validateStream is Validate for a normalized non-SSH host.
 func (h Host) validateStream() error {
 	switch h.Protocol {
-	case ProtoTelnet:
+	case ProtoTelnet, ProtoRDP:
 		switch {
 		case h.Address == "":
 			return &FieldError{"address", "required"}
@@ -181,6 +195,9 @@ func (h Host) validateStream() error {
 		}
 	default:
 		return &FieldError{"auth", "unknown method"}
+	}
+	if h.IsRDP() {
+		return h.RDP.validate()
 	}
 	switch h.NewLine {
 	case NewLineCR, NewLineLF, NewLineCRLF:
