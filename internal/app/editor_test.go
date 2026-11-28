@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -331,7 +332,16 @@ func TestOpenWithDefaultApp(t *testing.T) {
 	if fi, _ := os.Stat(local); fi.Mode().Perm() != wantMode {
 		t.Errorf("copy mode %v", fi.Mode())
 	}
-	if ed := fc.fs.externalEdit(filepath.ToSlash(file)); ed == nil || ed.local != local || ed.state != extWatching {
+	// Found by its copy: the test server's remote paths differ by platform.
+	byCopy := func() *extEdit {
+		for _, ed := range fc.fs.edits {
+			if ed.local == local {
+				return ed
+			}
+		}
+		return nil
+	}
+	if ed := byCopy(); ed == nil || path.Base(ed.remote) != "conf.ini" || ed.state != extWatching {
 		t.Fatalf("default app opened an untracked copy: %+v", ed)
 	}
 	// Saving it there waits for approval before uploading.
@@ -357,7 +367,7 @@ func TestOpenWithDefaultApp(t *testing.T) {
 	}
 	// Return the local copy to its original contents before closing.
 	write(t, local, "a=1\n")
-	ed := fc.fs.externalEdit(filepath.ToSlash(file))
+	ed := byCopy()
 	if ed == nil {
 		t.Fatal("the session disappeared")
 	}
