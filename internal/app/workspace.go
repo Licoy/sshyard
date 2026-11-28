@@ -149,6 +149,10 @@ func kindIcon(k layout.Kind, on bool) *icons.Icon {
 		return icons.DockerOn
 	case k == layout.Docker:
 		return icons.Docker
+	case k == layout.Desktop && on:
+		return icons.DesktopOn
+	case k == layout.Desktop:
+		return icons.Desktop
 	case k == layout.Tmux && on:
 		return icons.TmuxOn
 	case k == layout.Tmux:
@@ -432,6 +436,10 @@ func (a *App) paneView(c *ui.Context, t *layout.Tab, n *layout.Node, tok theme.T
 			}
 			if isTool(cn.kind) {
 				a.toolPaneView(c, cn, tok, m)
+				return
+			}
+			if cn.kind == layout.Desktop {
+				a.desktopPane(c, t, n, cn, tok, m)
 				return
 			}
 			// The header is drawn on the pane's color: on a terminal scheme

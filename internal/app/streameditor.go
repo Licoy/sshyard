@@ -123,7 +123,7 @@ func (f *hostForm) readPorts() {
 func (a *App) protocolField(c *ui.Context, m locales.Messages, f *hostForm) {
 	ui.Field(c, m.FieldProtocol(), func() {
 		prev := f.proto
-		if formSegmented(c.Key("f:proto"), &f.proto, false, m.ProtocolSSH(), m.ProtocolTelnet(), m.ProtocolSerial()).Label(m.FieldProtocol()).Changed() {
+		if formSegmented(c.Key("f:proto"), &f.proto, false, m.ProtocolSSH(), m.ProtocolTelnet(), m.ProtocolSerial(), m.ProtocolRdp()).Label(m.FieldProtocol()).Changed() {
 			a.setProtocol(m, f, prev)
 		}
 	})

@@ -160,4 +160,4 @@ func remoteOnly(cn *conn) bool { return cn != nil && hasSSH(cn.host) }
 // canAI says an assistant can open for a pane's host: any host. Over SSH
 // it has files and commands; on a Telnet, serial or local terminal it
 // types into the terminal (aiTarget).
-func canAI(cn *conn) bool { return cn != nil }
+func canAI(cn *conn) bool { return cn != nil && !isDesktop(cn.host) }

@@ -54,8 +54,8 @@ func (a *App) statusSession(c *ui.Context, m locales.Messages, tok theme.Tokens)
 		st = cn.s.Status()
 	}
 	ui.Row(c.Key("who")).Gap(6).Shrink(1).MinWidth(0).AlignItems(ui.Center).Children(func() {
-		if cn.s != nil {
-			dot(c, stateColor(tok, st.State)).Label(a.pv(a.statusText(m, h, st, c.Now())))
+		if state, text, ok := a.paneStatus(m, cn, c.Now()); ok {
+			dot(c, stateColor(tok, state)).Label(a.pv(text))
 		}
 		ui.Text(c, a.pv(h.Label())).FontSize(theme.Caption).FontWeight(600).SingleLine().Shrink(0)
 		ui.Text(c, a.pv(h.Target())).FontSize(theme.Caption).TextColor(tok.TextMuted).SingleLine().Shrink(1)

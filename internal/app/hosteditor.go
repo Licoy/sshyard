@@ -100,6 +100,7 @@ type hostForm struct {
 	// copies unless replaced
 	from string
 	streamForm
+	rdpForm
 	renewalForm
 }
 
@@ -154,6 +155,7 @@ func (a *App) openEditor(h *assets.Host) {
 
 	f := &hostForm{isNew: h == nil, port: "22", cwdFollow: true, encoding: vt.EncodingUTF8, transfers: true}
 	f.loadStream(h)
+	f.loadRDP(h)
 	f.loadRenewal(h, time.Now())
 	if h != nil {
 		f.orig = *h
@@ -279,6 +281,8 @@ func fieldError(m locales.Messages, err error) string {
 		return m.InvalidPort()
 	case fe.Field == "serial":
 		return m.InvalidSerialSettings()
+	case fe.Field == "width" || fe.Field == "height":
+		return m.RdpInvalidSize()
 	case fe.Field == "term":
 		return m.TermTypeInvalid()
 	case fe.Field == "startup":
@@ -321,6 +325,10 @@ func (a *App) SaveForm(m locales.Messages) bool {
 	h.Favorite, h.CwdFollow, h.Metrics = f.favorite, f.cwdFollow, metricsMode(f.metricsIdx)
 	h.Icon, h.Color = f.icon, f.color
 	f.applyStream(&h)
+	if !f.applyRDP(&h) {
+		f.err = m.RdpInvalidSize()
+		return false
+	}
 	f.applyRenewal(&h)
 	if f.auth == "" {
 		f.auth = a.authLabel(m, h)
@@ -499,13 +507,20 @@ func (a *App) editorView(c *ui.Context, m locales.Messages) {
 						if proto == assets.ProtoTelnet {
 							ui.Field(c, "", func() { notice(c, "f:plain", icons.Warning, tok.Warning, m.TelnetPlaintext()) })
 						}
+						if proto == assets.ProtoRDP {
+							ui.Field(c, "", func() { ui.Text(c, m.RdpHostHint()).FontSize(theme.Caption).TextColor(tok.TextMuted) })
+						}
 						if proto == assets.ProtoSerial {
 							a.serialFields(c, m, tok, f)
 						} else {
 							ui.Field(c, m.FieldHost(), func() { formTextInput(c.Key("f:addr"), &f.address).Placeholder("example.com") })
 							ui.Field(c, m.FieldPort(), func() { formTextInput(c.Key("f:port"), &f.port).Width(90) })
 						}
-						ui.Field(c, m.FieldUser(), func() { formTextInput(c.Key("f:user"), &f.user).Placeholder("root") })
+						userHint := "root"
+						if proto == assets.ProtoRDP {
+							userHint = "Administrator"
+						}
+						ui.Field(c, m.FieldUser(), func() { formTextInput(c.Key("f:user"), &f.user).Placeholder(userHint) })
 						ui.Field(c, m.FieldGroup(), func() { a.hostGroupField(c, m, f) })
 						ui.Field(c, m.FieldAppearance(), func() { a.lookFields(c, m, tok, &f.icon, &f.emoji, &f.color, m.AutoIcon(), m.AutoColor()) })
 						ui.Field(c, m.FieldAuth(), func() {
@@ -527,7 +542,9 @@ func (a *App) editorView(c *ui.Context, m locales.Messages) {
 							}
 						})
 						a.hostSecretFields(c, m, tok, f)
-						if proto != assets.ProtoSSH && f.auth != m.AuthManual() {
+						if proto == assets.ProtoRDP && f.auth == m.AuthManual() {
+							ui.Field(c, "", func() { ui.Text(c, m.RdpManualLoginHint()).FontSize(theme.Caption).TextColor(tok.TextMuted) })
+						} else if proto != assets.ProtoSSH && proto != assets.ProtoRDP && f.auth != m.AuthManual() {
 							ui.Field(c, "", func() { ui.Text(c, m.AutoLoginHint()).FontSize(theme.Caption).TextColor(tok.TextMuted) })
 						}
 						if proto != assets.ProtoSerial {
@@ -562,32 +579,38 @@ func (a *App) editorView(c *ui.Context, m locales.Messages) {
 									}
 								})
 							})
+						} else if proto == assets.ProtoRDP {
+							a.rdpFields(c, m, tok, f)
 						} else {
 							a.streamTermFields(c, m, tok, f)
 						}
-						encodingField(c, m, tok, f)
-						if f.protocol() != assets.ProtoSerial {
-							a.termTypeField(c, m, tok, f)
+						if proto != assets.ProtoRDP {
+							encodingField(c, m, tok, f)
+							if f.protocol() != assets.ProtoSerial {
+								a.termTypeField(c, m, tok, f)
+							}
+							sessionLogField(c, m, tok, f)
+							a.transfersField(c, m, tok, f)
 						}
-						sessionLogField(c, m, tok, f)
-						a.transfersField(c, m, tok, f)
 						ui.Field(c, "", func() {
 							ui.Collapsible(c.Key("f:renewal"), m.RenewalSection(), &f.renewOpen, func() {
 								a.renewalFields(c, m, tok, f)
 							})
 						})
-						ui.Field(c, "", func() {
-							ui.Collapsible(c.Key("f:adv"), m.Advanced(), &f.advOpen, func() {
-								labels := syncOSC52Label(m, f)
-								ui.Column(c).Gap(6).FillWidth().Margin(8, 0, 0, 0).Children(func() {
-									ui.Text(c, m.Osc52Title()).FontSize(theme.Footnote).TextColor(tok.TextMuted)
-									formSelect(c.Key("f:osc52"), &f.osc52, labels).Label(m.Osc52Title()).FillWidth()
+						if proto != assets.ProtoRDP {
+							ui.Field(c, "", func() {
+								ui.Collapsible(c.Key("f:adv"), m.Advanced(), &f.advOpen, func() {
+									labels := syncOSC52Label(m, f)
+									ui.Column(c).Gap(6).FillWidth().Margin(8, 0, 0, 0).Children(func() {
+										ui.Text(c, m.Osc52Title()).FontSize(theme.Footnote).TextColor(tok.TextMuted)
+										formSelect(c.Key("f:osc52"), &f.osc52, labels).Label(m.Osc52Title()).FillWidth()
+									})
 								})
 							})
-						})
-						ui.Field(c, "", func() {
-							a.aiHostFields(c, m, tok, f, proto == assets.ProtoSSH)
-						})
+							ui.Field(c, "", func() {
+								a.aiHostFields(c, m, tok, f, proto == assets.ProtoSSH)
+							})
+						}
 						ui.Field(c, "", func() {
 							ui.Column(c).Gap(6).Children(func() {
 								if proto == assets.ProtoSSH {
@@ -650,8 +673,9 @@ func (a *App) networkFields(c *ui.Context, m locales.Messages, tok theme.Tokens,
 					}
 				}}).Grow(1)
 		})
-		// Telnet goes through a proxy only: jump hosts are SSH.
-		if f.protocol() != assets.ProtoSSH {
+		// Telnet goes through a proxy only: jump hosts are SSH. A remote
+		// desktop is reached through them too.
+		if p := f.protocol(); p != assets.ProtoSSH && p != assets.ProtoRDP {
 			return
 		}
 		ui.Text(c, m.FieldJumpHosts()).FontSize(theme.Footnote).TextColor(tok.TextMuted)

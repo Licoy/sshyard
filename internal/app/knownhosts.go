@@ -15,6 +15,13 @@ import (
 
 // knowsHostKey reports whether known_hosts has a key for h.
 func (a *App) knowsHostKey(h assets.Host) bool {
+	if h.IsRDP() {
+		if a.rdpCerts == nil {
+			return false
+		}
+		_, ok := a.rdpCerts.Known(h.Addr())
+		return ok
+	}
 	return a.known != nil && h.SSH() && len(a.known.For(h.Addr())) > 0
 }
 
@@ -22,6 +29,12 @@ func (a *App) knowsHostKey(h assets.Host) bool {
 // connection asks to trust its key again.
 func (a *App) ForgetHostKey(id string) error {
 	h, ok := a.store.Get(id)
+	if ok && h.IsRDP() {
+		if a.rdpCerts == nil {
+			return nil
+		}
+		return a.rdpCerts.Forget(h.Addr())
+	}
 	if !ok || a.known == nil {
 		return nil
 	}

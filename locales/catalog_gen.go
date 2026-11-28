@@ -17871,6 +17871,536 @@ func (msgs Messages) ProtocolSerial() string {
 	return Catalog.Format(msgs.locale, "protocolSerial", nil)
 }
 
+// ProtocolRdp says "RDP"
+// in the language the app shows.
+func ProtocolRdp() string { return In(i18n.Locale()).ProtocolRdp() }
+
+// ProtocolRdp says "RDP"
+// in the language of msgs.
+func (msgs Messages) ProtocolRdp() string {
+	return Catalog.Format(msgs.locale, "protocolRdp", nil)
+}
+
+// RemoteDesktop says "Remote Desktop"
+// in the language the app shows.
+func RemoteDesktop() string { return In(i18n.Locale()).RemoteDesktop() }
+
+// RemoteDesktop says "Remote Desktop"
+// in the language of msgs.
+func (msgs Messages) RemoteDesktop() string {
+	return Catalog.Format(msgs.locale, "remoteDesktop", nil)
+}
+
+// RdpHostHint says "A Windows remote desktop (RDP). It opens as a desktop in a tab; files, terminal and AI are not available on it."
+// in the language the app shows.
+func RdpHostHint() string { return In(i18n.Locale()).RdpHostHint() }
+
+// RdpHostHint says "A Windows remote desktop (RDP). It opens as a desktop in a tab; files, terminal and AI are not available on it."
+// in the language of msgs.
+func (msgs Messages) RdpHostHint() string {
+	return Catalog.Format(msgs.locale, "rdpHostHint", nil)
+}
+
+// FieldRdpDomain says "Domain"
+// in the language the app shows.
+func FieldRdpDomain() string { return In(i18n.Locale()).FieldRdpDomain() }
+
+// FieldRdpDomain says "Domain"
+// in the language of msgs.
+func (msgs Messages) FieldRdpDomain() string {
+	return Catalog.Format(msgs.locale, "fieldRdpDomain", nil)
+}
+
+// RdpDomainHint says "Leave empty for a local account."
+// in the language the app shows.
+func RdpDomainHint() string { return In(i18n.Locale()).RdpDomainHint() }
+
+// RdpDomainHint says "Leave empty for a local account."
+// in the language of msgs.
+func (msgs Messages) RdpDomainHint() string {
+	return Catalog.Format(msgs.locale, "rdpDomainHint", nil)
+}
+
+// FieldRdpSecurity says "Security"
+// in the language the app shows.
+func FieldRdpSecurity() string { return In(i18n.Locale()).FieldRdpSecurity() }
+
+// FieldRdpSecurity says "Security"
+// in the language of msgs.
+func (msgs Messages) FieldRdpSecurity() string {
+	return Catalog.Format(msgs.locale, "fieldRdpSecurity", nil)
+}
+
+// RdpSecurityAuto says "Automatic"
+// in the language the app shows.
+func RdpSecurityAuto() string { return In(i18n.Locale()).RdpSecurityAuto() }
+
+// RdpSecurityAuto says "Automatic"
+// in the language of msgs.
+func (msgs Messages) RdpSecurityAuto() string {
+	return Catalog.Format(msgs.locale, "rdpSecurityAuto", nil)
+}
+
+// RdpSecurityHint says "Automatic uses Network Level Authentication (NLA) when the server offers it, and TLS otherwise."
+// in the language the app shows.
+func RdpSecurityHint() string { return In(i18n.Locale()).RdpSecurityHint() }
+
+// RdpSecurityHint says "Automatic uses Network Level Authentication (NLA) when the server offers it, and TLS otherwise."
+// in the language of msgs.
+func (msgs Messages) RdpSecurityHint() string {
+	return Catalog.Format(msgs.locale, "rdpSecurityHint", nil)
+}
+
+// FieldRdpResolution says "Resolution"
+// in the language the app shows.
+func FieldRdpResolution() string { return In(i18n.Locale()).FieldRdpResolution() }
+
+// FieldRdpResolution says "Resolution"
+// in the language of msgs.
+func (msgs Messages) FieldRdpResolution() string {
+	return Catalog.Format(msgs.locale, "fieldRdpResolution", nil)
+}
+
+// RdpResolutionFit says "Fit pane"
+// in the language the app shows.
+func RdpResolutionFit() string { return In(i18n.Locale()).RdpResolutionFit() }
+
+// RdpResolutionFit says "Fit pane"
+// in the language of msgs.
+func (msgs Messages) RdpResolutionFit() string {
+	return Catalog.Format(msgs.locale, "rdpResolutionFit", nil)
+}
+
+// RdpResolutionCustom says "Fixed"
+// in the language the app shows.
+func RdpResolutionCustom() string { return In(i18n.Locale()).RdpResolutionCustom() }
+
+// RdpResolutionCustom says "Fixed"
+// in the language of msgs.
+func (msgs Messages) RdpResolutionCustom() string {
+	return Catalog.Format(msgs.locale, "rdpResolutionCustom", nil)
+}
+
+// RdpResolutionFitHint says "The desktop takes the size of its pane and follows it when the pane is resized."
+// in the language the app shows.
+func RdpResolutionFitHint() string { return In(i18n.Locale()).RdpResolutionFitHint() }
+
+// RdpResolutionFitHint says "The desktop takes the size of its pane and follows it when the pane is resized."
+// in the language of msgs.
+func (msgs Messages) RdpResolutionFitHint() string {
+	return Catalog.Format(msgs.locale, "rdpResolutionFitHint", nil)
+}
+
+// RdpWidth says "Width"
+// in the language the app shows.
+func RdpWidth() string { return In(i18n.Locale()).RdpWidth() }
+
+// RdpWidth says "Width"
+// in the language of msgs.
+func (msgs Messages) RdpWidth() string {
+	return Catalog.Format(msgs.locale, "rdpWidth", nil)
+}
+
+// RdpHeight says "Height"
+// in the language the app shows.
+func RdpHeight() string { return In(i18n.Locale()).RdpHeight() }
+
+// RdpHeight says "Height"
+// in the language of msgs.
+func (msgs Messages) RdpHeight() string {
+	return Catalog.Format(msgs.locale, "rdpHeight", nil)
+}
+
+// RdpInvalidSize says "Width and height must each be between 200 and 8192 pixels."
+// in the language the app shows.
+func RdpInvalidSize() string { return In(i18n.Locale()).RdpInvalidSize() }
+
+// RdpInvalidSize says "Width and height must each be between 200 and 8192 pixels."
+// in the language of msgs.
+func (msgs Messages) RdpInvalidSize() string {
+	return Catalog.Format(msgs.locale, "rdpInvalidSize", nil)
+}
+
+// RdpClipboard says "Share the clipboard text"
+// in the language the app shows.
+func RdpClipboard() string { return In(i18n.Locale()).RdpClipboard() }
+
+// RdpClipboard says "Share the clipboard text"
+// in the language of msgs.
+func (msgs Messages) RdpClipboard() string {
+	return Catalog.Format(msgs.locale, "rdpClipboard", nil)
+}
+
+// RdpAdminSession says "Connect to the administrative session"
+// in the language the app shows.
+func RdpAdminSession() string { return In(i18n.Locale()).RdpAdminSession() }
+
+// RdpAdminSession says "Connect to the administrative session"
+// in the language of msgs.
+func (msgs Messages) RdpAdminSession() string {
+	return Catalog.Format(msgs.locale, "rdpAdminSession", nil)
+}
+
+// RdpAdminSessionHint says "Uses the server's console session, for administrators."
+// in the language the app shows.
+func RdpAdminSessionHint() string { return In(i18n.Locale()).RdpAdminSessionHint() }
+
+// RdpAdminSessionHint says "Uses the server's console session, for administrators."
+// in the language of msgs.
+func (msgs Messages) RdpAdminSessionHint() string {
+	return Catalog.Format(msgs.locale, "rdpAdminSessionHint", nil)
+}
+
+// RdpManualLoginHint says "You sign in on the server's sign-in screen. Requires TLS security: Network Level Authentication needs a password here."
+// in the language the app shows.
+func RdpManualLoginHint() string { return In(i18n.Locale()).RdpManualLoginHint() }
+
+// RdpManualLoginHint says "You sign in on the server's sign-in screen. Requires TLS security: Network Level Authentication needs a password here."
+// in the language of msgs.
+func (msgs Messages) RdpManualLoginHint() string {
+	return Catalog.Format(msgs.locale, "rdpManualLoginHint", nil)
+}
+
+// RdpSendCtrlAltDel says "Send Ctrl+Alt+Del"
+// in the language the app shows.
+func RdpSendCtrlAltDel() string { return In(i18n.Locale()).RdpSendCtrlAltDel() }
+
+// RdpSendCtrlAltDel says "Send Ctrl+Alt+Del"
+// in the language of msgs.
+func (msgs Messages) RdpSendCtrlAltDel() string {
+	return Catalog.Format(msgs.locale, "rdpSendCtrlAltDel", nil)
+}
+
+// RdpStepSecuring says "Securing the connection…"
+// in the language the app shows.
+func RdpStepSecuring() string { return In(i18n.Locale()).RdpStepSecuring() }
+
+// RdpStepSecuring says "Securing the connection…"
+// in the language of msgs.
+func (msgs Messages) RdpStepSecuring() string {
+	return Catalog.Format(msgs.locale, "rdpStepSecuring", nil)
+}
+
+// RdpStepAuth says "Signing in…"
+// in the language the app shows.
+func RdpStepAuth() string { return In(i18n.Locale()).RdpStepAuth() }
+
+// RdpStepAuth says "Signing in…"
+// in the language of msgs.
+func (msgs Messages) RdpStepAuth() string {
+	return Catalog.Format(msgs.locale, "rdpStepAuth", nil)
+}
+
+// RdpStepLicense says "Checking the license…"
+// in the language the app shows.
+func RdpStepLicense() string { return In(i18n.Locale()).RdpStepLicense() }
+
+// RdpStepLicense says "Checking the license…"
+// in the language of msgs.
+func (msgs Messages) RdpStepLicense() string {
+	return Catalog.Format(msgs.locale, "rdpStepLicense", nil)
+}
+
+// RdpStepDesktop says "Opening the desktop…"
+// in the language the app shows.
+func RdpStepDesktop() string { return In(i18n.Locale()).RdpStepDesktop() }
+
+// RdpStepDesktop says "Opening the desktop…"
+// in the language of msgs.
+func (msgs Messages) RdpStepDesktop() string {
+	return Catalog.Format(msgs.locale, "rdpStepDesktop", nil)
+}
+
+// RdpReconnecting says "Reconnecting (attempt {attempt})…"
+// in the language the app shows.
+func RdpReconnecting(attempt string) string { return In(i18n.Locale()).RdpReconnecting(attempt) }
+
+// RdpReconnecting says "Reconnecting (attempt {attempt})…"
+// in the language of msgs.
+func (msgs Messages) RdpReconnecting(attempt string) string {
+	return Catalog.Format(msgs.locale, "rdpReconnecting", map[string]any{"attempt": attempt})
+}
+
+// RdpPasswordNeeded says "A password is needed to sign in."
+// in the language the app shows.
+func RdpPasswordNeeded() string { return In(i18n.Locale()).RdpPasswordNeeded() }
+
+// RdpPasswordNeeded says "A password is needed to sign in."
+// in the language of msgs.
+func (msgs Messages) RdpPasswordNeeded() string {
+	return Catalog.Format(msgs.locale, "rdpPasswordNeeded", nil)
+}
+
+// RdpCertRefused says "The server's certificate was not trusted."
+// in the language the app shows.
+func RdpCertRefused() string { return In(i18n.Locale()).RdpCertRefused() }
+
+// RdpCertRefused says "The server's certificate was not trusted."
+// in the language of msgs.
+func (msgs Messages) RdpCertRefused() string {
+	return Catalog.Format(msgs.locale, "rdpCertRefused", nil)
+}
+
+// RdpLogonFailure says "The user name or password is incorrect."
+// in the language the app shows.
+func RdpLogonFailure() string { return In(i18n.Locale()).RdpLogonFailure() }
+
+// RdpLogonFailure says "The user name or password is incorrect."
+// in the language of msgs.
+func (msgs Messages) RdpLogonFailure() string {
+	return Catalog.Format(msgs.locale, "rdpLogonFailure", nil)
+}
+
+// RdpAccountLocked says "This account is locked out."
+// in the language the app shows.
+func RdpAccountLocked() string { return In(i18n.Locale()).RdpAccountLocked() }
+
+// RdpAccountLocked says "This account is locked out."
+// in the language of msgs.
+func (msgs Messages) RdpAccountLocked() string {
+	return Catalog.Format(msgs.locale, "rdpAccountLocked", nil)
+}
+
+// RdpAccountDisabled says "This account is disabled."
+// in the language the app shows.
+func RdpAccountDisabled() string { return In(i18n.Locale()).RdpAccountDisabled() }
+
+// RdpAccountDisabled says "This account is disabled."
+// in the language of msgs.
+func (msgs Messages) RdpAccountDisabled() string {
+	return Catalog.Format(msgs.locale, "rdpAccountDisabled", nil)
+}
+
+// RdpAccountRestricted says "This account is not allowed to sign in now."
+// in the language the app shows.
+func RdpAccountRestricted() string { return In(i18n.Locale()).RdpAccountRestricted() }
+
+// RdpAccountRestricted says "This account is not allowed to sign in now."
+// in the language of msgs.
+func (msgs Messages) RdpAccountRestricted() string {
+	return Catalog.Format(msgs.locale, "rdpAccountRestricted", nil)
+}
+
+// RdpAccountExpired says "This account has expired."
+// in the language the app shows.
+func RdpAccountExpired() string { return In(i18n.Locale()).RdpAccountExpired() }
+
+// RdpAccountExpired says "This account has expired."
+// in the language of msgs.
+func (msgs Messages) RdpAccountExpired() string {
+	return Catalog.Format(msgs.locale, "rdpAccountExpired", nil)
+}
+
+// RdpPasswordExpired says "The password has expired."
+// in the language the app shows.
+func RdpPasswordExpired() string { return In(i18n.Locale()).RdpPasswordExpired() }
+
+// RdpPasswordExpired says "The password has expired."
+// in the language of msgs.
+func (msgs Messages) RdpPasswordExpired() string {
+	return Catalog.Format(msgs.locale, "rdpPasswordExpired", nil)
+}
+
+// RdpPasswordMustChange says "The password must be changed before signing in."
+// in the language the app shows.
+func RdpPasswordMustChange() string { return In(i18n.Locale()).RdpPasswordMustChange() }
+
+// RdpPasswordMustChange says "The password must be changed before signing in."
+// in the language of msgs.
+func (msgs Messages) RdpPasswordMustChange() string {
+	return Catalog.Format(msgs.locale, "rdpPasswordMustChange", nil)
+}
+
+// RdpNotAllowed says "This user is not allowed to sign in remotely."
+// in the language the app shows.
+func RdpNotAllowed() string { return In(i18n.Locale()).RdpNotAllowed() }
+
+// RdpNotAllowed says "This user is not allowed to sign in remotely."
+// in the language of msgs.
+func (msgs Messages) RdpNotAllowed() string {
+	return Catalog.Format(msgs.locale, "rdpNotAllowed", nil)
+}
+
+// RdpLoggedOff says "You signed out of the remote desktop."
+// in the language the app shows.
+func RdpLoggedOff() string { return In(i18n.Locale()).RdpLoggedOff() }
+
+// RdpLoggedOff says "You signed out of the remote desktop."
+// in the language of msgs.
+func (msgs Messages) RdpLoggedOff() string {
+	return Catalog.Format(msgs.locale, "rdpLoggedOff", nil)
+}
+
+// RdpIdleTimeout says "The session ended after being idle."
+// in the language the app shows.
+func RdpIdleTimeout() string { return In(i18n.Locale()).RdpIdleTimeout() }
+
+// RdpIdleTimeout says "The session ended after being idle."
+// in the language of msgs.
+func (msgs Messages) RdpIdleTimeout() string {
+	return Catalog.Format(msgs.locale, "rdpIdleTimeout", nil)
+}
+
+// RdpLogonTimeout says "The session ended: its time limit was reached."
+// in the language the app shows.
+func RdpLogonTimeout() string { return In(i18n.Locale()).RdpLogonTimeout() }
+
+// RdpLogonTimeout says "The session ended: its time limit was reached."
+// in the language of msgs.
+func (msgs Messages) RdpLogonTimeout() string {
+	return Catalog.Format(msgs.locale, "rdpLogonTimeout", nil)
+}
+
+// RdpReplaced says "Another connection took over this session."
+// in the language the app shows.
+func RdpReplaced() string { return In(i18n.Locale()).RdpReplaced() }
+
+// RdpReplaced says "Another connection took over this session."
+// in the language of msgs.
+func (msgs Messages) RdpReplaced() string {
+	return Catalog.Format(msgs.locale, "rdpReplaced", nil)
+}
+
+// RdpAdminEnded says "An administrator or another user ended the session."
+// in the language the app shows.
+func RdpAdminEnded() string { return In(i18n.Locale()).RdpAdminEnded() }
+
+// RdpAdminEnded says "An administrator or another user ended the session."
+// in the language of msgs.
+func (msgs Messages) RdpAdminEnded() string {
+	return Catalog.Format(msgs.locale, "rdpAdminEnded", nil)
+}
+
+// RdpServerDenied says "The server refused the connection."
+// in the language the app shows.
+func RdpServerDenied() string { return In(i18n.Locale()).RdpServerDenied() }
+
+// RdpServerDenied says "The server refused the connection."
+// in the language of msgs.
+func (msgs Messages) RdpServerDenied() string {
+	return Catalog.Format(msgs.locale, "rdpServerDenied", nil)
+}
+
+// RdpProtocolError says "The server sent data the app could not read."
+// in the language the app shows.
+func RdpProtocolError() string { return In(i18n.Locale()).RdpProtocolError() }
+
+// RdpProtocolError says "The server sent data the app could not read."
+// in the language of msgs.
+func (msgs Messages) RdpProtocolError() string {
+	return Catalog.Format(msgs.locale, "rdpProtocolError", nil)
+}
+
+// RdpSecurityFailed says "The server and the app have no security protocol in common. Try another security setting."
+// in the language the app shows.
+func RdpSecurityFailed() string { return In(i18n.Locale()).RdpSecurityFailed() }
+
+// RdpSecurityFailed says "The server and the app have no security protocol in common. Try another security setting."
+// in the language of msgs.
+func (msgs Messages) RdpSecurityFailed() string {
+	return Catalog.Format(msgs.locale, "rdpSecurityFailed", nil)
+}
+
+// RdpLicenseFailed says "The server could not grant a remote desktop license."
+// in the language the app shows.
+func RdpLicenseFailed() string { return In(i18n.Locale()).RdpLicenseFailed() }
+
+// RdpLicenseFailed says "The server could not grant a remote desktop license."
+// in the language of msgs.
+func (msgs Messages) RdpLicenseFailed() string {
+	return Catalog.Format(msgs.locale, "rdpLicenseFailed", nil)
+}
+
+// RdpServerEnded says "The server ended the session."
+// in the language the app shows.
+func RdpServerEnded() string { return In(i18n.Locale()).RdpServerEnded() }
+
+// RdpServerEnded says "The server ended the session."
+// in the language of msgs.
+func (msgs Messages) RdpServerEnded() string {
+	return Catalog.Format(msgs.locale, "rdpServerEnded", nil)
+}
+
+// RdpCertUnknownTitle says "Unknown Certificate"
+// in the language the app shows.
+func RdpCertUnknownTitle() string { return In(i18n.Locale()).RdpCertUnknownTitle() }
+
+// RdpCertUnknownTitle says "Unknown Certificate"
+// in the language of msgs.
+func (msgs Messages) RdpCertUnknownTitle() string {
+	return Catalog.Format(msgs.locale, "rdpCertUnknownTitle", nil)
+}
+
+// RdpCertChangedTitle says "Certificate Changed"
+// in the language the app shows.
+func RdpCertChangedTitle() string { return In(i18n.Locale()).RdpCertChangedTitle() }
+
+// RdpCertChangedTitle says "Certificate Changed"
+// in the language of msgs.
+func (msgs Messages) RdpCertChangedTitle() string {
+	return Catalog.Format(msgs.locale, "rdpCertChangedTitle", nil)
+}
+
+// RdpCertUnknown says "{host} presents a certificate this computer has not seen before. Check its fingerprint before trusting it."
+// in the language the app shows.
+func RdpCertUnknown(host string) string { return In(i18n.Locale()).RdpCertUnknown(host) }
+
+// RdpCertUnknown says "{host} presents a certificate this computer has not seen before. Check its fingerprint before trusting it."
+// in the language of msgs.
+func (msgs Messages) RdpCertUnknown(host string) string {
+	return Catalog.Format(msgs.locale, "rdpCertUnknown", map[string]any{"host": host})
+}
+
+// RdpCertChanged says "The certificate of {host} is not the one trusted before. Someone may be intercepting the connection, or the server's …"
+// in the language the app shows.
+func RdpCertChanged(host string) string { return In(i18n.Locale()).RdpCertChanged(host) }
+
+// RdpCertChanged says "The certificate of {host} is not the one trusted before. Someone may be intercepting the connection, or the server's …"
+// in the language of msgs.
+func (msgs Messages) RdpCertChanged(host string) string {
+	return Catalog.Format(msgs.locale, "rdpCertChanged", map[string]any{"host": host})
+}
+
+// RdpCertSubject says "Issued to: {subject}"
+// in the language the app shows.
+func RdpCertSubject(subject string) string { return In(i18n.Locale()).RdpCertSubject(subject) }
+
+// RdpCertSubject says "Issued to: {subject}"
+// in the language of msgs.
+func (msgs Messages) RdpCertSubject(subject string) string {
+	return Catalog.Format(msgs.locale, "rdpCertSubject", map[string]any{"subject": subject})
+}
+
+// RdpCertExpires says "Expires: {date}"
+// in the language the app shows.
+func RdpCertExpires(date string) string { return In(i18n.Locale()).RdpCertExpires(date) }
+
+// RdpCertExpires says "Expires: {date}"
+// in the language of msgs.
+func (msgs Messages) RdpCertExpires(date string) string {
+	return Catalog.Format(msgs.locale, "rdpCertExpires", map[string]any{"date": date})
+}
+
+// RdpCertSaved says "Trusted: {fingerprint}"
+// in the language the app shows.
+func RdpCertSaved(fingerprint string) string { return In(i18n.Locale()).RdpCertSaved(fingerprint) }
+
+// RdpCertSaved says "Trusted: {fingerprint}"
+// in the language of msgs.
+func (msgs Messages) RdpCertSaved(fingerprint string) string {
+	return Catalog.Format(msgs.locale, "rdpCertSaved", map[string]any{"fingerprint": fingerprint})
+}
+
+// RdpCertOffered says "Now: SHA-256 {fingerprint}"
+// in the language the app shows.
+func RdpCertOffered(fingerprint string) string { return In(i18n.Locale()).RdpCertOffered(fingerprint) }
+
+// RdpCertOffered says "Now: SHA-256 {fingerprint}"
+// in the language of msgs.
+func (msgs Messages) RdpCertOffered(fingerprint string) string {
+	return Catalog.Format(msgs.locale, "rdpCertOffered", map[string]any{"fingerprint": fingerprint})
+}
+
 // FieldDevice says "Serial port"
 // in the language the app shows.
 func FieldDevice() string { return In(i18n.Locale()).FieldDevice() }

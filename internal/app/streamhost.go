@@ -37,7 +37,10 @@ func (e *serialInUseError) Error() string {
 func hasSSH(h assets.Host) bool { return !isLocal(h.ID) && h.SSH() }
 
 // isStream reports whether h is a Telnet or serial host.
-func isStream(h assets.Host) bool { return !isLocal(h.ID) && !h.SSH() }
+func isStream(h assets.Host) bool { return !isLocal(h.ID) && !h.SSH() && !h.IsRDP() }
+
+// isDesktop reports whether h is a remote desktop (RDP) host.
+func isDesktop(h assets.Host) bool { return !isLocal(h.ID) && h.IsRDP() }
 
 // serialPane is the terminal pane that has h's serial port open, nil for
 // none.
@@ -118,12 +121,14 @@ func protocolName(m locales.Messages, p assets.Protocol) string {
 		return m.ProtocolTelnet()
 	case assets.ProtoSerial:
 		return m.ProtocolSerial()
+	case assets.ProtoRDP:
+		return m.ProtocolRdp()
 	}
 	return m.ProtocolSSH()
 }
 
 // protocols are the editor's protocol choices, in its order.
-var protocols = []assets.Protocol{assets.ProtoSSH, assets.ProtoTelnet, assets.ProtoSerial}
+var protocols = []assets.Protocol{assets.ProtoSSH, assets.ProtoTelnet, assets.ProtoSerial, assets.ProtoRDP}
 
 // parityChoices are the parity settings and their labels, in order.
 func parityChoices(m locales.Messages) ([]string, []serial.Parity) {
@@ -168,6 +173,31 @@ func (a *App) streamFacts(c *ui.Context, m locales.Messages, tok theme.Tokens, h
 		ui.Text(c, m.FieldAuth()).FontSize(theme.Caption).TextColor(tok.TextMuted)
 		ui.Text(c, a.authText(m, h)).FontSize(theme.Footnote)
 	})
+}
+
+// desktopFacts are the connection card of an RDP host; or stands in a
+// dash for an empty value.
+func (a *App) desktopFacts(c *ui.Context, m locales.Messages, tok theme.Tokens, h assets.Host, proxy, jumps string, panes int, or func(string) string) {
+	o := rdpOptions(h)
+	user := h.User
+	if user != "" && o.Domain != "" {
+		user = o.Domain + `\` + user
+	}
+	size := m.RdpResolutionFit()
+	if o.Width > 0 && o.Height > 0 {
+		size = strconv.Itoa(o.Width) + " × " + strconv.Itoa(o.Height)
+	}
+	facts(c, tok, "",
+		m.FieldProtocol(), protocolName(m, h.Protocol), m.SysAddress(), a.pv(h.Address),
+		m.FieldPort(), strconv.Itoa(h.Port), m.FieldUser(), or(user),
+		m.FieldProxy(), proxy, m.FieldRdpResolution(), size,
+		m.FieldGroup(), or(h.Group), m.OpenPanes(), strconv.Itoa(panes))
+	for _, kv := range [][2]string{{m.FieldAuth(), a.authText(m, h)}, {m.JumpHosts(), or(jumps)}} {
+		ui.Column(c).Gap(2).FillWidth().Children(func() {
+			ui.Text(c, kv[0]).FontSize(theme.Caption).TextColor(tok.TextMuted)
+			ui.Text(c, kv[1]).FontSize(theme.Footnote)
+		})
+	}
 }
 
 // streamAuthChoices are the logins of a Telnet or serial host: by hand,

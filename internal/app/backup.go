@@ -20,6 +20,7 @@ import (
 	"github.com/Licoy/sshyard/internal/backup/gist"
 	"github.com/Licoy/sshyard/internal/icons"
 	"github.com/Licoy/sshyard/internal/keychain"
+	"github.com/Licoy/sshyard/internal/rdp"
 	"github.com/Licoy/sshyard/internal/settings"
 	"github.com/Licoy/sshyard/internal/theme"
 	"github.com/Licoy/sshyard/internal/vault"
@@ -39,6 +40,8 @@ type backupPayload struct {
 	Assets     assets.Snapshot   `json:"assets"`
 	Settings   settings.Settings `json:"settings"`
 	KnownHosts string            `json:"knownHosts,omitempty"`
+	// RDPCerts are the remote desktop certificates trusted.
+	RDPCerts string `json:"rdpCerts,omitempty"`
 	// Secrets are the entries above, by key; never the master key or MCP token.
 	Secrets map[string][]byte `json:"secrets,omitempty"`
 }
@@ -48,6 +51,7 @@ const (
 	backupAssets   = "assets.json"
 	backupSettings = "settings.json"
 	backupKnown    = "known_hosts"
+	backupRDPCerts = rdp.KnownCertsFile
 	backupSecrets  = "secrets.json"
 )
 
@@ -64,6 +68,9 @@ func (a *App) packBackup(p backupPayload) ([]byte, error) {
 	}
 	if p.KnownHosts != "" {
 		files[backupKnown] = []byte(p.KnownHosts)
+	}
+	if p.RDPCerts != "" {
+		files[backupRDPCerts] = []byte(p.RDPCerts)
 	}
 	if p.Secrets != nil {
 		if files[backupSecrets], err = json.Marshal(p.Secrets); err != nil {
@@ -96,6 +103,7 @@ func unpackBackup(plain []byte) (backupPayload, error) {
 		return p, vault.ErrCorrupt
 	}
 	p.KnownHosts = string(files[backupKnown])
+	p.RDPCerts = string(files[backupRDPCerts])
 	if b, ok := files[backupSecrets]; ok && json.Unmarshal(b, &p.Secrets) != nil {
 		return p, vault.ErrCorrupt
 	}
@@ -181,6 +189,11 @@ func (a *App) collectBackup(secrets bool) (backupPayload, error) {
 	p.Settings.AIACPAgents, p.Settings.AIACP, p.Settings.AIDefaultAgent = nil, nil, ""
 	if b, err := a.known.Contents(); err == nil {
 		p.KnownHosts = string(b)
+	}
+	if a.rdpCerts != nil {
+		if b, err := a.rdpCerts.Contents(); err == nil {
+			p.RDPCerts = string(b)
+		}
 	}
 	if !secrets {
 		return p, nil
@@ -309,6 +322,11 @@ func (a *App) restoreBackup(m locales.Messages, p backupPayload) error {
 	}
 	if p.KnownHosts != "" {
 		if _, err := a.known.Merge([]byte(p.KnownHosts)); err != nil {
+			a.toastError(m.ErrGeneric(err.Error()))
+		}
+	}
+	if p.RDPCerts != "" && a.rdpCerts != nil {
+		if _, err := a.rdpCerts.Merge([]byte(p.RDPCerts)); err != nil {
 			a.toastError(m.ErrGeneric(err.Error()))
 		}
 	}

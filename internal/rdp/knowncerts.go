@@ -115,6 +115,18 @@ func (k *KnownCerts) Verify(addr string, chain []*x509.Certificate) error {
 	return e
 }
 
+// Known returns the fingerprint trusted for addr, if any.
+func (k *KnownCerts) Known(addr string) (string, bool) {
+	key, err := knownCertAddress(addr)
+	if err != nil {
+		return "", false
+	}
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+	pin, ok := k.pins[key]
+	return pin, ok
+}
+
 // Trust adds or replaces a leaf pin after explicit user approval.
 func (k *KnownCerts) Trust(addr, fingerprint string) error {
 	key, err := knownCertAddress(addr)

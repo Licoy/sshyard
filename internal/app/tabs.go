@@ -336,8 +336,8 @@ func (a *App) tab(c *ui.Context, m locales.Messages, tok theme.Tokens, fill ui.C
 		if cn != nil && isTemp(cn.host.ID) {
 			tempBadge(c, m, tok)
 		}
-		if cn != nil && cn.s != nil {
-			dot(c, stateColor(tok, cn.s.Status().State))
+		if st, _, ok := a.paneStatus(m, cn, c.Now()); ok {
+			dot(c, stateColor(tok, st))
 		}
 		a.tabAIMarks(c, t, tok, m)
 		a.tabSyncMark(c, t, tok, m)
@@ -485,8 +485,8 @@ func (a *App) tabTip(c *ui.Context, m locales.Messages, tok theme.Tokens, chip u
 						if target := h.Target(); target != "" {
 							parts = append(parts, a.pv(target))
 						}
-						if cn.s != nil {
-							parts = append(parts, a.pv(a.statusText(m, h, cn.s.Status(), c.Now())))
+						if _, text, ok := a.paneStatus(m, cn, c.Now()); ok {
+							parts = append(parts, a.pv(text))
 						}
 						line := strings.Join(parts, " · ")
 						ui.Text(c, line).FontSize(theme.Caption).TextColor(tok.TextMuted).SingleLine()
@@ -559,8 +559,8 @@ func (a *App) moreTab(c *ui.Context, m locales.Messages, tok theme.Tokens, t *la
 			if target := h.Target(); target != "" {
 				sub = append(sub, a.pv(target))
 			}
-			if cn.s != nil {
-				sub = append(sub, a.pv(a.statusText(m, h, cn.s.Status(), c.Now())))
+			if _, text, ok := a.paneStatus(m, cn, c.Now()); ok {
+				sub = append(sub, a.pv(text))
 			}
 		}
 		ui.Column(c).Gap(1).Grow(1).Shrink(1).MinWidth(0).Children(func() {
@@ -569,8 +569,8 @@ func (a *App) moreTab(c *ui.Context, m locales.Messages, tok theme.Tokens, t *la
 				ui.Text(c, strings.Join(sub, " · ")).FontSize(theme.Caption).TextColor(tok.TextMuted).SingleLine()
 			}
 		})
-		if cn != nil && cn.s != nil {
-			dot(c, stateColor(tok, cn.s.Status().State))
+		if st, _, ok := a.paneStatus(m, cn, c.Now()); ok {
+			dot(c, stateColor(tok, st))
 		}
 		x := (IconButton{Icon: icons.Close, Label: m.CloseTab(), Size: Small}).Show(c, "x")
 		if !hov {

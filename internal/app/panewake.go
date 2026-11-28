@@ -54,6 +54,11 @@ func (a *App) markShown(w *winState) {
 		if cn.tv != nil {
 			cn.wake.shown.Store(cn.drawn == a.frame)
 		}
+		if cn.rd != nil {
+			shown := cn.drawn == a.frame
+			cn.wake.shown.Store(shown)
+			cn.rd.setShown(shown)
+		}
 	}
 }
 

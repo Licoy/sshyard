@@ -223,7 +223,7 @@ func validLayout(s layoutSnap) bool {
 		if _, ok := toolKind(n.Kind); ok {
 			return n.Host == ""
 		}
-		return n.Host != "" && (n.Kind == "terminal" || n.Kind == "files" || n.Kind == "ai" || n.Kind == "editor")
+		return n.Host != "" && (n.Kind == "terminal" || n.Kind == "files" || n.Kind == "ai" || n.Kind == "editor" || n.Kind == "desktop")
 	}
 	for _, t := range tabs {
 		if !valid(t.Root, 0) {

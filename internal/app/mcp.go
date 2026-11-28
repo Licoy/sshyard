@@ -325,7 +325,7 @@ type mcpHostInfo struct {
 	Group   string `json:"group"`
 	Address string `json:"address"`
 	Port    int    `json:"port"`
-	// Protocol is "ssh", "telnet" or "serial": agents connect to SSH
+	// Protocol is "ssh", "telnet", "serial" or "rdp": agents connect to SSH
 	// hosts only.
 	Protocol string `json:"protocol"`
 	// Provider, Renewal and Note are what the user keeps of the host's

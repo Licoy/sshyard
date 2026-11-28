@@ -1,7 +1,7 @@
 // Package layout keeps SSHYard's workspace: tabs, each a tree of split
 // panes, each pane showing one item. An item is of a kind: a terminal
 // session, a files (SFTP) browser, an editor of a remote file, an AI
-// assistant, or a tool on the sessions (the broadcast, the session logs,
+// assistant, a remote desktop, or a tool on the sessions (the broadcast, the session logs,
 // the snippets, the command history, the system monitor, the process
 // usage, the host's details, Docker, tmux). All are panes alike, so any of them can sit in any split
 // cell, be dragged onto another pane's edge, be focused and closed. An
@@ -36,6 +36,9 @@ const (
 	HostInfo
 	Docker
 	Tmux
+	// Desktop is a remote desktop (RDP) session, the one pane an RDP host
+	// opens.
+	Desktop
 )
 
 func (k Kind) String() string {
@@ -64,6 +67,8 @@ func (k Kind) String() string {
 		return "docker"
 	case Tmux:
 		return "tmux"
+	case Desktop:
+		return "desktop"
 	}
 	return "terminal"
 }

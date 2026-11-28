@@ -10,6 +10,7 @@ import (
 	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/icons"
 	"github.com/Licoy/sshyard/internal/netproxy"
+	"github.com/Licoy/sshyard/internal/rdp"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/internal/theme"
 	"github.com/Licoy/sshyard/locales"
@@ -311,11 +312,17 @@ func hostKeyChangeDetails(c *ui.Context, m locales.Messages, tok theme.Tokens, n
 // checkFailures opens a prompt for a session that failed for want of what
 // the user can give: a password, a passphrase, trust in a host key.
 func (a *App) checkFailures(m locales.Messages) {
-	if a.prompt != nil || a.hostKey != nil {
+	if a.prompt != nil || a.hostKey != nil || a.certAsk != nil {
 		return
 	}
 	for _, id := range a.promptConns() {
 		c := a.conns[id]
+		if c != nil && c.rd != nil && !c.restoredQuiet {
+			if a.checkDesktopFailure(c, m) {
+				return
+			}
+			continue
+		}
 		if c == nil || c.s == nil || c.restoredQuiet {
 			continue
 		}
@@ -423,11 +430,15 @@ func (a *App) retryPrompted(c *conn, key string) {
 	others := a.sameSecretFailures(c, key)
 	if c.s != nil {
 		c.s.Reconnect()
+	} else if c.rd != nil {
+		a.reconnectDesktop(c)
 	}
 	// The first to reconnect dials the connection the others then share.
 	for _, o := range others {
 		if o.s != nil {
 			o.s.Reconnect()
+		} else if o.rd != nil {
+			a.reconnectDesktop(o)
 		}
 	}
 }
@@ -438,6 +449,15 @@ func (a *App) sameSecretFailures(c *conn, key string) []*conn {
 	var out []*conn
 	for _, id := range a.promptConns() {
 		o := a.conns[id]
+		if o != nil && o != c && o.rd != nil {
+			st := o.rd.s.Status()
+			if k := desktopFailed(st.Err); st.State == rdp.Failed && promptable(k) {
+				if ok, _ := a.promptKeyFor(a.failedHost(o.host, st.Err), k, st.Err); ok == key {
+					out = append(out, o)
+				}
+			}
+			continue
+		}
 		if o == nil || o == c || o.s == nil {
 			continue
 		}
@@ -468,6 +488,9 @@ func (a *App) TrustHostKey() error {
 	if c := a.conns[k.conn]; c != nil && c.s != nil {
 		a.focusReq = c.id
 		c.s.Reconnect()
+	} else if c != nil && c.rd != nil {
+		a.focusReq = c.id
+		a.reconnectDesktop(c)
 	}
 	return nil
 }
@@ -564,6 +587,7 @@ func (a *App) promptsView(c *ui.Context, m locales.Messages) {
 			a.hostKey = nil
 		}
 	}
+	a.desktopCertView(c, m)
 	if k := a.keyChange; k != nil {
 		name := k.err.Host
 		if cn := a.conns[k.conn]; cn != nil {

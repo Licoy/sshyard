@@ -14,6 +14,7 @@ import (
 
 	"github.com/Licoy/sshyard/internal/applock"
 	"github.com/Licoy/sshyard/internal/keychain"
+	"github.com/Licoy/sshyard/internal/rdp"
 	"github.com/Licoy/sshyard/internal/settings"
 	"github.com/Licoy/sshyard/locales"
 	"github.com/egoist/mygo/i18n"
@@ -596,7 +597,7 @@ const resetFile = ".sshyard-reset"
 // windows' places. resetTemps are the prefixes of the files written
 // beside them before they replace them.
 var (
-	resetFiles = []string{"hosts.json", "settings.json", "layout.json", "known_hosts", "localkeys.json", cloudFile, applock.File, "secrets.enc", "master.enc", "ai-history", "ai-audit", "backgrounds"}
+	resetFiles = []string{"hosts.json", "settings.json", "layout.json", "known_hosts", rdp.KnownCertsFile, "localkeys.json", cloudFile, applock.File, "secrets.enc", "master.enc", "ai-history", "ai-audit", "backgrounds"}
 	resetTemps = []string{".tmp-", ".secrets-", ".known_hosts-"}
 )
 

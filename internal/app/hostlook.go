@@ -53,6 +53,8 @@ func hostIcon(h assets.Host) (*icons.Icon, string) {
 		return icons.TelnetHost, ""
 	case assets.ProtoSerial:
 		return icons.SerialHost, ""
+	case assets.ProtoRDP:
+		return icons.RDPHost, ""
 	}
 	f := fnv.New32a()
 	f.Write([]byte(lookSeed(h)))

@@ -151,7 +151,13 @@ var (
 	LocalShell   = load("terminal-window-line")
 	TelnetHost   = load("terminal-line")
 	SerialHost   = load("usb-line")
-	SendBreak    = load("pause-circle-line")
+	// RDPHost is a remote desktop (RDP) host; Desktop its pane.
+	RDPHost   = load("computer-line")
+	Desktop   = load("computer-line")
+	DesktopOn = load("computer-fill")
+	// SendKeys sends a key combination the local system keeps, such as Ctrl+Alt+Del.
+	SendKeys  = load("keyboard-line")
+	SendBreak = load("pause-circle-line")
 	// The window's own buttons, where the view draws them (Linux, Windows).
 	WinMinimize = load("subtract-line")
 	WinMaximize = load("checkbox-blank-line")

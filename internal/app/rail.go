@@ -760,6 +760,10 @@ func (a *App) hostPanel(c *ui.Context, m locales.Messages, tok theme.Tokens) {
 		}
 	}
 	a.panelCard(c, tok, "hostinfo", icons.Proxy, tok.TintAt(7), m.ConnectionSection(), "", func() {
+		if h.IsRDP() {
+			a.desktopFacts(c, m, tok, h, proxy, strings.Join(jumps, " → "), panes, or)
+			return
+		}
 		if !h.SSH() {
 			a.streamFacts(c, m, tok, h, proxy, panes, or)
 			return

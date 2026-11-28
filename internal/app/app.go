@@ -35,6 +35,7 @@ import (
 	"github.com/Licoy/sshyard/internal/layout"
 	"github.com/Licoy/sshyard/internal/localkeys"
 	"github.com/Licoy/sshyard/internal/netproxy"
+	"github.com/Licoy/sshyard/internal/rdp"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/internal/settings"
 	"github.com/Licoy/sshyard/internal/termlog"
@@ -192,6 +193,7 @@ type conn struct {
 	host           assets.Host
 	s              *session.Session
 	tv             *termView   // terminal panes
+	rd             *desktop    // remote desktop panes
 	fs             *filesState // files and editor panes (its SFTP client)
 	ed             *edWin      // editor windows
 	// wake is how a terminal's session asks for frames, drawn the main
@@ -296,6 +298,9 @@ func (c *conn) close() {
 	if c.fs != nil {
 		c.fs.close()
 	}
+	if c.rd != nil {
+		c.rd.close()
+	}
 	if c.fw != nil {
 		c.fw.Stop()
 		return
@@ -337,6 +342,7 @@ type App struct {
 	keychainOK bool
 	unlock     unlockState
 	known      *session.KnownHosts
+	rdpCerts   *rdp.KnownCerts
 	conns      map[int]*conn
 	// cwdSeq counts the directory reports of terminals
 	cwdSeq   int
@@ -454,6 +460,8 @@ type App struct {
 	sudoAsking   bool
 	sudoHold     focusHold
 	hostKey      *hostKeyAsk
+	certAsk      *desktopCertAsk // a remote desktop's certificate to trust
+	askingCert   bool
 	keyChange    *hostKeyChange
 	changingKey  bool
 	khQuery      string
@@ -770,6 +778,11 @@ func (a *App) loadData() error {
 	if kh := path("known_hosts"); kh != "" {
 		a.known, err = session.OpenKnownHosts(kh)
 		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if kc := path(rdp.KnownCertsFile); kc != "" {
+		if a.rdpCerts, err = rdp.OpenKnownCerts(kc); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -1159,6 +1172,17 @@ func (a *App) makeConnIn(hostID string, kind layout.Kind, link int, dir string) 
 	if isStream(h) && kind != layout.Terminal && kind != layout.AI {
 		return nil, errTerminalOnly
 	}
+	if isDesktop(h) {
+		// A remote desktop is all an RDP host opens: its "terminal".
+		if kind == layout.Terminal {
+			kind = layout.Desktop
+		}
+		if kind != layout.Desktop {
+			return nil, errDesktopOnly
+		}
+	} else if kind == layout.Desktop {
+		return nil, errDesktopOnly
+	}
 	if kind == layout.Terminal {
 		if ex := a.serialPane(h); ex != nil {
 			return nil, &serialInUseError{ex}
@@ -1168,6 +1192,11 @@ func (a *App) makeConnIn(hostID string, kind layout.Kind, link int, dir string) 
 	c := &conn{id: a.nextConn, kind: kind, host: h}
 	if isTemp(h.ID) {
 		c.temp = h.ID
+	}
+	if kind == layout.Desktop {
+		c.rd = a.newDesktop(c, h)
+		a.conns[c.id] = c
+		return c, nil
 	}
 	if kind == layout.AI {
 		agentName := a.settings.AIDefaultAgent
@@ -1259,6 +1288,20 @@ func (a *App) shown(c *conn) {
 func (a *App) startConn(c *conn) {
 	if c.temp == "" {
 		a.store.Touch(c.host.ID)
+	}
+	if c.rd != nil {
+		if a.connectionNeedsSecrets(c.host) {
+			c.waitingSecrets = true
+			a.withSecrets(func() {
+				if a.conns[c.id] == c {
+					c.waitingSecrets = false
+					c.rd.start()
+				}
+			})
+		} else {
+			c.rd.start()
+		}
+		return
 	}
 	if c.s != nil {
 		if a.connectionNeedsSecrets(c.host) {
