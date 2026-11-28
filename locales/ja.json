@@ -2255,6 +2255,8 @@
   "newWindow": "新規ウィンドウ",
   "moveToNewWindow": "新規ウィンドウに移動",
   "moveToWindow": "ウィンドウに移動",
+  "moveToNewTab": "新規タブに移動",
+  "separateIntoTabs": "個別のタブに分ける",
   "mainWindow": "メインウィンドウ",
   "windowNumber": "ウィンドウ {n}",
   "closeWindowTitle": "このウィンドウを閉じますか？",

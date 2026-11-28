@@ -20881,6 +20881,26 @@ func (msgs Messages) MoveToWindow() string {
 	return Catalog.Format(msgs.locale, "moveToWindow", nil)
 }
 
+// MoveToNewTab says "Move to New Tab"
+// in the language the app shows.
+func MoveToNewTab() string { return In(i18n.Locale()).MoveToNewTab() }
+
+// MoveToNewTab says "Move to New Tab"
+// in the language of msgs.
+func (msgs Messages) MoveToNewTab() string {
+	return Catalog.Format(msgs.locale, "moveToNewTab", nil)
+}
+
+// SeparateIntoTabs says "Separate into Tabs"
+// in the language the app shows.
+func SeparateIntoTabs() string { return In(i18n.Locale()).SeparateIntoTabs() }
+
+// SeparateIntoTabs says "Separate into Tabs"
+// in the language of msgs.
+func (msgs Messages) SeparateIntoTabs() string {
+	return Catalog.Format(msgs.locale, "separateIntoTabs", nil)
+}
+
 // MainWindow says "Main Window"
 // in the language the app shows.
 func MainWindow() string { return In(i18n.Locale()).MainWindow() }

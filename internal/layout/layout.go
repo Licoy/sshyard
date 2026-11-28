@@ -457,15 +457,45 @@ func (w *Workspace) TabOf(pane int) *Tab {
 	return nil
 }
 
-// Detach moves an item out to a tab of its own.
+// Detach moves an item out to a tab of its own, just after the tab it
+// leaves, and shows it.
 func (w *Workspace) Detach(id int) bool {
 	t, p := w.Locate(id)
 	if t == nil || t.Root == p {
 		return false
 	}
-	item := p.Item
 	w.remove(t, p)
-	w.Open(item)
+	i := slices.Index(w.Tabs, t) + 1
+	w.Tabs = slices.Insert(w.Tabs, i, &Tab{ID: w.id(), Root: p, Focus: p.ID})
+	w.Active = i
+	return true
+}
+
+// Ungroup splits the tab of ID tabID into a tab for each of its panes, in
+// reading order: the first keeps the tab, with its name and color, and the
+// others follow it. The tab of the pane that was focused is shown. It
+// reports whether the tab had more than one pane.
+func (w *Workspace) Ungroup(tabID int) bool {
+	i := slices.IndexFunc(w.Tabs, func(t *Tab) bool { return t.ID == tabID })
+	if i < 0 {
+		return false
+	}
+	t := w.Tabs[i]
+	panes := t.Panes()
+	if len(panes) < 2 {
+		return false
+	}
+	focus := t.Focus
+	t.Root, t.Focus = panes[0], panes[0].ID
+	w.Active = i
+	var rest []*Tab
+	for j, p := range panes[1:] {
+		rest = append(rest, &Tab{ID: w.id(), Root: p, Focus: p.ID})
+		if p.ID == focus {
+			w.Active = i + 1 + j
+		}
+	}
+	w.Tabs = slices.Insert(w.Tabs, i+1, rest...)
 	return true
 }
 
