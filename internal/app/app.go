@@ -105,7 +105,7 @@ type Platform struct {
 	// begin with; it may block. "" with no error is a cancel.
 	PickFolder func(title, start string) (string, error)
 	// OpenWith lets the user choose the app that opens path, then opens
-	// it there; it may block. A cancel is no error. nil can't.
+	// it there. It may block and can report context.Canceled. nil can't.
 	OpenWith func(path, title string) error
 	// OpenWindow opens a window of its own showing spec's view, for the
 	// file editor; it may block, and is never called on a frame. nil
@@ -505,13 +505,14 @@ type App struct {
 	// which invalidate redraws too. Under mu. quitting is set while the
 	// app quits: the windows close without asking, keeping their tabs; the
 	// system's thread reads it as a window closes.
-	wins        []*winState
-	main        *winState
-	focusWin    *winState
-	nextWin     int
-	wsSvc       map[int]ui.Services
-	quitting    atomic.Bool
-	updateCheck bool
+	wins            []*winState
+	main            *winState
+	focusWin        *winState
+	nextWin         int
+	wsSvc           map[int]ui.Services
+	quitting        atomic.Bool
+	extQuitApproved bool
+	updateCheck     bool
 	// updEvery is the index of the update interval in its control;
 	// updProxy the updates' proxy choice in its select.
 	updEvery  int
@@ -579,6 +580,12 @@ type App struct {
 	metEvery      int
 	metMount      string
 	metMountFocus bool
+	// upMode is the uploaded files' permissions field, upModeFocus set
+	// while it has the keyboard; edForm is the external editors' sheet.
+	upMode      string
+	upModeFocus bool
+	edForm      *editorsForm
+	edFormOpen  bool
 	// termCustom shows the terminal type setting's custom field, termText
 	// its text; termFocus is set while it has the keyboard (termTypeRow).
 	termCustom bool
@@ -807,6 +814,7 @@ func (a *App) syncChoices() {
 	a.metEvery = intervalIndex(a.settings.MetricsInterval)
 	a.updEvery = max(slices.Index(settings.UpdateIntervals, a.settings.UpdateIntervalHours), 0)
 	a.metMount = a.settings.MetricsMount
+	a.upMode = a.settings.UploadFileMode
 	a.aiLines = float64(a.settings.AIContextLines)
 	a.aiDays = float64(a.settings.AIAuditRetentionDays)
 	a.aiWait = float64(a.settings.AIRequestTimeout)
@@ -886,10 +894,23 @@ func (a *App) ApplySettings(s settings.Settings) error {
 			}
 		}
 	}
-	if s.TransferConcurrency != old.TransferConcurrency {
+	concurrencyChanged := s.TransferConcurrency != old.TransferConcurrency
+	uploadModeChanged := s.UploadFileMode != old.UploadFileMode
+	hiddenChanged := s.HideHiddenFiles != old.HideHiddenFiles
+	if concurrencyChanged || uploadModeChanged || hiddenChanged {
 		for _, c := range a.conns {
-			if c.fs != nil {
+			if c.fs == nil {
+				continue
+			}
+			if concurrencyChanged {
 				c.fs.transfers.SetConcurrency(s.TransferConcurrency)
+			}
+			if uploadModeChanged {
+				c.fs.transfers.SetUploadMode(s.UploadMode())
+			}
+			if hiddenChanged {
+				c.fs.remote.setShowHidden(!s.HideHiddenFiles)
+				c.fs.local.setShowHidden(!s.HideHiddenFiles)
 			}
 		}
 	}
@@ -1543,6 +1564,12 @@ func (a *App) closeSoon(id int) {
 
 // CloseSession closes a pane, terminal or files, and its connection.
 func (a *App) CloseSession(id int) {
+	if c := a.conns[id]; c != nil {
+		a.closeItems([]layout.Item{c.item()})
+	}
+}
+
+func (a *App) closeSession(id int) {
 	c := a.conns[id]
 	if c == nil {
 		return
@@ -1582,6 +1609,7 @@ func (a *App) finishCloseSession(c *conn) {
 	// Copies go here, not in the goroutine. RemoveAll unlinks the file
 	// before the folder, and c.close waits on the session.
 	if c.fs != nil {
+		c.fs.stopExternalEdits()
 		c.fs.copies.close()
 	}
 	if c.ed != nil {

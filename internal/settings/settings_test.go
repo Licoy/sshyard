@@ -40,6 +40,68 @@ func TestNormalize(t *testing.T) {
 	}
 }
 
+func TestExternalEditorSettingsDefaults(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "settings.json")
+	if err := os.WriteFile(p, []byte(`{"theme":"dark"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	legacy, err := Load(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []Settings{Default(), legacy} {
+		if s.FileEditor != FileEditorBuiltin || len(s.ExternalEditors) != 0 || s.ExternalUpload != ExternalUploadAuto || !s.ExternalNotify || s.HideHiddenFiles || s.UploadFileMode != "" {
+			t.Fatalf("unexpected file editing defaults: %+v", s)
+		}
+		if mode, ok := s.UploadMode(); mode != 0 || ok {
+			t.Fatalf("default upload mode = %03o, %v", mode, ok)
+		}
+	}
+}
+
+func TestExternalEditorSettingsNormalize(t *testing.T) {
+	s := Default()
+	s.FileEditor, s.ExternalUpload, s.UploadFileMode = "unknown", "unknown", "888"
+	s.ExternalEditors = []ExternalEditor{{Name: " one ", Program: " /usr/bin/one ", Args: " --file {file} ", Patterns: " *.txt "}, {Name: "invalid", Program: " "}, {Name: " two ", Program: " /usr/bin/two "}}
+	original := s.ExternalEditors
+	s.Normalize()
+	if s.FileEditor != FileEditorBuiltin || s.ExternalUpload != ExternalUploadAuto || s.UploadFileMode != "" {
+		t.Fatalf("invalid options were kept: %+v", s)
+	}
+	want := []ExternalEditor{{Name: "one", Program: "/usr/bin/one", Args: "--file {file}", Patterns: "*.txt"}, {Name: "two", Program: "/usr/bin/two"}}
+	if !slices.Equal(s.ExternalEditors, want) || original[0].Name != " one " {
+		t.Fatalf("normalized editors = %+v", s.ExternalEditors)
+	}
+	s.FileEditor, s.ExternalUpload, s.UploadFileMode = " system ", " ask ", " 0750 "
+	s.Normalize()
+	if s.FileEditor != FileEditorSystem || s.ExternalUpload != ExternalUploadAsk || s.UploadFileMode != "0750" {
+		t.Fatalf("valid options changed: %+v", s)
+	}
+	for _, invalid := range []string{"1000", "-1", "0o755", "rwx"} {
+		if mode, ok := ParseUploadFileMode(invalid); mode != 0 || ok {
+			t.Fatalf("invalid upload mode %q parsed as %03o, %v", invalid, mode, ok)
+		}
+	}
+}
+
+func TestExternalEditorSettingsRoundTrip(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "settings.json")
+	s := Default()
+	s.FileEditor, s.ExternalUpload, s.UploadFileMode = FileEditorExternal, ExternalUploadAsk, "000"
+	s.ExternalNotify, s.HideHiddenFiles = false, true
+	s.ExternalEditors = []ExternalEditor{{Name: "First", Program: "/usr/bin/first", Patterns: "*.txt"}, {Name: "Next", Program: "/usr/bin/next", Args: "--reuse {file}"}}
+	if err := Save(p, s); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Load(p)
+	if err != nil || !reflect.DeepEqual(got, s) {
+		t.Fatalf("got %+v %v, want %+v", got, err, s)
+	}
+	if mode, ok := got.UploadMode(); mode != 0 || !ok {
+		t.Fatalf("explicit zero upload mode = %03o, %v", mode, ok)
+	}
+}
+
 func TestFontsPersist(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "settings.json")
 	s := Default()

@@ -25,6 +25,24 @@ type Match struct {
 	Entry Entry
 }
 
+// SearchOptions controls which entries count towards the search limit.
+type SearchOptions struct {
+	HideHidden bool
+}
+
+func hideSearchEntries(opts []SearchOptions) bool {
+	return len(opts) != 0 && opts[0].HideHidden
+}
+
+func hiddenSearchPath(rel string) bool {
+	for name := range strings.SplitSeq(rel, "/") {
+		if strings.HasPrefix(name, ".") {
+			return true
+		}
+	}
+	return false
+}
+
 // SearchMatcher says whether a name matches the pattern typed: a part of
 // it, whatever the case, or, when the pattern has * or ?, the whole name
 // as a glob where * is any run of characters and ? any one. Brackets
@@ -172,7 +190,7 @@ const searchStatters = 8
 // run by run, describing each path it lists with stat: each found once
 // described, at most limit, in no set order. capped says it stopped at
 // limit. errNoFind says the server ran no find, before any was found.
-func findSearch(ctx context.Context, run runLines, stat func(context.Context, string) (Entry, error), root, pattern string, limit int, found func(Match)) (capped bool, err error) {
+func findSearch(ctx context.Context, run runLines, stat func(context.Context, string) (Entry, error), root, pattern string, limit int, found func(Match), opts ...SearchOptions) (capped bool, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	prefix := root + "/"
@@ -197,6 +215,7 @@ func findSearch(ctx context.Context, run runLines, stat func(context.Context, st
 		})
 	}
 	marked, before, n := false, 0, 0
+	hideHidden := hideSearchEntries(opts)
 	status, err := run(ctx, FindCommand(root, pattern), func(l string) bool {
 		if !marked {
 			// what a login script writes may come first
@@ -204,6 +223,9 @@ func findSearch(ctx context.Context, run runLines, stat func(context.Context, st
 			return marked || before < findBefore
 		}
 		if l == root || !strings.HasPrefix(l, prefix) {
+			return true
+		}
+		if hideHidden && hiddenSearchPath(l[len(prefix):]) {
 			return true
 		}
 		if n >= limit {
@@ -252,7 +274,7 @@ const walkWorkers = 8
 // once, shallower ones first: each entry whose name matches is found, at
 // most limit, then the walk stops (capped). It goes into no link and no
 // folder prunedUnder root, and leaves out what it cannot read.
-func walkSearch(ctx context.Context, w walkFS, root string, match func(string) bool, limit int, found func(Match)) (capped bool, err error) {
+func walkSearch(ctx context.Context, w walkFS, root string, match func(string) bool, limit int, found func(Match), opts ...SearchOptions) (capped bool, err error) {
 	parent := ctx
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -261,6 +283,7 @@ func walkSearch(ctx context.Context, w walkFS, root string, match func(string) b
 		pruned[p] = true
 	}
 	var mu sync.Mutex
+	hideHidden := hideSearchEntries(opts)
 	cond := sync.NewCond(&mu)
 	queue, busy, n := []string{root}, 0, 0
 	stop := context.AfterFunc(ctx, func() {
@@ -295,6 +318,9 @@ func walkSearch(ctx context.Context, w walkFS, root string, match func(string) b
 				for _, fi := range fis {
 					name := fi.Name()
 					if name == "" || name == "." || name == ".." || strings.ContainsAny(name, "/\x00") {
+						continue
+					}
+					if hideHidden && strings.HasPrefix(name, ".") {
 						continue
 					}
 					p := w.join(dir, name)
@@ -393,7 +419,7 @@ var windowsPath = regexp.MustCompile(`^/[A-Za-z]:(/|$)`).MatchString
 // what its SFTP does. The kernel's, devices' and runtime's folders of a
 // whole disk are left out, links are not followed into, and what cannot
 // be read is passed over.
-func (c *Client) Search(ctx context.Context, root, pattern string, limit int, found func(Match)) (capped bool, err error) {
+func (c *Client) Search(ctx context.Context, root, pattern string, limit int, found func(Match), opts ...SearchOptions) (capped bool, err error) {
 	if limit <= 0 {
 		limit = SearchLimit
 	}
@@ -411,7 +437,7 @@ func (c *Client) Search(ctx context.Context, root, pattern string, limit int, fo
 				}
 				return entry(fi), nil
 			}
-			capped, err = findSearch(ctx, sshLines(c.conn), stat, root, pattern, limit, found)
+			capped, err = findSearch(ctx, sshLines(c.conn), stat, root, pattern, limit, found, opts...)
 			if !errors.Is(err, errNoFind) {
 				return capped, err
 			}
@@ -426,14 +452,14 @@ func (c *Client) Search(ctx context.Context, root, pattern string, limit int, fo
 	defer sub.Close()
 	stop := context.AfterFunc(ctx, func() { sub.Close() })
 	defer stop()
-	return walkSearch(ctx, remoteWalk{sub}, root, SearchMatcher(pattern), limit, found)
+	return walkSearch(ctx, remoteWalk{sub}, root, SearchMatcher(pattern), limit, found, opts...)
 }
 
 // SearchLocal finds the entries under the local folder root as Search
 // does, by walking its folders.
-func SearchLocal(ctx context.Context, root, pattern string, limit int, found func(Match)) (capped bool, err error) {
+func SearchLocal(ctx context.Context, root, pattern string, limit int, found func(Match), opts ...SearchOptions) (capped bool, err error) {
 	if limit <= 0 {
 		limit = SearchLimit
 	}
-	return walkSearch(ctx, localWalk{}, filepath.Clean(root), SearchMatcher(pattern), limit, found)
+	return walkSearch(ctx, localWalk{}, filepath.Clean(root), SearchMatcher(pattern), limit, found, opts...)
 }

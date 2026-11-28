@@ -769,6 +769,7 @@ func (a *App) prefFiles(c *ui.Context, m locales.Messages, tok theme.Tokens, s *
 				}
 			}
 		})
+		a.prefFilesMore(c, g, m, s, changed)
 		g.row(m.FilesZoom(), m.FilesZoomNote(), func() {
 			opts := make([]string, len(settings.FilesZooms))
 			for i, z := range settings.FilesZooms {
@@ -782,6 +783,7 @@ func (a *App) prefFiles(c *ui.Context, m locales.Messages, tok theme.Tokens, s *
 			}
 		})
 	})
+	a.prefExternal(c, m, tok, s, changed)
 }
 
 func (a *App) chooseDownloadDir(m locales.Messages, start string) {

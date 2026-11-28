@@ -201,6 +201,7 @@ func (a *App) startSearch(cn *conn, remote bool, sr *fileSearch, q, root string,
 	ctx, cancel := context.WithCancel(context.Background())
 	sr.ran, sr.root, sr.client, sr.running, sr.cancel = q, root, client, true, cancel
 	gen := sr.gen
+	opt := sftpsvc.SearchOptions{HideHidden: !cn.fs.side(remote).showHidden}
 	var mu sync.Mutex
 	var found []sftpsvc.Match
 	posted := false
@@ -227,9 +228,9 @@ func (a *App) startSearch(cn *conn, remote bool, sr *fileSearch, q, root string,
 		var capped bool
 		var err error
 		if remote {
-			capped, err = client.Search(ctx, root, q, sftpsvc.SearchLimit, add)
+			capped, err = client.Search(ctx, root, q, sftpsvc.SearchLimit, add, opt)
 		} else {
-			capped, err = sftpsvc.SearchLocal(ctx, root, q, sftpsvc.SearchLimit, add)
+			capped, err = sftpsvc.SearchLocal(ctx, root, q, sftpsvc.SearchLimit, add, opt)
 		}
 		cancel()
 		a.post(func() {
@@ -272,7 +273,8 @@ func (a *App) matchEntries(cn *conn, remote bool, mt sftpsvc.Match, m locales.Me
 		a.reveal(cn, remote, mt.Dir, e.Name)
 	}})
 	if !e.IsDir {
-		out = append(out, menuEntry{Icon: icons.EditFile, Label: m.EditInEditor(), Disabled: remote && off, Do: func() { a.editFile(cn, remote, p, e.Size, false) }})
+		out = append(out, menuEntry{Icon: icons.EditFile, Label: m.EditInEditor(), Disabled: remote && off, Do: func() { a.editFile(cn, remote, p, e.Size, false) }},
+			a.extEditEntry(cn, remote, p, e.Size, remote && off, m))
 	}
 	if remote {
 		label := m.Download()

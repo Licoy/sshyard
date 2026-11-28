@@ -686,15 +686,13 @@ func (a *App) copyTabAddress(t *layout.Tab) {
 
 // closeTabs closes the tabs that close says to, by their place and tab.
 func (a *App) closeTabs(close func(i int, t *layout.Tab) bool) {
-	var gone []*layout.Tab
+	var items []layout.Item
 	for i, t := range a.ws.Tabs {
 		if close(i, t) {
-			gone = append(gone, t)
+			items = append(items, t.Items()...)
 		}
 	}
-	for _, t := range gone {
-		a.closeTab(t)
-	}
+	a.closeItems(items)
 }
 
 // tabRenameForm is the tab rename sheet: the tab, by its ID, and the name

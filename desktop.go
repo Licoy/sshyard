@@ -182,8 +182,17 @@ func (d *desktop) close(e *mygo.CloseEvent) {
 
 func (d *desktop) beforeQuit(e *mygo.QuitEvent) {
 	d.closePanel()
-	// MyGo closes windows in map order and exposes no quit-cancel callback,
-	// so ask editors first, while the main window can still be retained.
+	if e.SessionEnding {
+		d.quitting = true
+		d.app.SetQuitting(true)
+		return
+	}
+	if !d.app.AllowQuit(mygo.App.Quit) {
+		e.PreventDefault()
+		d.show()
+		return
+	}
+	// Ask editors before MyGo closes the workspace windows.
 	for _, w := range mygo.Windows() {
 		// The workspace's windows keep their tabs for the layout.
 		if w == d.window || w.IsFlyout() || workspaceWindows[w] {

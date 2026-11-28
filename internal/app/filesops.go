@@ -114,7 +114,8 @@ func (a *App) fileEntries(cn *conn, remote bool, m locales.Messages) []menuEntry
 			out = append(out,
 				menuEntry{Icon: icons.EditFile, Label: m.EditInEditor(), Disabled: roff, Do: func() { a.editFile(cn, remote, p, e.Size, false) }},
 				menuEntry{Icon: icons.OpenWith, Label: m.OpenWithDefault(), Disabled: roff || a.p.OpenPath == nil, Do: func() { a.openWith(cn, remote, p, e.Size, false, m) }},
-				menuEntry{Icon: icons.OpenWithApp, Label: m.OpenWithApp(), Disabled: roff || a.p.OpenWith == nil, Do: func() { a.openWith(cn, remote, p, e.Size, true, m) }})
+				menuEntry{Icon: icons.OpenWithApp, Label: m.OpenWithApp(), Disabled: roff || a.p.OpenWith == nil, Do: func() { a.openWith(cn, remote, p, e.Size, true, m) }},
+				a.extEditEntry(cn, remote, p, e.Size, roff, m))
 		}
 		if remote {
 			label := m.Download()
@@ -169,6 +170,7 @@ func (a *App) folderEntries(cn *conn, remote bool, m locales.Messages) []menuEnt
 			}
 		}},
 		{Icon: icons.Refresh, Label: m.Refresh(), Disabled: off, Do: func() { a.listAgain(cn, remote) }},
+		hiddenEntry(sd, m),
 	}
 }
 

@@ -145,6 +145,18 @@ type Settings struct {
 	// OpenConfirmMB is the size, in MB, from which opening a remote file
 	// (in the editor or a local program) asks first, 1 to 1024.
 	OpenConfirmMB int `json:"openConfirmMB"`
+	// FileEditor chooses how a text file is opened from the files pane.
+	FileEditor string `json:"fileEditor,omitempty"`
+	// ExternalEditors holds the rules in their matching order.
+	ExternalEditors []ExternalEditor `json:"externalEditors,omitempty"`
+	// ExternalUpload chooses whether saves go back automatically or ask first.
+	ExternalUpload string `json:"externalUpload,omitempty"`
+	// ExternalNotify shows a notice after an external edit is uploaded.
+	ExternalNotify bool `json:"externalNotify"`
+	// HideHiddenFiles hides dotfiles in the files pane.
+	HideHiddenFiles bool `json:"hideHiddenFiles,omitempty"`
+	// UploadFileMode sets octal permissions for ordinary uploads when nonempty.
+	UploadFileMode string `json:"uploadFileMode,omitempty"`
 	// FilesDual shows this computer's files beside the server's in a
 	// files pane; off, the default, shows the server's alone. A new pane
 	// follows the last choice.
@@ -269,6 +281,64 @@ type Settings struct {
 	// SessionLog is where the logs of terminal sessions go. It belongs to
 	// this device.
 	SessionLog SessionLog `json:"sessionLog"`
+}
+
+// File opening and external edit upload policies.
+const (
+	FileEditorBuiltin  = "builtin"
+	FileEditorSystem   = "system"
+	FileEditorExternal = "external"
+	ExternalUploadAuto = "auto"
+	ExternalUploadAsk  = "ask"
+)
+
+// ExternalEditor is an editor to launch locally, with optional arguments and
+// file name patterns.
+type ExternalEditor struct {
+	Name     string `json:"name"`
+	Program  string `json:"program"`
+	Args     string `json:"args,omitempty"`
+	Patterns string `json:"patterns,omitempty"`
+}
+
+// ParseUploadFileMode parses octal permissions. The bool distinguishes an
+// explicit zero mode from an unset or invalid value.
+func ParseUploadFileMode(value string) (fs.FileMode, bool) {
+	mode, err := strconv.ParseUint(strings.TrimSpace(value), 8, 9)
+	if err != nil {
+		return 0, false
+	}
+	return fs.FileMode(mode), true
+}
+
+// UploadMode returns the configured upload permissions, if any.
+func (s Settings) UploadMode() (fs.FileMode, bool) {
+	return ParseUploadFileMode(s.UploadFileMode)
+}
+
+func (s *Settings) normalizeFileEditing() {
+	s.FileEditor = strings.TrimSpace(s.FileEditor)
+	switch s.FileEditor {
+	case FileEditorSystem, FileEditorExternal:
+	default:
+		s.FileEditor = FileEditorBuiltin
+	}
+	if s.ExternalUpload = strings.TrimSpace(s.ExternalUpload); s.ExternalUpload != ExternalUploadAsk {
+		s.ExternalUpload = ExternalUploadAuto
+	}
+	var editors []ExternalEditor
+	for _, ed := range s.ExternalEditors {
+		ed.Name, ed.Program = strings.TrimSpace(ed.Name), strings.TrimSpace(ed.Program)
+		ed.Args, ed.Patterns = strings.TrimSpace(ed.Args), strings.TrimSpace(ed.Patterns)
+		if ed.Program != "" {
+			editors = append(editors, ed)
+		}
+	}
+	s.ExternalEditors = editors
+	s.UploadFileMode = strings.TrimSpace(s.UploadFileMode)
+	if _, ok := s.UploadMode(); !ok {
+		s.UploadFileMode = ""
+	}
 }
 
 // SessionLog is how terminal sessions are logged.
@@ -761,6 +831,7 @@ const (
 // Default returns the defaults.
 func Default() Settings {
 	return Settings{Background: DefaultBackground(), Theme: theme.Auto, CloseBehavior: CloseToTray, TrayIcon: TrayIconColor, TrayClick: TrayClickPanel, TrayMaterial: MaterialTranslucent, TrayHeight: DefaultTrayHeight, CheckUpdates: true, UpdateIntervalHours: 1, TerminalFontSize: 13, TerminalLineHeight: 100, TerminalCharWidth: 100, TerminalCursorStyle: CursorBlock, TerminalCursorBlink: true, TerminalScrollOnKey: true, TerminalCompletion: CompletionInline, KeepAliveSeconds: 30, AutoReconnect: true, ReturnToFolder: true, SidebarWidth: 240, ChromeMaterial: MaterialTranslucent, ContentMaterial: MaterialOpaque, MonospacedOnly: true, TransferConcurrency: 3, KeepAwake: true, OpenConfirmMB: 10, FilesSplit: 50, FilesEdge: FilesRight, TerminalRightClick: RightClickMenu, EditorTreeWidth: 240, TerminalTransfers: true, OSC52Write: OSC52Ask, OSC52MaxBytes: OSC52MaxDefault, OSC52Notify: true, MetricsEnabled: true, MetricsInterval: 2,
+		FileEditor: FileEditorBuiltin, ExternalUpload: ExternalUploadAuto, ExternalNotify: true,
 		AIDefaultAgent: "builtin", AIDefaultMode: "ask", AIReviewStrictness: AIReviewStandard, AIContextLines: 200, AIAuditRetentionDays: 90, AIRequestTimeout: DefaultAIRequestTimeout, AIRedact: true, MCPPort: MCPPortDefault, LocalKeys: true, Highlight: Highlight{On: true}, RenewalNotify: true}
 }
 
@@ -855,6 +926,7 @@ func (s *Settings) Normalize() {
 	if s.OpenConfirmMB < 1 || s.OpenConfirmMB > 1024 {
 		s.OpenConfirmMB = d.OpenConfirmMB
 	}
+	s.normalizeFileEditing()
 	if s.FilesSplit < 10 || s.FilesSplit > 90 {
 		s.FilesSplit = d.FilesSplit
 	}

@@ -188,6 +188,17 @@ func TestFindSearchCaps(t *testing.T) {
 	}
 }
 
+func TestFindSearchHiddenEntriesDoNotCountTowardsLimit(t *testing.T) {
+	root := "/srv/.explicit"
+	run, _ := fakeRun([]string{findMarker, root, root + "/.hidden", root + "/.hidden-dir/first", root + "/visible"}, 0, nil)
+	var got collect
+	opt := SearchOptions{HideHidden: true}
+	capped, err := findSearch(context.Background(), run, statAll, root, "*", 1, got.found, opt)
+	if err != nil || capped || !slices.Equal(got.paths(), []string{root + "/visible"}) {
+		t.Fatalf("findSearch = %v, %v, found %v; want only the visible file", capped, err, got.paths())
+	}
+}
+
 func TestFindSearchFallsBack(t *testing.T) {
 	for name, run := range map[string]runLines{
 		"no shell": func() runLines { r, _ := fakeRun([]string{"'sh' is not recognized"}, 1, nil); return r }(),
@@ -364,6 +375,26 @@ func TestSearchLocal(t *testing.T) {
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("found %v, want %v", got, want)
+	}
+}
+
+func TestSearchLocalHidesDotEntriesAndDirectories(t *testing.T) {
+	root := filepath.Join(t.TempDir(), ".explicit")
+	for _, name := range []string{".report", ".private/report", "report"} {
+		p := filepath.Join(root, name)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, nil, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var got []string
+	capped, err := SearchLocal(context.Background(), root, "report", 1, func(m Match) {
+		got = append(got, filepath.Join(m.Dir, m.Entry.Name))
+	}, SearchOptions{HideHidden: true})
+	if err != nil || capped || !slices.Equal(got, []string{filepath.Join(root, "report")}) {
+		t.Fatalf("SearchLocal = %v, %v, found %v; want only the visible file", capped, err, got)
 	}
 }
 

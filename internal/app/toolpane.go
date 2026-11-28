@@ -162,7 +162,7 @@ func (a *App) railOld(t *layout.Tab, k layout.Kind) *conn {
 		case c == nil:
 		case !railPane(c.kind):
 			session = true
-		case c.kind != k && !paneBusy(c) && (last == nil || c.id > last.id):
+		case c.kind != k && !paneBusy(c) && (c.fs == nil || len(c.fs.extUnsynced()) == 0) && (last == nil || c.id > last.id):
 			last = c
 		}
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os/exec"
 	"runtime"
 
@@ -19,14 +20,20 @@ func openWith(path, title string) error {
 		cmd = exec.Command("rundll32.exe", "shell32.dll,OpenAs_RunDLL", path)
 	case "darwin":
 		apps, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Title: title, DefaultPath: "/Applications", Filters: []mygo.FileFilter{{Name: title, Extensions: []string{"app"}}}})
-		if err != nil || len(apps) == 0 {
+		if err != nil {
 			return err
+		}
+		if len(apps) == 0 {
+			return context.Canceled
 		}
 		cmd = exec.Command("open", "-a", apps[0], path)
 	default:
 		progs, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Title: title, DefaultPath: "/usr/bin"})
-		if err != nil || len(progs) == 0 {
+		if err != nil {
 			return err
+		}
+		if len(progs) == 0 {
+			return context.Canceled
 		}
 		cmd = exec.Command(progs[0], path)
 	}

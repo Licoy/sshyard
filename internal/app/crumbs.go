@@ -409,7 +409,7 @@ func (a *App) crumbEntries(cn *conn, remote bool, dir, next string, m locales.Me
 		if pk.dir != dir || pk.remote != remote {
 			a.peekAt(cn, remote, dir)
 		}
-		es, failed, loading = pk.entries, pk.err, pk.loading
+		es, failed, loading = visibleEntries(pk.entries, sd.showHidden), pk.err, pk.loading
 	}
 	switch {
 	case loading:

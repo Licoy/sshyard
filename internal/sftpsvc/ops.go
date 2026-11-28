@@ -642,12 +642,22 @@ func (c *Client) WriteFileNoLinks(p string, data []byte, was Version) (Version, 
 	return c.writeFile(p, data, was, true)
 }
 
+// WriteFileContext replaces the file on a dedicated, cancellable session.
+// Cancellation cannot undo a rename already completed.
+func (c *Client) WriteFileContext(ctx context.Context, p string, data []byte, was Version) (Version, error) {
+	return c.writeOnSession(ctx, p, data, was, false)
+}
+
 // WriteFileNoLinksContext keeps validation and atomic replacement on a dedicated
 // cancellable session. Cancellation cannot undo a rename already completed.
 func (c *Client) WriteFileNoLinksContext(ctx context.Context, p string, data []byte, was Version) (Version, error) {
+	return c.writeOnSession(ctx, p, data, was, true)
+}
+
+func (c *Client) writeOnSession(ctx context.Context, p string, data []byte, was Version, noLinks bool) (Version, error) {
 	var ver Version
 	err := c.withOperation(ctx, false, func(sub *Client) (err error) {
-		ver, err = sub.writeFileContext(ctx, p, data, was, true)
+		ver, err = sub.writeFileContext(ctx, p, data, was, noLinks)
 		return err
 	})
 	if err != nil {
@@ -686,9 +696,12 @@ func (c *Client) writeFileContext(ctx context.Context, p string, data []byte, wa
 					return Version{}, err
 				}
 			}
-			_, cur, err := c.readBounded(p, limit)
+			data, cur, err := c.readBounded(p, limit)
 			if err != nil {
 				return Version{}, err
+			}
+			if cur.Sum == ([sha256.Size]byte{}) {
+				cur.Sum = sha256.Sum256(data)
 			}
 			if cur.Sum != was.Sum {
 				return Version{}, ErrChanged

@@ -77,11 +77,6 @@ func (a *App) frameView(c *ui.Context, w *winState) {
 	a.followCwd(c)
 	a.watchTmux(c)
 	a.watchLogs(locales.In(c.Locale()))
-	for _, cn := range a.conns {
-		if cn.fs != nil {
-			a.pendingOpens(cn)
-		}
-	}
 
 	base := *c.Theme()
 	base.Font = a.fonts.ui

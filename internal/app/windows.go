@@ -276,7 +276,7 @@ func (a *App) windowClosed(w *winState, quitting bool) {
 	}
 	defer a.enter(w)()
 	for _, it := range w.ws.Items() {
-		a.CloseSession(it.ID)
+		a.closeSession(it.ID)
 	}
 	a.dropWin(w)
 }
@@ -331,6 +331,7 @@ func (a *App) SetQuitting(on bool) {
 	if on {
 		return
 	}
+	a.extQuitApproved = false
 	a.post(func() {
 		for _, w := range a.wins {
 			if w.gone && w.native == nil {
@@ -560,14 +561,23 @@ func (a *App) closeAskView(c *ui.Context, m locales.Messages, w *winState) {
 
 // closeWindowSessions closes the sessions of window w, and so w.
 func (a *App) closeWindowSessions(w *winState) {
-	ids := w.ws.Items()
+	items := w.ws.Items()
 	a.post(func() {
-		defer a.enter(w)()
-		for _, it := range ids {
-			a.CloseSession(it.ID)
+		if !slices.Contains(a.wins, w) {
+			return
 		}
-		if slices.Contains(a.wins, w) && len(w.ws.Tabs) == 0 {
-			a.closeWindow(w)
+		w.closeAsk = false
+		close := func() {
+			defer a.enter(w)()
+			for _, it := range items {
+				a.closeSession(it.ID)
+			}
+			if slices.Contains(a.wins, w) && len(w.ws.Tabs) == 0 {
+				a.closeWindow(w)
+			}
+		}
+		if !a.askExternalClose(items, close) {
+			close()
 		}
 	})
 }

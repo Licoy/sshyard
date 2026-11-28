@@ -325,11 +325,14 @@ func (a *App) openEditorWindow(cn *conn) {
 // closes it: with unsaved changes it stays and asks what to do with them.
 func (a *App) editorClosing(cn *conn) bool {
 	// A reset of the app lock deletes the drafts with everything else.
-	if !cn.ed.dirty.Load() || a.lock.resetting {
+	if a.lock.resetting || a.quitting.Load() {
 		return true
 	}
-	a.post(func() { cn.ed.closeOpen = true })
-	return false
+	if cn.ed.dirty.Load() {
+		a.post(func() { cn.ed.closeOpen = true })
+		return false
+	}
+	return a.extQuitApproved || !a.askExternalClose([]layout.Item{cn.item()}, func() { a.closeSession(cn.id) })
 }
 
 // editorClosed closes the editor whose window is gone.
@@ -337,7 +340,7 @@ func (a *App) editorClosed(cn *conn) {
 	if cn.ed != nil {
 		cn.ed.win = nil
 	}
-	a.CloseSession(cn.id)
+	a.closeSession(cn.id)
 }
 
 // closeEditorWindow closes the window of an editor being closed, and
@@ -534,7 +537,6 @@ func (a *App) editorWindowView(c *ui.Context, cn *conn) {
 	}
 	ew.toasts = nil
 	a.refreshForTransfers(c, cn)
-	a.pendingOpens(cn)
 
 	var ed *editState
 	if ew.at >= 0 && ew.at < len(ew.tabs) {
@@ -660,6 +662,7 @@ func (a *App) editorWindowView(c *ui.Context, cn *conn) {
 	a.openAskView(c, cn, m)
 	a.withView(c, cn, tok, m)
 	a.transfersSheet(c, cn, tok, m)
+	a.extViews(c, cn, tok, m)
 	a.contextMenuIn(c, cn.id)
 }
 

@@ -10,7 +10,10 @@ package app
 // computer awake while they run.
 func (a *App) newFiles() *filesState {
 	fs := newFilesState(nil)
+	fs.remote.showHidden = !a.settings.HideHiddenFiles
+	fs.local.showHidden = !a.settings.HideHiddenFiles
 	ts := fs.transfers
+	ts.SetUploadMode(a.settings.UploadMode())
 	ts.OnChange = func() {
 		a.awake.Set(ts, ts.Busy())
 		a.invalidate()

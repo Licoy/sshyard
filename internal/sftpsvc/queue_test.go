@@ -262,6 +262,87 @@ func TestQueueUploadKeepsModeAndTime(t *testing.T) {
 	}
 }
 
+func TestQueueUploadMode(t *testing.T) {
+	r, root := queueServer(t)
+	folder := filepath.Join(t.TempDir(), "folder")
+	if err := os.Mkdir(folder, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	src := filepath.Join(folder, "nested.txt")
+	if err := os.WriteFile(src, []byte("file contents"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(root, "folder"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	c, err := r.get(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	items, err := c.PlanUpload(t.Context(), []string{folder}, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := newQueue(r)
+	ts.SetConcurrency(1)
+	ts.SetUploadMode(0o640, true)
+	ts.Add(Upload, src, root+"/single.txt", "single.txt")
+	enqueue(t, c, ts, items, Upload)
+	ts.SetUploadMode(0, true)
+	ts.Add(Upload, src, root+"/zero.txt", "zero.txt")
+	ts.SetUploadMode(0, false)
+	ts.Add(Upload, src, root+"/source.txt", "source.txt")
+	ts.Wait()
+	for _, tr := range ts.List() {
+		if tr.State != Done {
+			t.Fatalf("%s: upload state %v, error %v", tr.Name, tr.State, tr.Err)
+		}
+	}
+	for rel, want := range map[string]fs.FileMode{"single.txt": 0o640, "folder/nested.txt": 0o640, "folder": 0o700, "zero.txt": 0, "source.txt": 0o600} {
+		info, err := os.Stat(filepath.Join(root, rel))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != want {
+			t.Errorf("%s mode = %03o, want %03o", rel, got, want)
+		}
+	}
+}
+
+type rejectingUploadMode struct{ sftp.FileCmder }
+
+func (r rejectingUploadMode) Filecmd(req *sftp.Request) error {
+	if req.Method == "Setstat" && req.AttrFlags().Permissions && req.Attributes().FileMode().Perm() == 0o640 {
+		return sftp.ErrSSHFxPermissionDenied
+	}
+	return r.FileCmder.Filecmd(req)
+}
+
+func TestQueueUploadModeRejected(t *testing.T) {
+	r, _ := queueServer(t)
+	h := sftp.InMemHandler()
+	h.FileCmd = rejectingUploadMode{h.FileCmd}
+	r.srv.SFTPHandlers = func() sftp.Handlers { return h }
+	src := filepath.Join(t.TempDir(), "upload.txt")
+	if err := os.WriteFile(src, []byte("file contents"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ts := newQueue(r)
+	ts.SetUploadMode(0o640, true)
+	ts.Add(Upload, src, "/upload.txt", "upload.txt")
+	ts.Wait()
+	if tr := ts.List()[0]; tr.State != Failed || tr.Attempt != 0 || !errors.Is(tr.Err, fs.ErrPermission) {
+		t.Fatalf("upload state %v, error %v, want a permission failure", tr.State, tr.Err)
+	}
+	c, err := r.get(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.c.Lstat("/upload.txt"); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("final file after denied permissions: %v, want not exist", err)
+	}
+}
+
 // Uploads go into group-writable (umask 002, shared) and sticky (/tmp)
 // folders; only a folder anyone may write to without the sticky bit is
 // refused, at once rather than after retries.

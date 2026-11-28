@@ -91,6 +91,8 @@ type Transfer struct {
 	// destination's.
 	from   func(ctx context.Context) (*Client, error)
 	cancel context.CancelCauseFunc
+	// uploadMode is the permissions override at the time this upload was queued.
+	uploadMode *fs.FileMode
 	// stopping is set while a transfer asked to pause or cancel is still
 	// running: State already says what was last asked (a resume or retry
 	// meanwhile sets it back to Running) and the run settles to that
@@ -160,10 +162,11 @@ type Transfers struct {
 	// read of an upload's or relay's source).
 	onWrite func(t *Transfer, done int64)
 
-	mu    sync.Mutex
-	list  []*Transfer
-	next  int
-	limit int
+	mu         sync.Mutex
+	list       []*Transfer
+	next       int
+	limit      int
+	uploadMode *fs.FileMode
 }
 
 func (ts *Transfers) changed() {
@@ -211,6 +214,18 @@ func (ts *Transfers) SetConcurrency(n int) {
 	ts.changed()
 }
 
+// SetUploadMode sets the permissions for new uploads. With set false,
+// uploaded files keep their source permissions.
+func (ts *Transfers) SetUploadMode(mode fs.FileMode, set bool) {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	ts.uploadMode = nil
+	if set {
+		perm := mode.Perm()
+		ts.uploadMode = &perm
+	}
+}
+
 // List returns copies of the transfers, in the order they were added.
 func (ts *Transfers) List() []Transfer {
 	ts.mu.Lock()
@@ -249,6 +264,9 @@ func (ts *Transfers) add(t *Transfer) int {
 	ts.mu.Lock()
 	ts.next++
 	t.ID = ts.next
+	if t.Dir == Upload {
+		t.uploadMode = ts.uploadMode
+	}
 	var token [16]byte
 	if _, err := rand.Read(token[:]); err != nil {
 		panic(err)
@@ -672,9 +690,10 @@ func (ts *Transfers) copy(ctx context.Context, t *Transfer, fresh bool) (err err
 				err = setFileTimes(f, mod)
 			}
 		} else if f, ok := w.(interface{ Chmod(fs.FileMode) error }); ok {
-			// A server that refuses it leaves the part's 0600: safe, so
-			// the upload still completes.
-			if cerr := f.Chmod(fi.Mode().Perm()); cerr != nil {
+			if t.uploadMode != nil {
+				err = f.Chmod(*t.uploadMode)
+			} else if cerr := f.Chmod(fi.Mode().Perm()); cerr != nil {
+				// A server refusing source permissions leaves the part at 0600.
 				ts.logf("sftp: %s: keeping mode 0600: %v", t.Name, cerr)
 			}
 		}

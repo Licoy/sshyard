@@ -205,9 +205,7 @@ func (a *App) CloseFocused() {
 }
 
 func (a *App) closeTab(t *layout.Tab) {
-	for _, p := range t.Panes() {
-		a.CloseSession(p.Item.ID)
-	}
+	a.closeItems(t.Items())
 }
 
 // tempBadge marks a tab or pane on a temporary host of quick connect.
@@ -548,6 +546,9 @@ func (a *App) paneActions(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn
 			barAction{Key: "dual", Button: IconButton{Icon: icons.LocalDisk, On: icons.LocalDiskOn, Label: m.ShowLocalFiles(), Toggle: true, Active: a.settings.FilesDual, Size: Tiny},
 				Do: on(a.toggleDual)},
 			a.transfersAction(c, cn, m))
+		if len(cn.fs.edits) > 0 {
+			acts = append(acts, a.extEditsAction(cn, m))
+		}
 		if f, ok := a.followAction(t, n, cn, m); ok {
 			acts = append(acts, f)
 		}

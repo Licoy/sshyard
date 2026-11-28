@@ -82,6 +82,11 @@ func (a *App) reuse(ex *conn, hostID string, link int) (int, error) {
 		})
 		return ex.id, errPaneBusy
 	}
+	if ex.fs != nil && len(ex.fs.extUnsynced()) > 0 {
+		a.showPane(ex)
+		a.toastIn(ex, func(m locales.Messages) ui.Toast { return ui.Toast{Title: m.ExternalPaneBusy(), Type: "error"} })
+		return ex.id, errPaneBusy
+	}
 	if ex.kind == layout.AI {
 		a.StopAI(ex.id)
 		if err := a.saveChat(ex); err != nil {

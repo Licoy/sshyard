@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Licoy/sshyard/internal/settings"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -293,8 +294,8 @@ func TestOpenConfirmationCannotBypassHardReadLimit(t *testing.T) {
 	}
 }
 
-// A remote file opens in another app from a copy in the cache, which
-// only the user can read: what is changed there is not uploaded. A file
+// A remote file opens in another app from a tracked copy in the cache,
+// which only the user can read. A file
 // made for another app asks how to open it; the app can be chosen.
 func TestOpenWithDefaultApp(t *testing.T) {
 	a, tt, fc, root := filesPane(t)
@@ -303,6 +304,7 @@ func TestOpenWithDefaultApp(t *testing.T) {
 	a.p.OpenPath = func(p string) error { mu.Lock(); opened = append(opened, p); mu.Unlock(); return nil }
 	a.p.OpenWith = func(p, title string) error { mu.Lock(); chosen = append(chosen, p+"|"+title); mu.Unlock(); return nil }
 	a.p.CacheDir = filepath.Join(t.TempDir(), "cache")
+	a.settings.ExternalUpload = settings.ExternalUploadAsk
 	count := func(s *[]string) int { mu.Lock(); defer mu.Unlock(); return len(*s) }
 	file := filepath.Join(root, "conf.ini")
 	write(t, file, "a=1\n")
@@ -329,11 +331,14 @@ func TestOpenWithDefaultApp(t *testing.T) {
 	if fi, _ := os.Stat(local); fi.Mode().Perm() != wantMode {
 		t.Errorf("copy mode %v", fi.Mode())
 	}
-	waitFor(t, tt, "toast", func() bool { return tt.HasText("Opened a copy of conf.ini. Changes made there aren’t uploaded.") })
-	// Saving it there uploads nothing.
-	os.WriteFile(local, []byte("a=2\n"), 0o600)
-	time.Sleep(200 * time.Millisecond)
-	tt.Frame()
+	if ed := fc.fs.externalEdit(filepath.ToSlash(file)); ed == nil || ed.local != local || ed.state != extWatching {
+		t.Fatalf("default app opened an untracked copy: %+v", ed)
+	}
+	// Saving it there waits for approval before uploading.
+	write(t, local, "a=222\n")
+	if len(fc.fs.extUnsynced()) != 1 {
+		t.Fatal("the new save was absent from the close check")
+	}
 	if read(file) != "a=1\n" {
 		t.Fatalf("uploaded %q", read(file))
 	}
@@ -350,6 +355,17 @@ func TestOpenWithDefaultApp(t *testing.T) {
 	if count(&opened) != 1 {
 		t.Fatal("the default app opened it too")
 	}
+	// Return the local copy to its original contents before closing.
+	write(t, local, "a=1\n")
+	ed := fc.fs.externalEdit(filepath.ToSlash(file))
+	if ed == nil {
+		t.Fatal("the session disappeared")
+	}
+	sample, err := readExternalCopy(local, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.externalPolled(fc, extPoll{ed: ed, epoch: ed.epoch}, time.Now(), sample, nil)
 
 	// Closing the pane deletes the copies.
 	a.CloseSession(fc.id)

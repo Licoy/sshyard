@@ -4883,14 +4883,138 @@ func (msgs Messages) EditorReload() string {
 	return Catalog.Format(msgs.locale, "editorReload", nil)
 }
 
-// OpenedLocally says "Opened a copy of {name}. Changes made there aren’t uploaded."
+// OpenedLocally says "Opened a copy of {name} and started tracking changes."
 // in the language the app shows.
 func OpenedLocally(name string) string { return In(i18n.Locale()).OpenedLocally(name) }
 
-// OpenedLocally says "Opened a copy of {name}. Changes made there aren’t uploaded."
+// OpenedLocally says "Opened a copy of {name} and started tracking changes."
 // in the language of msgs.
 func (msgs Messages) OpenedLocally(name string) string {
 	return Catalog.Format(msgs.locale, "openedLocally", map[string]any{"name": name})
+}
+
+// ExternalNoEditor says "Configure an external editor in Settings."
+// in the language the app shows.
+func ExternalNoEditor() string { return In(i18n.Locale()).ExternalNoEditor() }
+
+// ExternalNoEditor says "Configure an external editor in Settings."
+// in the language of msgs.
+func (msgs Messages) ExternalNoEditor() string {
+	return Catalog.Format(msgs.locale, "externalNoEditor", nil)
+}
+
+// ExternalUploaded says "Uploaded changes to {name}."
+// in the language the app shows.
+func ExternalUploaded(name string) string { return In(i18n.Locale()).ExternalUploaded(name) }
+
+// ExternalUploaded says "Uploaded changes to {name}."
+// in the language of msgs.
+func (msgs Messages) ExternalUploaded(name string) string {
+	return Catalog.Format(msgs.locale, "externalUploaded", map[string]any{"name": name})
+}
+
+// ExternalConflict says "{name} changed on the server."
+// in the language the app shows.
+func ExternalConflict(name string) string { return In(i18n.Locale()).ExternalConflict(name) }
+
+// ExternalConflict says "{name} changed on the server."
+// in the language of msgs.
+func (msgs Messages) ExternalConflict(name string) string {
+	return Catalog.Format(msgs.locale, "externalConflict", map[string]any{"name": name})
+}
+
+// ExternalUploadFailed says "Couldn’t upload changes to {name}: {detail}"
+// in the language the app shows.
+func ExternalUploadFailed(name string, detail string) string {
+	return In(i18n.Locale()).ExternalUploadFailed(name, detail)
+}
+
+// ExternalUploadFailed says "Couldn’t upload changes to {name}: {detail}"
+// in the language of msgs.
+func (msgs Messages) ExternalUploadFailed(name string, detail string) string {
+	return Catalog.Format(msgs.locale, "externalUploadFailed", map[string]any{"name": name, "detail": detail})
+}
+
+// ExternalTakeServerFailed says "Couldn’t reload {name} from the server: {detail}"
+// in the language the app shows.
+func ExternalTakeServerFailed(name string, detail string) string {
+	return In(i18n.Locale()).ExternalTakeServerFailed(name, detail)
+}
+
+// ExternalTakeServerFailed says "Couldn’t reload {name} from the server: {detail}"
+// in the language of msgs.
+func (msgs Messages) ExternalTakeServerFailed(name string, detail string) string {
+	return Catalog.Format(msgs.locale, "externalTakeServerFailed", map[string]any{"name": name, "detail": detail})
+}
+
+// ExternalLocalCopyChanged says "The local copy changed while it was being read. Save it again or retry."
+// in the language the app shows.
+func ExternalLocalCopyChanged() string { return In(i18n.Locale()).ExternalLocalCopyChanged() }
+
+// ExternalLocalCopyChanged says "The local copy changed while it was being read. Save it again or retry."
+// in the language of msgs.
+func (msgs Messages) ExternalLocalCopyChanged() string {
+	return Catalog.Format(msgs.locale, "externalLocalCopyChanged", nil)
+}
+
+// ExternalNoOpenApp says "No app is available to open this file."
+// in the language the app shows.
+func ExternalNoOpenApp() string { return In(i18n.Locale()).ExternalNoOpenApp() }
+
+// ExternalNoOpenApp says "No app is available to open this file."
+// in the language of msgs.
+func (msgs Messages) ExternalNoOpenApp() string {
+	return Catalog.Format(msgs.locale, "externalNoOpenApp", nil)
+}
+
+// ExternalEditorInvalidProgram says "Choose an absolute path to an editor."
+// in the language the app shows.
+func ExternalEditorInvalidProgram() string { return In(i18n.Locale()).ExternalEditorInvalidProgram() }
+
+// ExternalEditorInvalidProgram says "Choose an absolute path to an editor."
+// in the language of msgs.
+func (msgs Messages) ExternalEditorInvalidProgram() string {
+	return Catalog.Format(msgs.locale, "externalEditorInvalidProgram", nil)
+}
+
+// ExternalEditorUnsafeProgram says "Choose an executable editor. A script requires an interpreter."
+// in the language the app shows.
+func ExternalEditorUnsafeProgram() string { return In(i18n.Locale()).ExternalEditorUnsafeProgram() }
+
+// ExternalEditorUnsafeProgram says "Choose an executable editor. A script requires an interpreter."
+// in the language of msgs.
+func (msgs Messages) ExternalEditorUnsafeProgram() string {
+	return Catalog.Format(msgs.locale, "externalEditorUnsafeProgram", nil)
+}
+
+// ExternalEditorInvalidArgs says "Check the quotes and escapes in the arguments."
+// in the language the app shows.
+func ExternalEditorInvalidArgs() string { return In(i18n.Locale()).ExternalEditorInvalidArgs() }
+
+// ExternalEditorInvalidArgs says "Check the quotes and escapes in the arguments."
+// in the language of msgs.
+func (msgs Messages) ExternalEditorInvalidArgs() string {
+	return Catalog.Format(msgs.locale, "externalEditorInvalidArgs", nil)
+}
+
+// ExternalEditorInvalidPattern says "Check the file name patterns."
+// in the language the app shows.
+func ExternalEditorInvalidPattern() string { return In(i18n.Locale()).ExternalEditorInvalidPattern() }
+
+// ExternalEditorInvalidPattern says "Check the file name patterns."
+// in the language of msgs.
+func (msgs Messages) ExternalEditorInvalidPattern() string {
+	return Catalog.Format(msgs.locale, "externalEditorInvalidPattern", nil)
+}
+
+// ExternalPaneBusy says "Finish or discard the unsynced external edits before switching hosts in this Files pane."
+// in the language the app shows.
+func ExternalPaneBusy() string { return In(i18n.Locale()).ExternalPaneBusy() }
+
+// ExternalPaneBusy says "Finish or discard the unsynced external edits before switching hosts in this Files pane."
+// in the language of msgs.
+func (msgs Messages) ExternalPaneBusy() string {
+	return Catalog.Format(msgs.locale, "externalPaneBusy", nil)
 }
 
 // OpenFailed says "Couldn’t open {name}: {detail}"
@@ -5045,11 +5169,11 @@ func (msgs Messages) OpenWithMessage() string {
 	return Catalog.Format(msgs.locale, "openWithMessage", nil)
 }
 
-// OpenWithCopyNote says "Another app opens a copy downloaded to a temporary folder. Changes made there aren’t uploaded."
+// OpenWithCopyNote says "Another app opens a temporary copy. SSHYard tracks changes to this copy for upload while the Files pane is open."
 // in the language the app shows.
 func OpenWithCopyNote() string { return In(i18n.Locale()).OpenWithCopyNote() }
 
-// OpenWithCopyNote says "Another app opens a copy downloaded to a temporary folder. Changes made there aren’t uploaded."
+// OpenWithCopyNote says "Another app opens a temporary copy. SSHYard tracks changes to this copy for upload while the Files pane is open."
 // in the language of msgs.
 func (msgs Messages) OpenWithCopyNote() string {
 	return Catalog.Format(msgs.locale, "openWithCopyNote", nil)
@@ -20815,4 +20939,770 @@ func MoveToMainWindow() string { return In(i18n.Locale()).MoveToMainWindow() }
 // in the language of msgs.
 func (msgs Messages) MoveToMainWindow() string {
 	return Catalog.Format(msgs.locale, "moveToMainWindow", nil)
+}
+
+// FileEditor says "Open text files in"
+// in the language the app shows.
+func FileEditor() string { return In(i18n.Locale()).FileEditor() }
+
+// FileEditor says "Open text files in"
+// in the language of msgs.
+func (msgs Messages) FileEditor() string {
+	return Catalog.Format(msgs.locale, "fileEditor", nil)
+}
+
+// FileEditorNote says "What a double click on a text file in the files pane opens it in."
+// in the language the app shows.
+func FileEditorNote() string { return In(i18n.Locale()).FileEditorNote() }
+
+// FileEditorNote says "What a double click on a text file in the files pane opens it in."
+// in the language of msgs.
+func (msgs Messages) FileEditorNote() string {
+	return Catalog.Format(msgs.locale, "fileEditorNote", nil)
+}
+
+// FileEditorBuiltin says "Built-in"
+// in the language the app shows.
+func FileEditorBuiltin() string { return In(i18n.Locale()).FileEditorBuiltin() }
+
+// FileEditorBuiltin says "Built-in"
+// in the language of msgs.
+func (msgs Messages) FileEditorBuiltin() string {
+	return Catalog.Format(msgs.locale, "fileEditorBuiltin", nil)
+}
+
+// FileEditorSystem says "Default App"
+// in the language the app shows.
+func FileEditorSystem() string { return In(i18n.Locale()).FileEditorSystem() }
+
+// FileEditorSystem says "Default App"
+// in the language of msgs.
+func (msgs Messages) FileEditorSystem() string {
+	return Catalog.Format(msgs.locale, "fileEditorSystem", nil)
+}
+
+// FileEditorExternal says "External Editor"
+// in the language the app shows.
+func FileEditorExternal() string { return In(i18n.Locale()).FileEditorExternal() }
+
+// FileEditorExternal says "External Editor"
+// in the language of msgs.
+func (msgs Messages) FileEditorExternal() string {
+	return Catalog.Format(msgs.locale, "fileEditorExternal", nil)
+}
+
+// ExternalEditors says "External editors"
+// in the language the app shows.
+func ExternalEditors() string { return In(i18n.Locale()).ExternalEditors() }
+
+// ExternalEditors says "External editors"
+// in the language of msgs.
+func (msgs Messages) ExternalEditors() string {
+	return Catalog.Format(msgs.locale, "externalEditors", nil)
+}
+
+// ExternalEditorsNote says "A remote file opens as a private copy, and each save is uploaded back to the server."
+// in the language the app shows.
+func ExternalEditorsNote() string { return In(i18n.Locale()).ExternalEditorsNote() }
+
+// ExternalEditorsNote says "A remote file opens as a private copy, and each save is uploaded back to the server."
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsNote() string {
+	return Catalog.Format(msgs.locale, "externalEditorsNote", nil)
+}
+
+// ExternalEditorsNone says "None"
+// in the language the app shows.
+func ExternalEditorsNone() string { return In(i18n.Locale()).ExternalEditorsNone() }
+
+// ExternalEditorsNone says "None"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsNone() string {
+	return Catalog.Format(msgs.locale, "externalEditorsNone", nil)
+}
+
+// ExternalEditorsManage says "Manage…"
+// in the language the app shows.
+func ExternalEditorsManage() string { return In(i18n.Locale()).ExternalEditorsManage() }
+
+// ExternalEditorsManage says "Manage…"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsManage() string {
+	return Catalog.Format(msgs.locale, "externalEditorsManage", nil)
+}
+
+// ExternalUpload says "After saving"
+// in the language the app shows.
+func ExternalUpload() string { return In(i18n.Locale()).ExternalUpload() }
+
+// ExternalUpload says "After saving"
+// in the language of msgs.
+func (msgs Messages) ExternalUpload() string {
+	return Catalog.Format(msgs.locale, "externalUpload", nil)
+}
+
+// ExternalUploadNote says "What happens when another app saves the copy of a remote file."
+// in the language the app shows.
+func ExternalUploadNote() string { return In(i18n.Locale()).ExternalUploadNote() }
+
+// ExternalUploadNote says "What happens when another app saves the copy of a remote file."
+// in the language of msgs.
+func (msgs Messages) ExternalUploadNote() string {
+	return Catalog.Format(msgs.locale, "externalUploadNote", nil)
+}
+
+// ExternalUploadAuto says "Upload"
+// in the language the app shows.
+func ExternalUploadAuto() string { return In(i18n.Locale()).ExternalUploadAuto() }
+
+// ExternalUploadAuto says "Upload"
+// in the language of msgs.
+func (msgs Messages) ExternalUploadAuto() string {
+	return Catalog.Format(msgs.locale, "externalUploadAuto", nil)
+}
+
+// ExternalUploadAsk says "Ask"
+// in the language the app shows.
+func ExternalUploadAsk() string { return In(i18n.Locale()).ExternalUploadAsk() }
+
+// ExternalUploadAsk says "Ask"
+// in the language of msgs.
+func (msgs Messages) ExternalUploadAsk() string {
+	return Catalog.Format(msgs.locale, "externalUploadAsk", nil)
+}
+
+// ExternalNotify says "Notify after uploading"
+// in the language the app shows.
+func ExternalNotify() string { return In(i18n.Locale()).ExternalNotify() }
+
+// ExternalNotify says "Notify after uploading"
+// in the language of msgs.
+func (msgs Messages) ExternalNotify() string {
+	return Catalog.Format(msgs.locale, "externalNotify", nil)
+}
+
+// ExternalNotifyNote says "Show a notice each time the changes to a remote file's copy are uploaded."
+// in the language the app shows.
+func ExternalNotifyNote() string { return In(i18n.Locale()).ExternalNotifyNote() }
+
+// ExternalNotifyNote says "Show a notice each time the changes to a remote file's copy are uploaded."
+// in the language of msgs.
+func (msgs Messages) ExternalNotifyNote() string {
+	return Catalog.Format(msgs.locale, "externalNotifyNote", nil)
+}
+
+// ShowHiddenFiles says "Show hidden files"
+// in the language the app shows.
+func ShowHiddenFiles() string { return In(i18n.Locale()).ShowHiddenFiles() }
+
+// ShowHiddenFiles says "Show hidden files"
+// in the language of msgs.
+func (msgs Messages) ShowHiddenFiles() string {
+	return Catalog.Format(msgs.locale, "showHiddenFiles", nil)
+}
+
+// ShowHiddenFilesNote says "Show files and folders whose names start with a dot. A files pane can also switch it from its menu."
+// in the language the app shows.
+func ShowHiddenFilesNote() string { return In(i18n.Locale()).ShowHiddenFilesNote() }
+
+// ShowHiddenFilesNote says "Show files and folders whose names start with a dot. A files pane can also switch it from its menu."
+// in the language of msgs.
+func (msgs Messages) ShowHiddenFilesNote() string {
+	return Catalog.Format(msgs.locale, "showHiddenFilesNote", nil)
+}
+
+// UploadFileMode says "Uploaded file permissions"
+// in the language the app shows.
+func UploadFileMode() string { return In(i18n.Locale()).UploadFileMode() }
+
+// UploadFileMode says "Uploaded file permissions"
+// in the language of msgs.
+func (msgs Messages) UploadFileMode() string {
+	return Catalog.Format(msgs.locale, "uploadFileMode", nil)
+}
+
+// UploadFileModeNote says "An octal mode such as 644 for the files uploaded; empty keeps each file's own."
+// in the language the app shows.
+func UploadFileModeNote() string { return In(i18n.Locale()).UploadFileModeNote() }
+
+// UploadFileModeNote says "An octal mode such as 644 for the files uploaded; empty keeps each file's own."
+// in the language of msgs.
+func (msgs Messages) UploadFileModeNote() string {
+	return Catalog.Format(msgs.locale, "uploadFileModeNote", nil)
+}
+
+// UploadFileModeKeep says "Keep"
+// in the language the app shows.
+func UploadFileModeKeep() string { return In(i18n.Locale()).UploadFileModeKeep() }
+
+// UploadFileModeKeep says "Keep"
+// in the language of msgs.
+func (msgs Messages) UploadFileModeKeep() string {
+	return Catalog.Format(msgs.locale, "uploadFileModeKeep", nil)
+}
+
+// UploadFileModeInvalid says "Enter an octal mode such as 644."
+// in the language the app shows.
+func UploadFileModeInvalid() string { return In(i18n.Locale()).UploadFileModeInvalid() }
+
+// UploadFileModeInvalid says "Enter an octal mode such as 644."
+// in the language of msgs.
+func (msgs Messages) UploadFileModeInvalid() string {
+	return Catalog.Format(msgs.locale, "uploadFileModeInvalid", nil)
+}
+
+// ExternalEditorsSheetNote says "A file opens in the first editor whose files match its name; an editor with no files listed takes every file."
+// in the language the app shows.
+func ExternalEditorsSheetNote() string { return In(i18n.Locale()).ExternalEditorsSheetNote() }
+
+// ExternalEditorsSheetNote says "A file opens in the first editor whose files match its name; an editor with no files listed takes every file."
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsSheetNote() string {
+	return Catalog.Format(msgs.locale, "externalEditorsSheetNote", nil)
+}
+
+// ExternalEditorsYours says "Your editors"
+// in the language the app shows.
+func ExternalEditorsYours() string { return In(i18n.Locale()).ExternalEditorsYours() }
+
+// ExternalEditorsYours says "Your editors"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsYours() string {
+	return Catalog.Format(msgs.locale, "externalEditorsYours", nil)
+}
+
+// ExternalEditorsEmpty says "No editor yet. Add one found on this computer, or choose a program."
+// in the language the app shows.
+func ExternalEditorsEmpty() string { return In(i18n.Locale()).ExternalEditorsEmpty() }
+
+// ExternalEditorsEmpty says "No editor yet. Add one found on this computer, or choose a program."
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsEmpty() string {
+	return Catalog.Format(msgs.locale, "externalEditorsEmpty", nil)
+}
+
+// ExternalEditorsDetected says "Found on this computer"
+// in the language the app shows.
+func ExternalEditorsDetected() string { return In(i18n.Locale()).ExternalEditorsDetected() }
+
+// ExternalEditorsDetected says "Found on this computer"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsDetected() string {
+	return Catalog.Format(msgs.locale, "externalEditorsDetected", nil)
+}
+
+// ExternalEditorsDetecting says "Looking for editors…"
+// in the language the app shows.
+func ExternalEditorsDetecting() string { return In(i18n.Locale()).ExternalEditorsDetecting() }
+
+// ExternalEditorsDetecting says "Looking for editors…"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsDetecting() string {
+	return Catalog.Format(msgs.locale, "externalEditorsDetecting", nil)
+}
+
+// ExternalEditorsNoneFound says "No well-known editor was found."
+// in the language the app shows.
+func ExternalEditorsNoneFound() string { return In(i18n.Locale()).ExternalEditorsNoneFound() }
+
+// ExternalEditorsNoneFound says "No well-known editor was found."
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsNoneFound() string {
+	return Catalog.Format(msgs.locale, "externalEditorsNoneFound", nil)
+}
+
+// ExternalEditorsDetectAgain says "Look Again"
+// in the language the app shows.
+func ExternalEditorsDetectAgain() string { return In(i18n.Locale()).ExternalEditorsDetectAgain() }
+
+// ExternalEditorsDetectAgain says "Look Again"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsDetectAgain() string {
+	return Catalog.Format(msgs.locale, "externalEditorsDetectAgain", nil)
+}
+
+// ExternalEditorAddFound says "Add {name}"
+// in the language the app shows.
+func ExternalEditorAddFound(name string) string {
+	return In(i18n.Locale()).ExternalEditorAddFound(name)
+}
+
+// ExternalEditorAddFound says "Add {name}"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorAddFound(name string) string {
+	return Catalog.Format(msgs.locale, "externalEditorAddFound", map[string]any{"name": name})
+}
+
+// ExternalEditorAddCustom says "Add Other Editor…"
+// in the language the app shows.
+func ExternalEditorAddCustom() string { return In(i18n.Locale()).ExternalEditorAddCustom() }
+
+// ExternalEditorAddCustom says "Add Other Editor…"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorAddCustom() string {
+	return Catalog.Format(msgs.locale, "externalEditorAddCustom", nil)
+}
+
+// ExternalEditorEdit says "Edit {name}"
+// in the language the app shows.
+func ExternalEditorEdit(name string) string { return In(i18n.Locale()).ExternalEditorEdit(name) }
+
+// ExternalEditorEdit says "Edit {name}"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorEdit(name string) string {
+	return Catalog.Format(msgs.locale, "externalEditorEdit", map[string]any{"name": name})
+}
+
+// ExternalEditorRemove says "Remove {name}"
+// in the language the app shows.
+func ExternalEditorRemove(name string) string { return In(i18n.Locale()).ExternalEditorRemove(name) }
+
+// ExternalEditorRemove says "Remove {name}"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorRemove(name string) string {
+	return Catalog.Format(msgs.locale, "externalEditorRemove", map[string]any{"name": name})
+}
+
+// ExternalEditorMoveUp says "Move {name} Up"
+// in the language the app shows.
+func ExternalEditorMoveUp(name string) string { return In(i18n.Locale()).ExternalEditorMoveUp(name) }
+
+// ExternalEditorMoveUp says "Move {name} Up"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorMoveUp(name string) string {
+	return Catalog.Format(msgs.locale, "externalEditorMoveUp", map[string]any{"name": name})
+}
+
+// ExternalEditorMoveDown says "Move {name} Down"
+// in the language the app shows.
+func ExternalEditorMoveDown(name string) string {
+	return In(i18n.Locale()).ExternalEditorMoveDown(name)
+}
+
+// ExternalEditorMoveDown says "Move {name} Down"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorMoveDown(name string) string {
+	return Catalog.Format(msgs.locale, "externalEditorMoveDown", map[string]any{"name": name})
+}
+
+// ExternalEditorName says "Name"
+// in the language the app shows.
+func ExternalEditorName() string { return In(i18n.Locale()).ExternalEditorName() }
+
+// ExternalEditorName says "Name"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorName() string {
+	return Catalog.Format(msgs.locale, "externalEditorName", nil)
+}
+
+// ExternalEditorProgram says "Program"
+// in the language the app shows.
+func ExternalEditorProgram() string { return In(i18n.Locale()).ExternalEditorProgram() }
+
+// ExternalEditorProgram says "Program"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorProgram() string {
+	return Catalog.Format(msgs.locale, "externalEditorProgram", nil)
+}
+
+// ExternalEditorChoose says "Choose Program…"
+// in the language the app shows.
+func ExternalEditorChoose() string { return In(i18n.Locale()).ExternalEditorChoose() }
+
+// ExternalEditorChoose says "Choose Program…"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorChoose() string {
+	return Catalog.Format(msgs.locale, "externalEditorChoose", nil)
+}
+
+// ExternalEditorChooseTitle says "Choose the editor's program"
+// in the language the app shows.
+func ExternalEditorChooseTitle() string { return In(i18n.Locale()).ExternalEditorChooseTitle() }
+
+// ExternalEditorChooseTitle says "Choose the editor's program"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorChooseTitle() string {
+	return Catalog.Format(msgs.locale, "externalEditorChooseTitle", nil)
+}
+
+// ExternalEditorArgs says "Arguments"
+// in the language the app shows.
+func ExternalEditorArgs() string { return In(i18n.Locale()).ExternalEditorArgs() }
+
+// ExternalEditorArgs says "Arguments"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorArgs() string {
+	return Catalog.Format(msgs.locale, "externalEditorArgs", nil)
+}
+
+// ExternalEditorArgsNote says "{token} is the file to open; without it, the file comes last. Quotes keep spaces in an argument, and nothing runs thr…"
+// in the language the app shows.
+func ExternalEditorArgsNote(token string) string {
+	return In(i18n.Locale()).ExternalEditorArgsNote(token)
+}
+
+// ExternalEditorArgsNote says "{token} is the file to open; without it, the file comes last. Quotes keep spaces in an argument, and nothing runs thr…"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorArgsNote(token string) string {
+	return Catalog.Format(msgs.locale, "externalEditorArgsNote", map[string]any{"token": token})
+}
+
+// ExternalEditorPatterns says "Files"
+// in the language the app shows.
+func ExternalEditorPatterns() string { return In(i18n.Locale()).ExternalEditorPatterns() }
+
+// ExternalEditorPatterns says "Files"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorPatterns() string {
+	return Catalog.Format(msgs.locale, "externalEditorPatterns", nil)
+}
+
+// ExternalEditorPatternsHint says "e.g. *.conf; *.yml — empty for every file"
+// in the language the app shows.
+func ExternalEditorPatternsHint() string { return In(i18n.Locale()).ExternalEditorPatternsHint() }
+
+// ExternalEditorPatternsHint says "e.g. *.conf; *.yml — empty for every file"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorPatternsHint() string {
+	return Catalog.Format(msgs.locale, "externalEditorPatternsHint", nil)
+}
+
+// ExternalEditorAllFiles says "Every file"
+// in the language the app shows.
+func ExternalEditorAllFiles() string { return In(i18n.Locale()).ExternalEditorAllFiles() }
+
+// ExternalEditorAllFiles says "Every file"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorAllFiles() string {
+	return Catalog.Format(msgs.locale, "externalEditorAllFiles", nil)
+}
+
+// ExternalEditorAddDone says "Add"
+// in the language the app shows.
+func ExternalEditorAddDone() string { return In(i18n.Locale()).ExternalEditorAddDone() }
+
+// ExternalEditorAddDone says "Add"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorAddDone() string {
+	return Catalog.Format(msgs.locale, "externalEditorAddDone", nil)
+}
+
+// ExternalEditorApply says "Apply"
+// in the language the app shows.
+func ExternalEditorApply() string { return In(i18n.Locale()).ExternalEditorApply() }
+
+// ExternalEditorApply says "Apply"
+// in the language of msgs.
+func (msgs Messages) ExternalEditorApply() string {
+	return Catalog.Format(msgs.locale, "externalEditorApply", nil)
+}
+
+// ExternalEditorsSaveFailed says "The editors could not be saved; nothing was changed."
+// in the language the app shows.
+func ExternalEditorsSaveFailed() string { return In(i18n.Locale()).ExternalEditorsSaveFailed() }
+
+// ExternalEditorsSaveFailed says "The editors could not be saved; nothing was changed."
+// in the language of msgs.
+func (msgs Messages) ExternalEditorsSaveFailed() string {
+	return Catalog.Format(msgs.locale, "externalEditorsSaveFailed", nil)
+}
+
+// EditExternally says "Edit in External Editor"
+// in the language the app shows.
+func EditExternally() string { return In(i18n.Locale()).EditExternally() }
+
+// EditExternally says "Edit in External Editor"
+// in the language of msgs.
+func (msgs Messages) EditExternally() string {
+	return Catalog.Format(msgs.locale, "editExternally", nil)
+}
+
+// EditExternallyIn says "Edit in {name}"
+// in the language the app shows.
+func EditExternallyIn(name string) string { return In(i18n.Locale()).EditExternallyIn(name) }
+
+// EditExternallyIn says "Edit in {name}"
+// in the language of msgs.
+func (msgs Messages) EditExternallyIn(name string) string {
+	return Catalog.Format(msgs.locale, "editExternallyIn", map[string]any{"name": name})
+}
+
+// SetUpExternalEditor says "Set Up External Editor…"
+// in the language the app shows.
+func SetUpExternalEditor() string { return In(i18n.Locale()).SetUpExternalEditor() }
+
+// SetUpExternalEditor says "Set Up External Editor…"
+// in the language of msgs.
+func (msgs Messages) SetUpExternalEditor() string {
+	return Catalog.Format(msgs.locale, "setUpExternalEditor", nil)
+}
+
+// ExternalEdits says "External Edits"
+// in the language the app shows.
+func ExternalEdits() string { return In(i18n.Locale()).ExternalEdits() }
+
+// ExternalEdits says "External Edits"
+// in the language of msgs.
+func (msgs Messages) ExternalEdits() string {
+	return Catalog.Format(msgs.locale, "externalEdits", nil)
+}
+
+// ExternalEditsNote says "Files open in other apps. Their saves are uploaded while this pane stays open."
+// in the language the app shows.
+func ExternalEditsNote() string { return In(i18n.Locale()).ExternalEditsNote() }
+
+// ExternalEditsNote says "Files open in other apps. Their saves are uploaded while this pane stays open."
+// in the language of msgs.
+func (msgs Messages) ExternalEditsNote() string {
+	return Catalog.Format(msgs.locale, "externalEditsNote", nil)
+}
+
+// ExternalEditsEmpty says "No file is open in another app."
+// in the language the app shows.
+func ExternalEditsEmpty() string { return In(i18n.Locale()).ExternalEditsEmpty() }
+
+// ExternalEditsEmpty says "No file is open in another app."
+// in the language of msgs.
+func (msgs Messages) ExternalEditsEmpty() string {
+	return Catalog.Format(msgs.locale, "externalEditsEmpty", nil)
+}
+
+// ExtStateOpening says "Opening…"
+// in the language the app shows.
+func ExtStateOpening() string { return In(i18n.Locale()).ExtStateOpening() }
+
+// ExtStateOpening says "Opening…"
+// in the language of msgs.
+func (msgs Messages) ExtStateOpening() string {
+	return Catalog.Format(msgs.locale, "extStateOpening", nil)
+}
+
+// ExtStateWatching says "Up to date"
+// in the language the app shows.
+func ExtStateWatching() string { return In(i18n.Locale()).ExtStateWatching() }
+
+// ExtStateWatching says "Up to date"
+// in the language of msgs.
+func (msgs Messages) ExtStateWatching() string {
+	return Catalog.Format(msgs.locale, "extStateWatching", nil)
+}
+
+// ExtStateChanged says "Changed"
+// in the language the app shows.
+func ExtStateChanged() string { return In(i18n.Locale()).ExtStateChanged() }
+
+// ExtStateChanged says "Changed"
+// in the language of msgs.
+func (msgs Messages) ExtStateChanged() string {
+	return Catalog.Format(msgs.locale, "extStateChanged", nil)
+}
+
+// ExtStateUploading says "Uploading…"
+// in the language the app shows.
+func ExtStateUploading() string { return In(i18n.Locale()).ExtStateUploading() }
+
+// ExtStateUploading says "Uploading…"
+// in the language of msgs.
+func (msgs Messages) ExtStateUploading() string {
+	return Catalog.Format(msgs.locale, "extStateUploading", nil)
+}
+
+// ExtStateConflict says "Changed on the server"
+// in the language the app shows.
+func ExtStateConflict() string { return In(i18n.Locale()).ExtStateConflict() }
+
+// ExtStateConflict says "Changed on the server"
+// in the language of msgs.
+func (msgs Messages) ExtStateConflict() string {
+	return Catalog.Format(msgs.locale, "extStateConflict", nil)
+}
+
+// ExtStateFailed says "Upload failed"
+// in the language the app shows.
+func ExtStateFailed() string { return In(i18n.Locale()).ExtStateFailed() }
+
+// ExtStateFailed says "Upload failed"
+// in the language of msgs.
+func (msgs Messages) ExtStateFailed() string {
+	return Catalog.Format(msgs.locale, "extStateFailed", nil)
+}
+
+// ExtUploadNow says "Upload {name} Now"
+// in the language the app shows.
+func ExtUploadNow(name string) string { return In(i18n.Locale()).ExtUploadNow(name) }
+
+// ExtUploadNow says "Upload {name} Now"
+// in the language of msgs.
+func (msgs Messages) ExtUploadNow(name string) string {
+	return Catalog.Format(msgs.locale, "extUploadNow", map[string]any{"name": name})
+}
+
+// ExtReveal says "Show the Copy of {name}"
+// in the language the app shows.
+func ExtReveal(name string) string { return In(i18n.Locale()).ExtReveal(name) }
+
+// ExtReveal says "Show the Copy of {name}"
+// in the language of msgs.
+func (msgs Messages) ExtReveal(name string) string {
+	return Catalog.Format(msgs.locale, "extReveal", map[string]any{"name": name})
+}
+
+// ExtStop says "Stop Tracking {name}"
+// in the language the app shows.
+func ExtStop(name string) string { return In(i18n.Locale()).ExtStop(name) }
+
+// ExtStop says "Stop Tracking {name}"
+// in the language of msgs.
+func (msgs Messages) ExtStop(name string) string {
+	return Catalog.Format(msgs.locale, "extStop", map[string]any{"name": name})
+}
+
+// ExtStopTitle says "Stop tracking “{name}”?"
+// in the language the app shows.
+func ExtStopTitle(name string) string { return In(i18n.Locale()).ExtStopTitle(name) }
+
+// ExtStopTitle says "Stop tracking “{name}”?"
+// in the language of msgs.
+func (msgs Messages) ExtStopTitle(name string) string {
+	return Catalog.Format(msgs.locale, "extStopTitle", map[string]any{"name": name})
+}
+
+// ExtStopMessage says "Its copy has changes that are not on the server. Stopping deletes the copy and those changes."
+// in the language the app shows.
+func ExtStopMessage() string { return In(i18n.Locale()).ExtStopMessage() }
+
+// ExtStopMessage says "Its copy has changes that are not on the server. Stopping deletes the copy and those changes."
+// in the language of msgs.
+func (msgs Messages) ExtStopMessage() string {
+	return Catalog.Format(msgs.locale, "extStopMessage", nil)
+}
+
+// ExtStopConfirm says "Stop and Delete"
+// in the language the app shows.
+func ExtStopConfirm() string { return In(i18n.Locale()).ExtStopConfirm() }
+
+// ExtStopConfirm says "Stop and Delete"
+// in the language of msgs.
+func (msgs Messages) ExtStopConfirm() string {
+	return Catalog.Format(msgs.locale, "extStopConfirm", nil)
+}
+
+// ExtAskTitle says "Upload “{name}”?"
+// in the language the app shows.
+func ExtAskTitle(name string) string { return In(i18n.Locale()).ExtAskTitle(name) }
+
+// ExtAskTitle says "Upload “{name}”?"
+// in the language of msgs.
+func (msgs Messages) ExtAskTitle(name string) string {
+	return Catalog.Format(msgs.locale, "extAskTitle", map[string]any{"name": name})
+}
+
+// ExtAskMessage says "“{name}” was saved in another app. Upload the changes to the server?"
+// in the language the app shows.
+func ExtAskMessage(name string) string { return In(i18n.Locale()).ExtAskMessage(name) }
+
+// ExtAskMessage says "“{name}” was saved in another app. Upload the changes to the server?"
+// in the language of msgs.
+func (msgs Messages) ExtAskMessage(name string) string {
+	return Catalog.Format(msgs.locale, "extAskMessage", map[string]any{"name": name})
+}
+
+// ExtDontUpload says "Don't Upload"
+// in the language the app shows.
+func ExtDontUpload() string { return In(i18n.Locale()).ExtDontUpload() }
+
+// ExtDontUpload says "Don't Upload"
+// in the language of msgs.
+func (msgs Messages) ExtDontUpload() string {
+	return Catalog.Format(msgs.locale, "extDontUpload", nil)
+}
+
+// ExtConflictTitle says "“{name}” changed on the server"
+// in the language the app shows.
+func ExtConflictTitle(name string) string { return In(i18n.Locale()).ExtConflictTitle(name) }
+
+// ExtConflictTitle says "“{name}” changed on the server"
+// in the language of msgs.
+func (msgs Messages) ExtConflictTitle(name string) string {
+	return Catalog.Format(msgs.locale, "extConflictTitle", map[string]any{"name": name})
+}
+
+// ExtConflictMessage says "The file on the server changed after it was opened. Replace it with your copy, or replace your copy with the server's…"
+// in the language the app shows.
+func ExtConflictMessage() string { return In(i18n.Locale()).ExtConflictMessage() }
+
+// ExtConflictMessage says "The file on the server changed after it was opened. Replace it with your copy, or replace your copy with the server's…"
+// in the language of msgs.
+func (msgs Messages) ExtConflictMessage() string {
+	return Catalog.Format(msgs.locale, "extConflictMessage", nil)
+}
+
+// ExtOverwrite says "Replace on Server"
+// in the language the app shows.
+func ExtOverwrite() string { return In(i18n.Locale()).ExtOverwrite() }
+
+// ExtOverwrite says "Replace on Server"
+// in the language of msgs.
+func (msgs Messages) ExtOverwrite() string {
+	return Catalog.Format(msgs.locale, "extOverwrite", nil)
+}
+
+// ExtTakeServer says "Use Server's Version"
+// in the language the app shows.
+func ExtTakeServer() string { return In(i18n.Locale()).ExtTakeServer() }
+
+// ExtTakeServer says "Use Server's Version"
+// in the language of msgs.
+func (msgs Messages) ExtTakeServer() string {
+	return Catalog.Format(msgs.locale, "extTakeServer", nil)
+}
+
+// ExtLater says "Later"
+// in the language the app shows.
+func ExtLater() string { return In(i18n.Locale()).ExtLater() }
+
+// ExtLater says "Later"
+// in the language of msgs.
+func (msgs Messages) ExtLater() string {
+	return Catalog.Format(msgs.locale, "extLater", nil)
+}
+
+// ExtCloseTitle says "Changes not uploaded"
+// in the language the app shows.
+func ExtCloseTitle() string { return In(i18n.Locale()).ExtCloseTitle() }
+
+// ExtCloseTitle says "Changes not uploaded"
+// in the language of msgs.
+func (msgs Messages) ExtCloseTitle() string {
+	return Catalog.Format(msgs.locale, "extCloseTitle", nil)
+}
+
+// ExtCloseMessage says "{names} has changes that are not on the server. Closing deletes the local copies and those changes."
+// in the language the app shows.
+func ExtCloseMessage(names string) string { return In(i18n.Locale()).ExtCloseMessage(names) }
+
+// ExtCloseMessage says "{names} has changes that are not on the server. Closing deletes the local copies and those changes."
+// in the language of msgs.
+func (msgs Messages) ExtCloseMessage(names string) string {
+	return Catalog.Format(msgs.locale, "extCloseMessage", map[string]any{"names": names})
+}
+
+// ExtCloseAnyway says "Close Anyway"
+// in the language the app shows.
+func ExtCloseAnyway() string { return In(i18n.Locale()).ExtCloseAnyway() }
+
+// ExtCloseAnyway says "Close Anyway"
+// in the language of msgs.
+func (msgs Messages) ExtCloseAnyway() string {
+	return Catalog.Format(msgs.locale, "extCloseAnyway", nil)
+}
+
+// ExtNameSeparator says ", "
+// in the language the app shows.
+func ExtNameSeparator() string { return In(i18n.Locale()).ExtNameSeparator() }
+
+// ExtNameSeparator says ", "
+// in the language of msgs.
+func (msgs Messages) ExtNameSeparator() string {
+	return Catalog.Format(msgs.locale, "extNameSeparator", nil)
 }

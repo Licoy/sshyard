@@ -29,15 +29,15 @@ import (
 // entries in it, those chosen, by name, and the row last chosen (sel),
 // which the keys move from.
 type sideList struct {
-	dir     string
-	entries []sftpsvc.Entry
-	sel     int
-	chosen  ui.Selection[string]
-	list    ui.ListState
+	dir        string
+	entries    []sftpsvc.Entry
+	showHidden bool
+	sel        int
+	chosen     ui.Selection[string]
+	list       ui.ListState
 	// listed are the entries as the folder listed them, folders first by
-	// name. entries are them in the order sorted says, which follows sort,
-	// the table's: a click on a column's header sorts by it, another
-	// reverses it and a third goes back to the order listed (resort).
+	// name. entries are the visible ones in sorted order. Clicking a
+	// column sorts by it, reverses the order, then restores the listing order.
 	listed       []sftpsvc.Entry
 	sort, sorted ui.SortOrder
 	// reveal is the name chosen once the folder lists, for an entry gone
@@ -98,23 +98,30 @@ func (sd *sideList) show(dir string, es []sftpsvc.Entry) {
 	if dir != sd.dir {
 		sd.chosen.Clear()
 		sd.dropSizes()
-	} else {
-		there := make(map[string]bool, len(es))
-		for _, e := range es {
-			there[e.Name] = true
-		}
-		for name := range sd.chosen.All() {
-			if !there[name] {
-				sd.chosen.Remove(name)
-			}
-		}
 	}
-	sd.dir, sd.listed, sd.entries, sd.sel = dir, es, sortedEntries(es, sd.sorted), -1
+	sd.dir, sd.listed, sd.sel = dir, es, -1
+	sd.refreshEntries()
 	if name := sd.reveal; name != "" {
 		sd.reveal = ""
 		if i := slices.IndexFunc(sd.entries, func(e sftpsvc.Entry) bool { return e.Name == name }); i >= 0 {
 			sd.only(i)
 			sd.list.ScrollTo(i, ui.Center)
+		}
+	}
+}
+
+func (sd *sideList) refreshEntries() {
+	sd.entries = sortedEntries(visibleEntries(sd.listed, sd.showHidden), sd.sorted)
+	if sd.chosen.Len() == 0 {
+		return
+	}
+	there := make(map[string]bool, len(sd.entries))
+	for _, e := range sd.entries {
+		there[e.Name] = true
+	}
+	for name := range sd.chosen.All() {
+		if !there[name] {
+			sd.chosen.Remove(name)
 		}
 	}
 }
@@ -134,9 +141,33 @@ func (sd *sideList) resort() {
 	if e, ok := selected(sd.sel, sd.entries); ok {
 		name = e.Name
 	}
-	sd.entries = sortedEntries(sd.listed, sd.sorted)
+	sd.entries = sortedEntries(visibleEntries(sd.listed, sd.showHidden), sd.sorted)
 	if name != "" {
 		sd.sel = slices.IndexFunc(sd.entries, func(e sftpsvc.Entry) bool { return e.Name == name })
+	}
+}
+
+func visibleEntries(es []sftpsvc.Entry, showHidden bool) []sftpsvc.Entry {
+	if showHidden {
+		return es
+	}
+	return slices.DeleteFunc(slices.Clone(es), func(e sftpsvc.Entry) bool {
+		return e.Name != ".." && strings.HasPrefix(e.Name, ".")
+	})
+}
+
+func (sd *sideList) setShowHidden(show bool) {
+	if sd.showHidden == show {
+		return
+	}
+	picked, hasSelection := selected(sd.sel, sd.entries)
+	sd.showHidden, sd.sel = show, -1
+	sd.refreshEntries()
+	if hasSelection {
+		sd.sel = slices.IndexFunc(sd.entries, func(e sftpsvc.Entry) bool { return e.Name == picked.Name })
+	}
+	if sd.search != nil {
+		sd.search.clear()
 	}
 }
 
@@ -310,9 +341,10 @@ type localSide struct {
 // filesState is what a files pane keeps: both sides, its transfers and
 // its dialogs. Each files pane has its own.
 type filesState struct {
-	remote    remoteSide
-	local     localSide
-	transfers *sftpsvc.Transfers
+	remote      remoteSide
+	local       localSide
+	localActive bool
+	transfers   *sftpsvc.Transfers
 	// ask is the open name or mode dialog (new folder or file, rename,
 	// permissions), del the delete confirmation, conflict the same-name
 	// dialog of a transfer being planned.
@@ -325,13 +357,16 @@ type filesState struct {
 	// open confirms opening a large file in the editor
 	open     *openAsk
 	openOpen bool
-	// with asks how to open a file the app does not show; opens are
-	// remote files downloading to open in another app, and copies the
-	// copies they open.
-	with     *withAsk
-	withOpen bool
-	opens    []pendingOpen
-	copies   localCopies
+	// with asks how to open a file and copies holds its local working copies.
+	with           *withAsk
+	withOpen       bool
+	copies         localCopies
+	edits          []*extEdit
+	extWatchCancel context.CancelFunc
+	extWatchScan   chan []extPoll
+	extCloseAsk    bool
+	extView        extView
+	extCloseDo     func()
 	// names are the server's user and group names, by ID, once read.
 	names *idNames
 	// skipped is what the last download planned left out, shown until
@@ -397,6 +432,7 @@ func newFilesState(onChange func()) *filesState {
 	fs := &filesState{transfers: &sftpsvc.Transfers{OnChange: onChange}}
 	for _, sd := range []*sideList{&fs.remote.sideList, &fs.local.sideList} {
 		sd.sel = -1
+		sd.showHidden = true
 		sd.list.Selected, sd.list.Selection = &sd.sel, &sd.chosen
 		sd.list.DragSelect, sd.list.RoundRows = true, true
 		sd.list.Sort = &sd.sort
@@ -413,6 +449,7 @@ func (fs *filesState) side(remote bool) *sideList {
 }
 
 func (fs *filesState) close() {
+	fs.stopExternalEdits()
 	fs.transfers.CancelAll()
 	if fs.working != nil {
 		fs.working.cancel()
@@ -1377,7 +1414,7 @@ func (a *App) filesBody(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, 
 		}
 		localPane := func() {
 			ui.Box(c.Key("lpad")).Fill().Padding(gap(true)).Children(func() {
-				local := sideCard("local")
+				local := sideCard("local").ObserveInput(func(ui.InputEvent) { fs.localActive = true })
 				local.Children(func() {
 					picked := l.picked()
 					a.sideHeader(c, "lhead:"+strconv.Itoa(cn.id), tok, icons.LocalDisk, m.Local(), []barAction{
@@ -1454,7 +1491,7 @@ func (a *App) filesBody(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, 
 		}
 		remotePane := func() {
 			ui.Box(c.Key("rpad")).Fill().Padding(gap(false)).Children(func() {
-				remote := sideCard("remote")
+				remote := sideCard("remote").ObserveInput(func(ui.InputEvent) { fs.localActive = false })
 				remote.Children(func() {
 					if dual {
 						a.sideHeader(c, "rhead:"+strconv.Itoa(cn.id), tok, icons.Host, m.Remote(), remoteActions(), m)
@@ -1501,6 +1538,7 @@ func (a *App) filesBody(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, 
 						tb, opened := a.fileTable(c, cn, true, m, tok)
 						if a.focusReq == cn.id && a.page == pageWorkspace {
 							tb.Focus()
+							fs.localActive = false
 							a.focusReq = 0
 						}
 						if e, ok := selected(s.sel, s.entries); (tb.Submitted() || opened) && ok {
@@ -1553,6 +1591,7 @@ func (a *App) filesBody(c *ui.Context, t *layout.Tab, n *layout.Node, cn *conn, 
 	a.conflictView(c, cn, m)
 	a.openAskView(c, cn, m)
 	a.withView(c, cn, tok, m)
+	a.extViews(c, cn, tok, m)
 	a.snippetView(c, cn, tok, m)
 	a.transfersSheet(c, cn, tok, m)
 	a.infoView(c, cn, tok, m)
@@ -1588,6 +1627,11 @@ func (a *App) toggleDual() {
 	st := a.settings
 	st.FilesDual = !st.FilesDual
 	a.ApplySettings(st)
+}
+
+func (a *App) toggleHidden(cn *conn) {
+	sd := cn.fs.side(!a.settings.FilesDual || !cn.fs.localActive)
+	sd.setShowHidden(!sd.showHidden)
 }
 
 // pickUpload asks for files, or a folder, to upload into the remote

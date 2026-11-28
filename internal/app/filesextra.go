@@ -227,7 +227,7 @@ func (a *App) compress(cn *conn, ask *compressAsk, m locales.Messages) error {
 	}
 	sd := fs.side(ask.remote)
 	exists := errors.New(m.ErrNameExists(name))
-	if slices.ContainsFunc(sd.entries, func(e sftpsvc.Entry) bool { return e.Name == name }) && sd.dir == ask.dir {
+	if slices.ContainsFunc(sd.listed, func(e sftpsvc.Entry) bool { return e.Name == name }) && sd.dir == ask.dir {
 		return exists
 	}
 	dir, names, f := ask.dir, ask.names, sftpsvc.ArchiveFormat(ask.format)
@@ -269,8 +269,8 @@ func (a *App) extract(cn *conn, remote bool, name string) {
 	sd := fs.side(remote)
 	dir := sd.dir
 	archive := sidePath(remote, dir, name)
-	taken := make(map[string]bool, len(sd.entries))
-	for _, e := range sd.entries {
+	taken := make(map[string]bool, len(sd.listed))
+	for _, e := range sd.listed {
 		taken[e.Name] = true
 	}
 	dst := sftpsvc.UniqueName(sidePath(remote, dir, sftpsvc.ArchiveBase(name)), remote, func(p string) bool {

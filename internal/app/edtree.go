@@ -225,6 +225,9 @@ func (a *App) treeView(c *ui.Context, cn *conn, tok theme.Tokens, m locales.Mess
 		if len(fs.transfers.List()) > 0 {
 			acts = append(acts, a.transfersAction(c, cn, m))
 		}
+		if len(fs.edits) > 0 {
+			acts = append(acts, a.extEditsAction(cn, m))
+		}
 		acts = append(acts,
 			barAction{Key: "treeup", Button: IconButton{Icon: icons.GoUp, Label: m.EditorUpFolder(), Size: Tiny, Disabled: off || sideDir(remote, t.root) == t.root},
 				Do: func() { a.treeUp(cn) }},
@@ -398,7 +401,8 @@ func (a *App) treeEntries(cn *conn, p string, m locales.Messages) []menuEntry {
 			out = append(out,
 				menuEntry{Icon: icons.EditFile, Label: m.EditorOpenFile(), Disabled: off, Do: func() { a.treeOpen(cn, p) }},
 				menuEntry{Icon: icons.OpenWith, Label: m.OpenWithDefault(), Disabled: off || a.p.OpenPath == nil, Do: func() { a.openWith(cn, remote, p, e.Size, false, m) }},
-				menuEntry{Icon: icons.OpenWithApp, Label: m.OpenWithApp(), Disabled: off || a.p.OpenWith == nil, Do: func() { a.openWith(cn, remote, p, e.Size, true, m) }})
+				menuEntry{Icon: icons.OpenWithApp, Label: m.OpenWithApp(), Disabled: off || a.p.OpenWith == nil, Do: func() { a.openWith(cn, remote, p, e.Size, true, m) }},
+				a.extEditEntry(cn, remote, p, e.Size, off, m))
 		}
 		if remote {
 			out = append(out, menuEntry{Icon: icons.Download, Label: m.DownloadTo(), Disabled: off || a.p.PickFolder == nil, Do: func() { a.downloadTo(cn, []string{p}, m) }})
