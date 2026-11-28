@@ -31,6 +31,7 @@ func testSessionARC(t *testing.T, resize bool) {
 	serverErrors := make(chan error, 3)
 	secondDial := make(chan time.Time, 1)
 	secondReady := make(chan struct{})
+	closeRequested := make(chan struct{})
 	var attempts, passwordCalls atomic.Int32
 	var drop chan struct{}
 	width, height, minDelay := 800, 600, 300*time.Millisecond
@@ -74,11 +75,7 @@ func testSessionARC(t *testing.T, resize bool) {
 			})
 			if err == nil {
 				close(secondReady)
-				_, err = peer.readMCS()
-				var e *Error
-				if errors.As(err, &e) && e.Code == 3 {
-					err = nil
-				}
+				err = expectCookiePeerClose(peer, closeRequested)
 			}
 			serverErrors <- err
 		}()
@@ -118,8 +115,9 @@ func testSessionARC(t *testing.T, resize bool) {
 	select {
 	case <-secondReady:
 	case <-time.After(3 * time.Second):
-		t.Fatal("resized connection did not send the lock synchronization event")
+		t.Fatal("reconnected session did not send the lock synchronization event")
 	}
+	close(closeRequested)
 	s.Close()
 	_, version, _ := s.CopyFrame(nil, 0)
 	status := s.Status()
@@ -134,9 +132,31 @@ func testSessionARC(t *testing.T, resize bool) {
 				t.Fatal(err)
 			}
 		case <-time.After(5 * time.Second):
-			t.Fatal("resized test session did not close")
+			t.Fatal("test peers did not finish after reconnection and close")
 		}
 	}
+}
+
+func expectCookiePeerClose(peer *rdpTransport, closeRequested <-chan struct{}) error {
+	_, err := peer.readMCS()
+	if err == nil {
+		return errors.New("unexpected MCS packet after reconnect lock synchronization")
+	}
+	select {
+	case <-closeRequested:
+	default:
+		return fmt.Errorf("reconnected peer stopped before session close: %w", err)
+	}
+	var e *Error
+	if errors.As(err, &e) && e.Kind == KindServer && e.Code == 3 {
+		return nil
+	}
+	// The peer received the lock sync, but the client may still be completing
+	// its write. Close may then end the transport without an MCS disconnect.
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+	return fmt.Errorf("unexpected reconnected peer close: %w", err)
 }
 
 func serveCookieSeed(raw net.Conn, cert tls.Certificate, cfg Config, cp arcCookie, drop <-chan struct{}) error {

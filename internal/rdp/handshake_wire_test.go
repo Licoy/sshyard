@@ -81,6 +81,20 @@ func TestHandshakeGCC(t *testing.T) {
 	}
 }
 
+func TestRDPClientInfoXrdpLogonFlags(t *testing.T) {
+	p, err := clientInfo(Config{User: "sample"}, nil, protocolTLS, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p) < 12 {
+		t.Fatalf("short Client Info PDU: %d bytes", len(p))
+	}
+	const logonNormal = 0x33 // xrdp's RDP_LOGON_NORMAL mask.
+	if flags := binary.LittleEndian.Uint32(p[8:12]); flags&logonNormal != logonNormal {
+		t.Fatalf("Client Info flags %#08x omit bits from RDP_LOGON_NORMAL (%#x)", flags, logonNormal)
+	}
+}
+
 func TestHandshakeFastPath(t *testing.T) {
 	for _, pkt := range [][]byte{{0, 4, 3, 9}, {0, 0x80, 5, 3, 9}} {
 		p, fast, err := readRDPFrame(bytes.NewReader(pkt), true)

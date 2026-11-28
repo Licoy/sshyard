@@ -36,6 +36,23 @@ func TestLicenseValidClient(t *testing.T) {
 	}
 }
 
+func TestRDPLicenseXrdpValidClientAlert(t *testing.T) {
+	// xrdp sends STATUS_VALID_CLIENT with an empty error blob of type 0x1428.
+	p := handshakeHex(t, "ff021000070000000200000028140000")[4:] // Skip the licensing preamble.
+	license := newLicenseExchange(Config{}, nil)
+	if err := license.alert(p); err != nil || license.state != licenseComplete {
+		t.Fatalf("xrdp alert state=%v err=%v", license.state, err)
+	}
+
+	p = append(p, 0)
+	binary.LittleEndian.PutUint16(p[10:], 1) // Error blob size.
+	license = newLicenseExchange(Config{}, nil)
+	err := license.alert(p)
+	if kind, reason := Classify(err); kind != KindLicense || reason != ReasonProtocol || license.state != licenseStart {
+		t.Fatalf("nonempty unknown error blob state=%v err=%v", license.state, err)
+	}
+}
+
 func TestLicenseKeyDerivation(t *testing.T) {
 	// MS-RDPELE 4.1 and 4.2 sample randoms/premaster, with the expected
 	// outputs calculated independently from the hash formulas in 5.1.2/5.1.5.

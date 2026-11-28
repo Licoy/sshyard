@@ -142,6 +142,26 @@ func TestRDPClipboardBoundsAndValidation(t *testing.T) {
 	}
 }
 
+func TestRDPClipboardPadding(t *testing.T) {
+	v, sent := testRDPVirtualChannels(nil)
+	text := []byte{'x', 0, 0, 0}
+	v.clipboard.offered, v.clipboard.unicode = true, text
+	p := append(rdpTestClipPDU(clipDataRequest, 0, []byte{clipUnicode, 0, 0, 0}), 0, 0, 0, 0)
+	if err := v.receiveClipboard(p); err != nil {
+		t.Fatalf("padded clipboard request rejected: %v", err)
+	}
+	want := rdpTestClipPDU(clipDataResponse, clipOK, text)
+	if len(*sent) != 1 || !bytes.Equal((*sent)[0].body(), want) {
+		t.Fatalf("padded clipboard request sent %v, want one response %x", *sent, want)
+	}
+
+	binary.LittleEndian.PutUint32(p[4:], uint32(len(p)-8+1))
+	err := v.receiveClipboard(p)
+	if kind, reason := Classify(err); kind != KindServer || reason != ReasonProtocol || len(*sent) != 1 {
+		t.Fatalf("oversized clipboard dataLen sent %d additional responses, err=%v", len(*sent)-1, err)
+	}
+}
+
 func FuzzRDPClipboard(f *testing.F) {
 	f.Add(rdpTestClipPDU(2, 0, []byte{13, 0, 0, 0, 0, 0}), true)
 	f.Add(rdpTestClipPDU(5, 1, []byte{0x3d, 0xd8, 0, 0xde, 0, 0}), false)

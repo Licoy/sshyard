@@ -11,6 +11,23 @@ func rdpTestFastUpdate(head byte, data []byte) []byte {
 	return append(packet, data...)
 }
 
+func TestRDPFastOutputCompressionFlags(t *testing.T) {
+	for _, flags := range []byte{0x80, 0x40, 0xc0} { // PACKET_FLUSHED, PACKET_AT_FRONT, or both.
+		var updates []Pointer
+		g := graphicsState{pointer: func(p Pointer) { updates = append(updates, p) }}
+		// A system pointer update with compression flags and an empty body.
+		if err := g.fastOutput([]byte{0x86, flags, 0, 0}); err != nil {
+			t.Errorf("fast-path flags %#x rejected: %v", flags, err)
+		} else if len(updates) != 1 || !updates[0].Default {
+			t.Errorf("fast-path flags %#x produced pointer updates %+v", flags, updates)
+		}
+		updates = nil
+		if err := g.fastOutput([]byte{0x86, flags | 0x20, 0, 0}); err == nil || len(updates) != 0 {
+			t.Errorf("compressed fast-path flags %#x produced pointer updates %+v, err=%v", flags|0x20, updates, err)
+		}
+	}
+}
+
 func TestRDPFastOutputFragmentSequence(t *testing.T) {
 	var position image.Point
 	g := graphicsState{position: func(p image.Point) { position = p }}
