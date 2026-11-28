@@ -81,7 +81,8 @@ func readDataPDU(p []byte) (uint32, byte, []byte, error) {
 	}
 	// Windows versions have left uncompressedLength uninitialized. The enclosing
 	// share control length bounds uncompressed data (MS-RDPBCGR 4.1.18).
-	if p[9] != 0 || binary.LittleEndian.Uint16(p[10:]) != 0 {
+	// Only PACKET_COMPRESSED says the data is (MS-RDPBCGR 2.2.8.1.1.1.2).
+	if p[9]&0x20 != 0 {
 		return 0, 0, nil, protocolError("RDP bulk compression was not negotiated")
 	}
 	return binary.LittleEndian.Uint32(p), p[8], p[12:], nil

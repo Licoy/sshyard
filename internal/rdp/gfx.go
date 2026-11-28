@@ -64,7 +64,9 @@ func (g *graphicsState) fastOutput(data []byte) error {
 			if len(data) == 0 {
 				return fmt.Errorf("short RDP fast-path compression flags")
 			}
-			if data[0]&0xe0 != 0 {
+			// Only PACKET_COMPRESSED says the data is: a server may flag a
+			// flush (or "at front") with no compression negotiated.
+			if data[0]&0x20 != 0 {
 				return fmt.Errorf("RDP bulk compression was not negotiated")
 			}
 			data = data[1:]

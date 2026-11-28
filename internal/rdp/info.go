@@ -43,8 +43,8 @@ func clientInfo(cfg Config, local net.Addr, protocol uint32, password []uint16, 
 	if err != nil {
 		return nil, err
 	}
-	const infoFlags = 0x00000001 | 0x00000002 | 0x00000010 | 0x00000040 | 0x00000100 | 0x00010000 | 0x00020000 | 0x00080000
-	flags := uint32(infoFlags) // Mouse, SAS, Unicode, logon notifications, Windows keys, logon errors, wheel, no audio playback.
+	const infoFlags = 0x00000001 | 0x00000002 | 0x00000010 | 0x00000020 | 0x00000040 | 0x00000100 | 0x00010000 | 0x00020000 | 0x00080000
+	flags := uint32(infoFlags) // Mouse, no Ctrl+Alt+Del screen, Unicode, maximized shell (which xrdp requires), logon notifications, Windows keys, logon errors, wheel, no audio playback.
 	if protocol == protocolTLS && len(password) > 0 && len(arc) == 0 {
 		flags |= 0x0008 // INFO_AUTOLOGON
 	} else {

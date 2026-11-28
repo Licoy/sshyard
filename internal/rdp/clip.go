@@ -45,10 +45,11 @@ func (e *clipboardInputError) Error() string { return e.message }
 // receiveClipboard processes MS-RDPECLIP control and data PDUs.
 func (v *virtualChannels) receiveClipboard(p []byte) error {
 	le := binary.LittleEndian
-	if len(p) < 8 || len(p) > maxClipboardPDU || le.Uint32(p[4:]) != uint32(len(p)-8) {
+	// Some servers pad a PDU past its dataLen: what follows it is ignored.
+	if len(p) < 8 || len(p) > maxClipboardPDU || uint64(le.Uint32(p[4:])) > uint64(len(p)-8) {
 		return protocolError("invalid RDP clipboard header")
 	}
-	kind, flags, data := le.Uint16(p), le.Uint16(p[2:]), p[8:]
+	kind, flags, data := le.Uint16(p), le.Uint16(p[2:]), p[8:8+le.Uint32(p[4:])]
 	c := &v.clipboard
 	switch kind {
 	case clipCaps:

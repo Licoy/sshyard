@@ -199,7 +199,8 @@ func (l *licenseExchange) alert(p []byte) error {
 	}
 	code, state := binary.LittleEndian.Uint32(p), binary.LittleEndian.Uint32(p[4:])
 	kind, details, rest, ok := readLicenseBlob(p[8:])
-	if !ok || (kind != 4 && (kind != 0 || len(details) != 0)) || len(rest) != 0 {
+	// An empty blob's type means nothing: some servers send any.
+	if !ok || (kind != 4 && len(details) != 0) || len(rest) != 0 {
 		return malformedLicense("invalid RDP licensing error details")
 	}
 	switch state {
