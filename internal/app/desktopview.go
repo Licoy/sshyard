@@ -516,12 +516,14 @@ func (a *App) desktopInput(d *desktop, ev ui.InputEvent, svc ui.Services) bool {
 		if ev.Key == ui.KeyV && (ev.Mods&ui.Ctrl != 0 || ev.Mods&ui.Shift != 0) || ev.Key == ui.KeyInsert && ev.Mods&ui.Shift != 0 {
 			d.offerClipboard(svc)
 		}
-		return d.key(ev.Code, true)
+		d.keyed = d.key(keyCode(ev), true)
+		return d.keyed
 	case ui.InputKeyUp:
+		d.keyed = false
 		if d.composing {
 			return false
 		}
-		return d.key(ev.Code, false)
+		return d.key(keyCode(ev), false)
 	case ui.InputCompose:
 		d.composing = ev.Text != ""
 		if d.composing {
@@ -529,12 +531,14 @@ func (a *App) desktopInput(d *desktop, ev ui.InputEvent, svc ui.Services) bool {
 		}
 		return false
 	case ui.InputText:
-		// Typed keys went as keys; what an input method commits goes as
-		// text.
-		if !d.composed && !d.composing {
+		// A key sent as a key typed its text on the remote side; what an
+		// input method commits, or text with no key (an emoji picker,
+		// dictation), goes as text.
+		if d.keyed && !d.composed && !d.composing {
+			d.keyed = false
 			return true
 		}
-		d.composed, d.composing = false, false
+		d.keyed, d.composed, d.composing = false, false, false
 		for _, r := range ev.Text {
 			d.s.Unicode(r, true)
 			d.s.Unicode(r, false)
@@ -604,6 +608,23 @@ func (d *desktop) key(code ui.KeyCode, down bool) bool {
 		d.sendCode(ui.CodeSuperLeft, true)
 	}
 	return d.sendCode(code, down)
+}
+
+// namedCodes are the physical keys of the keys that type no text, for a
+// key event that names no physical key: its text, if any, goes as text.
+var namedCodes = map[ui.Key]ui.KeyCode{
+	ui.KeyEnter: ui.CodeEnter, ui.KeyEscape: ui.CodeEscape, ui.KeyBackspace: ui.CodeBackspace,
+	ui.KeyTab: ui.CodeTab, ui.KeyDelete: ui.CodeDelete, ui.KeyHome: ui.CodeHome, ui.KeyEnd: ui.CodeEnd,
+	ui.KeyPageUp: ui.CodePageUp, ui.KeyPageDown: ui.CodePageDown, ui.KeyLeft: ui.CodeArrowLeft,
+	ui.KeyRight: ui.CodeArrowRight, ui.KeyUp: ui.CodeArrowUp, ui.KeyDown: ui.CodeArrowDown,
+}
+
+// keyCode is the physical key of key event ev.
+func keyCode(ev ui.InputEvent) ui.KeyCode {
+	if ev.Code != 0 {
+		return ev.Code
+	}
+	return namedCodes[ev.Key]
 }
 
 // sendCode sends the scancode of code; false for a key RDP has none for.

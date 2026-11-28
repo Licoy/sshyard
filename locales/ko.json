@@ -2733,6 +2733,7 @@
   "rdpCertExpires": "만료: {date}",
   "rdpCertSaved": "신뢰함: {fingerprint}",
   "rdpCertOffered": "현재: SHA-256 {fingerprint}",
+  "rdpCertVerifyHint": "신뢰하기 전에 서버의 지문과 비교하세요. Windows에서는 certlm.msc의 원격 데스크톱 아래 인증서의 SHA-256 지문이고, xrdp에서는 openssl x509 -noout -fingerprint -sha256 -in /etc/xrdp/cert.pem을 실행합니다.",
   "fieldDevice": "직렬 포트",
   "refreshPorts": "직렬 포트 새로 고침",
   "noSerialPorts": "직렬 포트를 찾지 못했습니다. 장치 이름을 직접 입력하세요.",

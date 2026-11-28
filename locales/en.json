@@ -2733,6 +2733,7 @@
   "rdpCertExpires": "Expires: {date}",
   "rdpCertSaved": "Trusted: {fingerprint}",
   "rdpCertOffered": "Now: SHA-256 {fingerprint}",
+  "rdpCertVerifyHint": "Before trusting it, compare the fingerprint with the server's: on Windows, the SHA-256 thumbprint of the certificate under Remote Desktop in certlm.msc; with xrdp, openssl x509 -noout -fingerprint -sha256 -in /etc/xrdp/cert.pem.",
   "fieldDevice": "Serial port",
   "refreshPorts": "Refresh serial ports",
   "noSerialPorts": "No serial ports found. Type the device name instead.",

@@ -18401,6 +18401,16 @@ func (msgs Messages) RdpCertOffered(fingerprint string) string {
 	return Catalog.Format(msgs.locale, "rdpCertOffered", map[string]any{"fingerprint": fingerprint})
 }
 
+// RdpCertVerifyHint says "Before trusting it, compare the fingerprint with the server's: on Windows, the SHA-256 thumbprint of the certificate …"
+// in the language the app shows.
+func RdpCertVerifyHint() string { return In(i18n.Locale()).RdpCertVerifyHint() }
+
+// RdpCertVerifyHint says "Before trusting it, compare the fingerprint with the server's: on Windows, the SHA-256 thumbprint of the certificate …"
+// in the language of msgs.
+func (msgs Messages) RdpCertVerifyHint() string {
+	return Catalog.Format(msgs.locale, "rdpCertVerifyHint", nil)
+}
+
 // FieldDevice says "Serial port"
 // in the language the app shows.
 func FieldDevice() string { return In(i18n.Locale()).FieldDevice() }

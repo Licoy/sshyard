@@ -2010,6 +2010,7 @@
   "rdpCertExpires": "到期：{date}",
   "rdpCertSaved": "已信任：{fingerprint}",
   "rdpCertOffered": "現在：SHA-256 {fingerprint}",
+  "rdpCertVerifyHint": "信任前請與伺服器上的指紋核對：Windows 上為 certlm.msc 中「遠端桌面」下憑證的 SHA-256 指紋；xrdp 可執行 openssl x509 -noout -fingerprint -sha256 -in /etc/xrdp/cert.pem。",
   "fieldDevice": "序列埠裝置",
   "refreshPorts": "重新整理序列埠清單",
   "noSerialPorts": "未找到序列埠，可直接輸入裝置名稱。",

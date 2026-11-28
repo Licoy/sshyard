@@ -2010,6 +2010,7 @@
   "rdpCertExpires": "到期：{date}",
   "rdpCertSaved": "已信任：{fingerprint}",
   "rdpCertOffered": "现在：SHA-256 {fingerprint}",
+  "rdpCertVerifyHint": "信任前请与服务器上的指纹核对：Windows 上为 certlm.msc 中“远程桌面”下证书的 SHA-256 指纹；xrdp 可运行 openssl x509 -noout -fingerprint -sha256 -in /etc/xrdp/cert.pem。",
   "fieldDevice": "串口设备",
   "refreshPorts": "刷新串口列表",
   "noSerialPorts": "未发现串口，可直接输入设备名。",

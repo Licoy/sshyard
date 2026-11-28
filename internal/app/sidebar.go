@@ -4,6 +4,7 @@ import (
 	"github.com/Licoy/sshyard/internal/assets"
 	"github.com/Licoy/sshyard/internal/icons"
 	"github.com/Licoy/sshyard/internal/layout"
+	"github.com/Licoy/sshyard/internal/rdp"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/internal/theme"
 	"github.com/Licoy/sshyard/locales"
@@ -141,17 +142,22 @@ func (a *App) sidebarView(c *ui.Context, m locales.Messages, tok theme.Tokens) {
 	})
 }
 
-// connectedCount counts shared SSH clients once, excluding local shells.
+// connectedCount counts shared SSH clients once, excluding local shells,
+// and the remote desktops connected.
 func (a *App) connectedCount() int {
 	clients := make(map[*ssh.Client]struct{})
+	desktops := 0
 	for _, cn := range a.conns {
+		if cn.rd != nil && cn.rd.s.Status().State == rdp.Connected {
+			desktops++
+		}
 		if cn.s != nil {
 			if client := cn.s.Client(); client != nil {
 				clients[client] = struct{}{}
 			}
 		}
 	}
-	return len(clients)
+	return len(clients) + desktops
 }
 
 // ungroupedDrops takes the hosts and groups dropped on the ungrouped

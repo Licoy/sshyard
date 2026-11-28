@@ -70,6 +70,9 @@ type desktop struct {
 	// composing is whether an input method composes text, composed
 	// whether what it commits next goes as text.
 	composed bool
+	// keyed is whether the key down last was sent as a key, so the text
+	// it types is not sent again.
+	keyed bool
 	// winPending is the Command key held on macOS, not yet sent as the
 	// Windows key; winDown whether it was.
 	winPending, winDown bool

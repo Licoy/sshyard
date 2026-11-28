@@ -13,6 +13,7 @@ import (
 	"github.com/Licoy/sshyard/internal/rdp"
 	"github.com/Licoy/sshyard/internal/session"
 	"github.com/Licoy/sshyard/locales"
+	"github.com/egoist/mygo/ui"
 )
 
 // testFingerprint is a well-formed SHA-256 certificate fingerprint.
@@ -221,5 +222,19 @@ func TestResetDeletesRDPCerts(t *testing.T) {
 	}
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Fatalf("%s kept after the reset: %v", rdp.KnownCertsFile, err)
+	}
+}
+
+// TestDesktopKeyCode: a key event's physical key goes to the desktop;
+// one naming none still sends the keys that type no text.
+func TestDesktopKeyCode(t *testing.T) {
+	if got := keyCode(ui.InputEvent{Key: ui.KeyA, Code: ui.CodeEnter}); got != ui.CodeEnter {
+		t.Fatalf("physical key %v, want Enter", got)
+	}
+	if got := keyCode(ui.InputEvent{Key: ui.KeyEnter}); got != ui.CodeEnter {
+		t.Fatalf("Enter with no physical key gave %v", got)
+	}
+	if got := keyCode(ui.InputEvent{Key: ui.KeyA}); got != 0 {
+		t.Fatalf("a letter with no physical key gave %v, want none (its text goes as text)", got)
 	}
 }

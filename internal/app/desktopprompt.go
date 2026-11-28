@@ -142,7 +142,7 @@ func (a *App) desktopCertView(c *ui.Context, m locales.Messages) {
 				}
 				ui.Text(c, m.RdpCertOffered(k.err.Fingerprint)).FontSize(theme.Caption).FontWeight(600).Selectable()
 			})
-			ui.Text(c, m.HostKeyVerifyHint()).FontSize(theme.Caption).TextColor(tok.TextMuted)
+			ui.Text(c, m.RdpCertVerifyHint()).FontSize(theme.Caption).TextColor(tok.TextMuted)
 			ui.Row(c).Gap(8).Margin(4, 0, 0, 0).Children(func() {
 				ui.Spacer(c)
 				if pill(c, m.Cancel(), false, false, false) {

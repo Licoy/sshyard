@@ -2010,6 +2010,7 @@
   "rdpCertExpires": "有効期限: {date}",
   "rdpCertSaved": "信頼済み: {fingerprint}",
   "rdpCertOffered": "現在: SHA-256 {fingerprint}",
+  "rdpCertVerifyHint": "信頼する前に、サーバー側の指紋と照合してください。Windows では certlm.msc の「リモート デスクトップ」にある証明書の SHA-256 拇印、xrdp では openssl x509 -noout -fingerprint -sha256 -in /etc/xrdp/cert.pem で確認できます。",
   "fieldDevice": "シリアルポート",
   "refreshPorts": "シリアルポートを再読み込み",
   "noSerialPorts": "シリアルポートが見つかりません。デバイス名を直接入力してください。",
