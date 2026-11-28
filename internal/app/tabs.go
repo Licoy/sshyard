@@ -131,6 +131,23 @@ func (a *App) tabs(c *ui.Context, m locales.Messages, tok theme.Tokens) {
 		a.tabRoom = room
 		c.Invalidate()
 	}
+	// A tab, or a pane's header, dropped on the bar off the tabs goes
+	// after the last.
+	var last *layout.Tab
+	if n > 0 {
+		last = a.ws.Tabs[n-1]
+	}
+	s, toEnd := ui.DragOver[dragSession](area)
+	toEnd = toEnd && last != nil && a.tabTakes(s, last)
+	if s, ok := ui.Drop[dragSession](area); ok && last != nil && a.tabTakes(s, last) {
+		id := last.ID
+		if s.Tab == 0 {
+			a.post(func() { a.paneToTab(s.ID, id, true) })
+		} else if a.ws.MoveTab(s.Tab, id, true) {
+			a.saveLayout()
+			c.Invalidate()
+		}
+	}
 	// A copy: closing tabs from one's menu changes the list as it builds.
 	shown := slices.Clone(a.ws.Tabs[start : start+k])
 	// Read when the tabs paint, once all have been built.
@@ -143,6 +160,13 @@ func (a *App) tabs(c *ui.Context, m locales.Messages, tok theme.Tokens) {
 				lead = 0 // the first tab stands on the sidebar's separator
 			}
 			track := ui.Row(c.Key("tabs")).Shrink(1).MinWidth(0).Height(tabHeight).Padding(0, tabInset, 0, lead).Gap(tabGap).AlignItems(ui.End)
+			if toEnd {
+				// Where it goes: after the last tab shown.
+				foot := max(bandHeight(c)-tabHeight, 0)
+				track.DrawOver(func(p *ui.Painter, r ui.Rect) {
+					p.Fill(ui.Rect{X: r.X + r.W - tabInset, Y: r.Y + 6, W: 2, H: r.H - foot - 12}, tok.Accent, 1)
+				})
+			}
 			track.Children(func() {
 				for j, t := range shown {
 					i := start + j
@@ -338,13 +362,14 @@ func (a *App) tab(c *ui.Context, m locales.Messages, tok theme.Tokens, fill ui.C
 
 // tabDrops makes the tab t, whose chip it is, take another tab dropped on
 // it, which goes before t or after it as the pointer is over t's first half
-// or its second; while one is dragged over, an accent line shows where. It
-// reports whether one is.
+// or its second, or a pane's header, whose pane goes there in a tab of its
+// own; while one is dragged over, an accent line shows where. It reports
+// whether one is.
 func (a *App) tabDrops(c *ui.Context, chip ui.Element, t *layout.Tab, tok theme.Tokens, foot float32) bool {
 	x, _, _ := chip.PointerPosition()
 	after := x >= chip.Bounds().W/2
 	s, over := ui.DragOver[dragSession](chip)
-	over = over && s.Tab != 0 && s.Tab != t.ID
+	over = over && a.tabTakes(s, t)
 	if over {
 		chip.DrawOver(func(p *ui.Painter, r ui.Rect) {
 			if after {
@@ -353,11 +378,26 @@ func (a *App) tabDrops(c *ui.Context, chip ui.Element, t *layout.Tab, tok theme.
 			p.Fill(ui.Rect{X: r.X, Y: r.Y + 6, W: 2, H: r.H - foot - 12}, tok.Accent, 1)
 		})
 	}
-	if s, ok := ui.Drop[dragSession](chip); ok && s.Tab != 0 && a.ws.MoveTab(s.Tab, t.ID, after) {
-		a.saveLayout()
-		c.Invalidate()
+	if s, ok := ui.Drop[dragSession](chip); ok && a.tabTakes(s, t) {
+		if s.Tab == 0 {
+			// After the frame, which is walking the tabs.
+			a.post(func() { a.paneToTab(s.ID, t.ID, after) })
+		} else if a.ws.MoveTab(s.Tab, t.ID, after) {
+			a.saveLayout()
+			c.Invalidate()
+		}
 	}
 	return over
+}
+
+// tabTakes reports whether the chip of tab t takes drag s: another tab,
+// or the header of a pane of this window, unless it is alone in t.
+func (a *App) tabTakes(s dragSession, t *layout.Tab) bool {
+	if s.Tab != 0 {
+		return s.Tab != t.ID
+	}
+	st, p := a.ws.Locate(s.ID)
+	return st != nil && !(st == t && st.Root == p)
 }
 
 // tabEdge draws the active tab in r into the content below it: its flare,

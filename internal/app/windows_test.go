@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/Licoy/sshyard/internal/layout"
@@ -79,6 +80,85 @@ func TestWindowMovesKeepSessions(t *testing.T) {
 	waitFor(t, tt, "empty window closed", func() bool { return len(a.wins) == 1 })
 	if _, _, closed, _ := tw.state(); !closed || len(a.main.ws.Tabs) != 2 {
 		t.Fatal("empty window kept")
+	}
+}
+
+// A pane split off, or a tab separated, makes tabs in the window it is in,
+// from outside its frames too, keeping the sessions.
+func TestSeparateIntoTabsInItsWindow(t *testing.T) {
+	a, _ := newTestApp(t)
+	fakeWindows(a)
+	one, two := openLocal(t, a), openLocal(t, a) // two splits one's tab
+	a.movePaneToNewWindow(two)
+	w := a.wins[1]
+	a.winState = w
+	three := openLocal(t, a) // splits two's tab in w
+	if len(w.ws.Tabs) != 1 || len(w.ws.Tabs[0].Panes()) != 2 {
+		t.Fatalf("w tabs %d", len(w.ws.Tabs))
+	}
+	s3 := a.conns[three].s
+	a.winState = a.main
+	if a.paneToNewTab(one) {
+		t.Fatal("split off a lone pane")
+	}
+	if !a.paneToNewTab(three) || len(w.ws.Tabs) != 2 || len(a.main.ws.Tabs) != 1 || a.winState != a.main {
+		t.Fatalf("split off: w tabs %d, main tabs %d", len(w.ws.Tabs), len(a.main.ws.Tabs))
+	}
+	if w.ws.Active != 1 || w.ws.ActiveTab().Focused().ID != three || w.focusReq != three || a.conns[three].s != s3 {
+		t.Fatal("split-off pane not shown with its session")
+	}
+	// Back in one tab, then separated.
+	a.winState = w
+	if !a.ws.Move(three, w.ws.Tabs[0].Root.ID, layout.Bottom) || len(w.ws.Tabs) != 1 {
+		t.Fatal("regroup")
+	}
+	tab := w.ws.Tabs[0].ID
+	a.winState = a.main
+	if !a.separateTab(tab) || len(w.ws.Tabs) != 2 || a.winState != a.main {
+		t.Fatalf("separate: w tabs %d", len(w.ws.Tabs))
+	}
+	if a.winOf(two) != w || a.winOf(three) != w || a.conns[two] == nil || a.conns[three].s != s3 {
+		t.Fatal("sessions not kept in w")
+	}
+	if a.separateTab(tab) || a.separateTab(-1) {
+		t.Fatal("separated a lone pane or a missing tab")
+	}
+}
+
+// A pane's header dropped on a tab takes the pane out to a tab of its own
+// beside it; a pane alone in its tab takes its tab there.
+func TestPaneDroppedOnTabBar(t *testing.T) {
+	a, _ := newTestApp(t)
+	one, two := openLocal(t, a), openLocal(t, a) // two splits one's tab
+	three := openLocal(t, a)
+	if !a.ws.Detach(three) || len(a.ws.Tabs) != 2 {
+		t.Fatal("setup")
+	}
+	order := func() []int {
+		var out []int
+		for _, x := range a.ws.Tabs {
+			out = append(out, x.Root.Item.ID)
+		}
+		return out
+	}
+	first, last := a.ws.Tabs[0], a.ws.Tabs[1]
+	if a.tabTakes(dragSession{ID: three}, last) || !a.tabTakes(dragSession{ID: three}, first) || !a.tabTakes(dragSession{ID: two}, first) {
+		t.Fatal("what a tab takes")
+	}
+	// Two, split with one, dropped after the last tab.
+	s2 := a.conns[two].s
+	if !a.paneToTab(two, last.ID, true) || !slices.Equal(order(), []int{one, three, two}) {
+		t.Fatalf("tabs %v", order())
+	}
+	if a.ws.ActiveTab().Focused().ID != two || a.focusReq != two || a.conns[two].s != s2 {
+		t.Fatal("dropped pane not shown with its session")
+	}
+	// Three, alone in its tab, takes it before the first.
+	if !a.paneToTab(three, first.ID, false) || !slices.Equal(order(), []int{three, one, two}) || len(a.ws.Tabs) != 3 {
+		t.Fatalf("tab moved %v", order())
+	}
+	if a.paneToTab(-1, first.ID, false) {
+		t.Fatal("moved a missing pane")
 	}
 }
 

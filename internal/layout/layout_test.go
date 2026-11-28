@@ -400,3 +400,65 @@ func TestSiblingMoves(t *testing.T) {
 		t.Fatal("last pane taken leaves the tab")
 	}
 }
+
+func TestDetachGoesBesideItsTab(t *testing.T) {
+	w := New()
+	w.Open(T(1))
+	w.SplitFocused(Row, T(2))
+	w.Open(T(3))
+	if !w.Detach(2) {
+		t.Fatal("detach")
+	}
+	var got [][]int
+	for _, tab := range w.Tabs {
+		got = append(got, sessions(tab))
+	}
+	if len(got) != 3 || !slices.Equal(got[0], []int{1}) || !slices.Equal(got[1], []int{2}) || !slices.Equal(got[2], []int{3}) {
+		t.Fatalf("tabs %v", got)
+	}
+	if w.Active != 1 || w.ActiveTab().Focused().ID != 2 {
+		t.Fatalf("shown %d", w.Active)
+	}
+}
+
+func TestUngroup(t *testing.T) {
+	w := New()
+	w.Open(T(9))
+	w.Open(T(1))
+	w.SplitFocused(Row, T(2))
+	w.SplitFocused(Column, F(3))
+	w.Open(T(8))
+	tab := w.Tabs[1]
+	tab.Title, tab.Color = "web", "blue"
+	w.Activate(2)
+	if !w.Ungroup(tab.ID) {
+		t.Fatal("ungroup")
+	}
+	var got [][]int
+	for _, x := range w.Tabs {
+		got = append(got, sessions(x))
+	}
+	want := [][]int{{9}, {1}, {2}, {3}, {8}}
+	if !slices.EqualFunc(got, want, slices.Equal[[]int]) {
+		t.Fatalf("tabs %v, want %v", got, want)
+	}
+	if w.Tabs[1] != tab || tab.Title != "web" || tab.Color != "blue" || w.Tabs[2].Title != "" || w.Tabs[2].Color != "" {
+		t.Error("the first pane keeps the tab, its name and color")
+	}
+	if w.Active != 2 {
+		t.Errorf("shown %d, want the focused pane's tab", w.Active)
+	}
+	ids := map[int]bool{}
+	for _, x := range w.Tabs {
+		if ids[x.ID] {
+			t.Fatalf("tab ID %d twice", x.ID)
+		}
+		ids[x.ID] = true
+		if x.Focus != x.Root.ID || !x.Root.Leaf() {
+			t.Errorf("tab %d is not one focused pane", x.ID)
+		}
+	}
+	if w.Ungroup(tab.ID) || w.Ungroup(-1) {
+		t.Error("ungrouped a lone pane or a missing tab")
+	}
+}

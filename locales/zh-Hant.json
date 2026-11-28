@@ -2243,6 +2243,8 @@
   "newWindow": "新增視窗",
   "moveToNewWindow": "移至新視窗",
   "moveToWindow": "移至視窗",
+  "moveToNewTab": "移至新分頁",
+  "separateIntoTabs": "拆成獨立分頁",
   "mainWindow": "主視窗",
   "windowNumber": "視窗 {n}",
   "closeWindowTitle": "關閉此視窗？",

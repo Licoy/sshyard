@@ -393,6 +393,63 @@ func (a *App) landed(dst *winState, t *layout.Tab) {
 	a.invalidate()
 }
 
+// paneToNewTab moves the pane showing id out of its tab to a tab of its
+// own just after it, in the same window, and shows it.
+func (a *App) paneToNewTab(id int) bool { return a.paneToTab(id, 0, false) }
+
+// paneToTab moves the pane showing id, dropped on the tab bar, beside the
+// tab of ID tabID in the same window, before it or after it: out of its
+// tab to a tab of its own, which it shows, or, alone in its tab, with its
+// tab. With tabID 0 the new tab goes just after the one it leaves.
+func (a *App) paneToTab(id, tabID int, after bool) bool {
+	defer a.enterOf(id)()
+	t, p := a.ws.Locate(id)
+	if t == nil {
+		return false
+	}
+	if t.Root == p {
+		if tabID == 0 || !a.ws.MoveTab(t.ID, tabID, after) {
+			return false
+		}
+		a.saveLayout()
+		a.invalidate()
+		return true
+	}
+	a.ws.Detach(id)
+	if tabID != 0 {
+		a.ws.MoveTab(a.ws.ActiveTab().ID, tabID, after)
+	}
+	a.showSplitOff(a.ws.ActiveTab())
+	return true
+}
+
+// separateTab splits the tab of ID tabID into a tab for each of its panes,
+// in the same window, and shows the one of the pane that was focused.
+func (a *App) separateTab(tabID int) bool {
+	i := slices.IndexFunc(a.wins, func(w *winState) bool {
+		return slices.ContainsFunc(w.ws.Tabs, func(t *layout.Tab) bool { return t.ID == tabID })
+	})
+	if i < 0 {
+		return false
+	}
+	defer a.enter(a.wins[i])()
+	if !a.ws.Ungroup(tabID) {
+		return false
+	}
+	a.showSplitOff(a.ws.ActiveTab())
+	return true
+}
+
+// showSplitOff shows tab t, just split off in the current window, with
+// the keyboard on its focused pane.
+func (a *App) showSplitOff(t *layout.Tab) {
+	a.settleFocus(t)
+	a.page = pageWorkspace
+	a.focusReq = t.Focused().ID
+	a.saveLayout()
+	a.invalidate()
+}
+
 // moveTabToNewWindow moves the tab of ID tabID to a new window, its
 // top-left corner at x, y on the screen when placed.
 func (a *App) moveTabToNewWindow(tabID int, x, y int, placed bool) {
@@ -488,9 +545,21 @@ func (a *App) tearPane(c *ui.Context, el ui.Element, id int) {
 }
 
 // windowEntries are the menu entries moving the tab of ID tabID, or the
-// pane id when tabID is 0, to a new window or another one.
+// pane id when tabID is 0, to a new window or another one, led by the one
+// separating the tab into a tab for each of its panes, or moving the pane
+// out to a tab of its own.
 func (a *App) windowEntries(m locales.Messages, tabID, id int) []menuEntry {
 	cur := a.winState
+	var apart menuEntry
+	if tabID != 0 {
+		t := cur.ws.Tabs[slices.IndexFunc(cur.ws.Tabs, func(t *layout.Tab) bool { return t.ID == tabID })]
+		apart = menuEntry{Icon: icons.OpenInTab, Label: m.SeparateIntoTabs(), Disabled: len(t.Panes()) < 2,
+			Do: func() { a.post(func() { a.separateTab(tabID) }) }}
+	} else {
+		t, p := cur.ws.Locate(id)
+		apart = menuEntry{Icon: icons.OpenInTab, Label: m.MoveToNewTab(), Disabled: t == nil || t.Root == p,
+			Do: func() { a.post(func() { a.paneToNewTab(id) }) }}
+	}
 	// After the frame, which may still be walking the tabs.
 	toNew := func() {
 		a.post(func() {
@@ -503,7 +572,7 @@ func (a *App) windowEntries(m locales.Messages, tabID, id int) []menuEntry {
 	}
 	// The only pane of another window would only move.
 	single := cur != a.main && len(cur.ws.Tabs) == 1 && len(cur.ws.Tabs[0].Panes()) == 1
-	entries := []menuEntry{{Icon: icons.ToWindow, Label: m.MoveToNewWindow(), Disabled: single, Do: toNew}}
+	entries := []menuEntry{apart, {Icon: icons.ToWindow, Label: m.MoveToNewWindow(), Disabled: single, Do: toNew}}
 	var others []menuEntry
 	for _, w := range a.wins {
 		if w == cur || w.gone {

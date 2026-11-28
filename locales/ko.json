@@ -2966,6 +2966,8 @@
   "newWindow": "새 창",
   "moveToNewWindow": "새 창으로 이동",
   "moveToWindow": "창으로 이동",
+  "moveToNewTab": "새 탭으로 이동",
+  "separateIntoTabs": "개별 탭으로 분리",
   "mainWindow": "기본 창",
   "windowNumber": "창 {n}",
   "closeWindowTitle": "이 창을 닫을까요?",

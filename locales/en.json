@@ -2966,6 +2966,8 @@
   "newWindow": "New Window",
   "moveToNewWindow": "Move to New Window",
   "moveToWindow": "Move to Window",
+  "moveToNewTab": "Move to New Tab",
+  "separateIntoTabs": "Separate into Tabs",
   "mainWindow": "Main Window",
   "windowNumber": "Window {n}",
   "closeWindowTitle": "Close This Window?",
