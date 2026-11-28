@@ -99,9 +99,7 @@ func normalizeConfig(cfg Config) Config {
 	if cfg.Scale == 0 {
 		cfg.Scale = 100
 	}
-	if cfg.ClientName == "" {
-		cfg.ClientName = "SSHYard"
-	}
+	cfg.ClientName = normalizeRDPClientName(cfg.ClientName)
 	if cfg.KeyboardLayout == 0 {
 		cfg.KeyboardLayout = 0x0409 // en-US physical keyboard layout
 	}

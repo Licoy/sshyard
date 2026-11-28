@@ -126,13 +126,16 @@ func (l *licenseExchange) request(p []byte) error {
 		return err
 	}
 	l.macKey, l.cipherKey = deriveLicenseKeys(premaster[:], clientRandom[:], req.serverRandom)
-	l.hwid = licenseHardwareID(l.cfg.ClientName)
+	l.hwid, err = licenseHardwareID(l.cfg.ClientName)
+	if err != nil {
+		return err
+	}
 	body := binary.LittleEndian.AppendUint32(nil, 1) // KEY_EXCHANGE_ALG_RSA
 	body = binary.LittleEndian.AppendUint32(body, licensePlatformID)
 	body = append(body, clientRandom[:]...)
 	body = appendLicenseBlob(body, 2, ciphertext)
 	l.state = licenseAwaitChallenge
-	if l.cached != nil && l.cached.matches(req) {
+	if l.cached != nil && l.cached.hwid == l.hwid && l.cached.matches(req) {
 		body = appendLicenseBlob(body, 1, l.cached.value)
 		body = appendLicenseBlob(body, 9, cryptLicense(l.cipherKey, l.hwid[:]))
 		body = append(body, licenseMAC(l.macKey, l.hwid[:])...)
@@ -183,6 +186,7 @@ func (l *licenseExchange) acceptLicense(kind byte, p []byte) error {
 	if err != nil {
 		return err
 	}
+	license.hwid = l.hwid
 	l.issued = license
 	l.state = licenseComplete
 	l.clearKeys()
@@ -249,14 +253,17 @@ func licensePacketName(kind byte) string {
 	}
 }
 
-func licenseHardwareID(name string) [20]byte {
+func licenseHardwareID(name string) ([20]byte, error) {
 	// Hash the client and host names into a stable 16-byte identifier.
-	host, _ := os.Hostname()
-	digest := sha256.Sum256([]byte(name + "\x00" + host))
 	var id [20]byte
+	host, err := os.Hostname()
+	if err != nil {
+		return id, &Error{Kind: KindLicense, Err: fmt.Errorf("read RDP licensing host name: %w", err)}
+	}
+	digest := sha256.Sum256([]byte(name + "\x00" + host))
 	binary.LittleEndian.PutUint32(id[:], licensePlatformID)
 	copy(id[4:], digest[:])
-	return id
+	return id, nil
 }
 
 func licenseName(s string) []byte {

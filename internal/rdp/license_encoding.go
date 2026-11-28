@@ -23,6 +23,7 @@ type rdpClientLicense struct {
 	licenseProduct
 	scope []byte
 	value []byte
+	hwid  [20]byte
 }
 
 func (l *rdpClientLicense) matches(r licenseRequest) bool {

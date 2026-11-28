@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"strings"
 	"testing"
 	"time"
 	"unicode/utf16"
@@ -35,6 +36,7 @@ func TestHandshake(t *testing.T) {
 	}{
 		{"TLS Channel Join", protocolTLS, 0, tls.VersionTLS13, false, false, false, KindOther, 1},
 		{"TLS 1.0 fallback", protocolTLS, 0, tls.VersionTLS10, true, false, false, KindOther, 2},
+		{"TLS 1.1 fallback", protocolTLS, 0, tls.VersionTLS11, true, false, false, KindOther, 2},
 		{"TLS certificate rejection", protocolTLS, 0, tls.VersionTLS13, false, true, false, KindCert, 1},
 		{"CredSSP v2", protocolHybrid, 2, tls.VersionTLS12, false, false, false, KindOther, 1},
 		{"CredSSP v3", protocolHybrid, 3, tls.VersionTLS12, false, false, false, KindOther, 1},
@@ -95,10 +97,17 @@ func TestHandshake(t *testing.T) {
 			if err := rdp.disconnect(); err != nil {
 				t.Fatal(err)
 			}
+			versionMismatches := 0
 			for i := 0; i < tc.wantDials; i++ {
-				if err := <-serve; err != nil && tc.tlsMax != tls.VersionTLS10 {
-					t.Fatal(err)
+				if err := <-serve; err != nil {
+					if !strings.HasPrefix(err.Error(), "tls: client offered only unsupported versions:") {
+						t.Fatal(err)
+					}
+					versionMismatches++
 				}
+			}
+			if versionMismatches != tc.wantDials-1 {
+				t.Fatalf("expected %d rejected TLS versions, got %d", tc.wantDials-1, versionMismatches)
 			}
 		})
 	}

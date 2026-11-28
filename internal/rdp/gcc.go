@@ -46,15 +46,7 @@ func clientCoreData(cfg Config, selected uint32) []byte {
 	le.PutUint16(p[10:], 0xaa03) // RNS_UD_SAS_DEL
 	le.PutUint32(p[12:], cfg.KeyboardLayout)
 	le.PutUint32(p[16:], 7601) // Windows 7 SP1-era core capabilities
-	name, _, _ := strings.Cut(cfg.ClientName, "\x00")
-	units := utf16.Encode([]rune(name))
-	if len(units) > 15 {
-		units = units[:15]
-		if units[14] >= 0xd800 && units[14] <= 0xdbff {
-			units = units[:14]
-		}
-	}
-	copy(p[20:52], rdpUTF16Bytes(units))
+	copy(p[20:52], ntlmUTF16(normalizeRDPClientName(cfg.ClientName)))
 	le.PutUint32(p[52:], 4)  // Enhanced keyboard
 	le.PutUint32(p[60:], 12) // Number of function keys
 	le.PutUint16(p[128:], 0xca01)
@@ -70,6 +62,23 @@ func clientCoreData(cfg Config, selected uint32) []byte {
 	le.PutUint32(p[222:], uint32(cfg.Scale))
 	le.PutUint32(p[226:], 100)
 	return gccBlock(0xc001, p)
+}
+
+// normalizeRDPClientName fits GCC's 15 UTF-16 code-unit limit while preserving
+// whole characters. Use the same name in Client Core, NTLM, and licensing.
+func normalizeRDPClientName(name string) string {
+	name, _, _ = strings.Cut(name, "\x00")
+	if name == "" {
+		return "SSHYard"
+	}
+	units := utf16.Encode([]rune(name))
+	if len(units) > 15 {
+		units = units[:15]
+		if units[14] >= 0xd800 && units[14] <= 0xdbff {
+			units = units[:14]
+		}
+	}
+	return string(utf16.Decode(units))
 }
 
 func gccBlock(kind uint16, p []byte) []byte {

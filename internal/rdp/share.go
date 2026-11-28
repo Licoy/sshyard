@@ -46,6 +46,7 @@ func dataPDU(userID uint16, shareID uint32, kind byte, body []byte) []byte {
 	p := make([]byte, 12, 12+len(body))
 	le.PutUint32(p, shareID)
 	p[5] = 1 // STREAM_LOW
+	// The client finalization examples in MS-RDPBCGR 4.1.14–4.1.16 use payload plus four.
 	le.PutUint16(p[6:], uint16(len(body)+4))
 	p[8] = kind
 	return controlPDU(userID, shareData, append(p, body...))

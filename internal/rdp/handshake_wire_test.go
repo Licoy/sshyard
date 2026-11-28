@@ -140,3 +140,17 @@ func TestHandshakeMCSFragmentedLength(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeRDPClientName(t *testing.T) {
+	for input, want := range map[string]string{
+		"":                  "SSHYard",
+		"\x00hidden":        "SSHYard",
+		"laptop\x00hidden":  "laptop",
+		"abcdefghijklm🌎end": "abcdefghijklm🌎",
+		"abcdefghijklmn🌎":   "abcdefghijklmn",
+	} {
+		if got := normalizeRDPClientName(input); got != want {
+			t.Errorf("client name %q = %q, want %q", input, got, want)
+		}
+	}
+}
