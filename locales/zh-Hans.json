@@ -255,6 +255,8 @@
   "keyPuttyConverted": "PuTTY 密钥，将转换为 OpenSSH 格式保存",
   "keyEncrypted": "已用口令加密",
   "askPassphraseEachTime": "不保存口令，每次运行时询问一次",
+  "keyAlsoPassword": "同时使用密码登录",
+  "keyAlsoPasswordHint": "适用于要求密钥和密码都通过的服务器（AuthenticationMethods publickey,password）。密码加密保存在本机。",
   "credUsedBy": "使用者：{names}",
   "credUnused": "没有主机使用",
   "credKeyRequired": "请载入、粘贴或生成一个私钥。",

@@ -255,6 +255,8 @@
   "keyPuttyConverted": "PuTTY鍵をOpenSSH形式で保持",
   "keyEncrypted": "パスフレーズで暗号化済み",
   "askPassphraseEachTime": "パスフレーズを保存せず、起動ごとに一度確認",
+  "keyAlsoPassword": "パスワードでもログイン",
+  "keyAlsoPasswordHint": "鍵とパスワードの両方を求めるサーバー向けです（AuthenticationMethods publickey,password）。パスワードはこのコンピュータに暗号化して保存されます。",
   "credUsedBy": "使用中：{names}",
   "credUnused": "どのホストも使用していません",
   "credKeyRequired": "秘密鍵を読み込むか、貼り付けるか、生成してください。",

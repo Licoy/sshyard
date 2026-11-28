@@ -255,6 +255,8 @@
   "keyPuttyConverted": "PuTTY 金鑰，將轉換為 OpenSSH 格式儲存",
   "keyEncrypted": "已用密碼短語加密",
   "askPassphraseEachTime": "不儲存密碼短語，每次執行時詢問一次",
+  "keyAlsoPassword": "同時使用密碼登入",
+  "keyAlsoPasswordHint": "適用於要求金鑰和密碼都通過的伺服器（AuthenticationMethods publickey,password）。密碼加密儲存在本機。",
   "credUsedBy": "使用者：{names}",
   "credUnused": "沒有主機使用",
   "credKeyRequired": "請載入、貼上或生成一個私鑰。",

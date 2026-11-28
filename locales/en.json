@@ -255,6 +255,8 @@
   "keyPuttyConverted": "PuTTY key, kept in OpenSSH form",
   "keyEncrypted": "Encrypted with a passphrase",
   "askPassphraseEachTime": "Don't save the passphrase; ask once each run",
+  "keyAlsoPassword": "Also log in with a password",
+  "keyAlsoPasswordHint": "For servers that want both the key and a password (AuthenticationMethods publickey,password). The password is saved encrypted on this computer.",
   "credUsedBy": "Used by {names}",
   "credUnused": "Not used by any host",
   "credKeyRequired": "Load, paste or generate a private key.",

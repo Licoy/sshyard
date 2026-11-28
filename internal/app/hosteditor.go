@@ -37,6 +37,10 @@ type hostForm struct {
 	auth      string
 	favorite  bool
 	cwdFollow bool
+	// keyPassword logs in with a saved password after the key, for a
+	// server that wants both; keyPasswordSaved is whether the host
+	// already keeps one (see hostSecretChanges)
+	keyPassword, keyPasswordSaved bool
 	// metricsIdx is 0 follow, 1 on, 2 off.
 	metricsIdx int
 	// proxy is the ID chosen in the proxy select ("" none); jumps the
@@ -205,6 +209,11 @@ func (a *App) openEditor(h *assets.Host) {
 				}
 				f.secret.orig = assets.Credential{Kind: assets.CredKey, KeyType: k.Type(), Fingerprint: k.Fingerprint(), Encrypted: k.Encrypted}
 			} else if !errors.Is(err, keychain.ErrNotFound) {
+				f.err = secretStoreErrorText(locales.In(a.settings.Language), err)
+			}
+			if saved, err := a.kc.Exists(keychain.Host(h.ID, keychain.Password)); err == nil {
+				f.keyPassword, f.keyPasswordSaved = saved, saved
+			} else if f.err == "" {
 				f.err = secretStoreErrorText(locales.In(a.settings.Language), err)
 			}
 		}

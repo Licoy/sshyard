@@ -143,7 +143,7 @@ func backupSecretKeys(snap assets.Snapshot, provs []settings.AIProvider) []strin
 			out = append(out, keychain.Host(h.ID, keychain.Password))
 		}
 		if h.Auth == assets.AuthKey {
-			out = append(out, keychain.Host(h.ID, keychain.PrivateKey), keychain.Host(h.ID, keychain.Passphrase))
+			out = append(out, keychain.Host(h.ID, keychain.PrivateKey), keychain.Host(h.ID, keychain.Passphrase), keychain.Host(h.ID, keychain.Password))
 		}
 		if h.Startup {
 			out = append(out, keychain.HostStartup(h.ID))

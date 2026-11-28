@@ -53,6 +53,10 @@ type Server struct {
 	// TrustedCA, when set, signs the user certificates that may log in,
 	// as OpenSSH's TrustedUserCAKeys: valid now, naming User.
 	TrustedCA ssh.PublicKey
+	// KeyThenPassword wants both, as OpenSSH's AuthenticationMethods
+	// publickey,password: an accepted key is a partial success, then the
+	// password logs in, and the password alone does not.
+	KeyThenPassword bool
 	// DirectTCPIP lets clients open direct-tcpip channels (ssh -L, -D,
 	// jump hosts); TCPIPForward lets them ask for remote listeners
 	// (ssh -R).
@@ -173,32 +177,25 @@ func (s *Server) Close() {
 }
 
 func (s *Server) config() *ssh.ServerConfig {
+	password := func(m ssh.ConnMetadata, pw []byte) (*ssh.Permissions, error) {
+		if m.User() == s.User && s.Password != "" && string(pw) == s.Password {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("wrong password for %q", m.User())
+	}
 	cfg := &ssh.ServerConfig{
 		PasswordCallback: func(m ssh.ConnMetadata, pw []byte) (*ssh.Permissions, error) {
-			if m.User() == s.User && s.Password != "" && string(pw) == s.Password {
-				return nil, nil
+			if s.KeyThenPassword {
+				return nil, fmt.Errorf("a key first for %q", m.User())
 			}
-			return nil, fmt.Errorf("wrong password for %q", m.User())
+			return password(m, pw)
 		},
 		PublicKeyCallback: func(m ssh.ConnMetadata, k ssh.PublicKey) (*ssh.Permissions, error) {
-			if m.User() != s.User {
-				return nil, fmt.Errorf("unknown user")
+			perms, err := s.publicKey(m, k)
+			if err == nil && s.KeyThenPassword {
+				return nil, &ssh.PartialSuccessError{Next: ssh.ServerAuthCallbacks{PasswordCallback: password}}
 			}
-			if _, ok := k.(*ssh.Certificate); ok {
-				if s.TrustedCA == nil {
-					return nil, fmt.Errorf("no certificate authority")
-				}
-				ca := string(s.TrustedCA.Marshal())
-				checker := &ssh.CertChecker{IsUserAuthority: func(auth ssh.PublicKey) bool { return string(auth.Marshal()) == ca }}
-				return checker.Authenticate(m, k)
-			}
-			if s.AuthorizedKey != nil && string(k.Marshal()) == string(s.AuthorizedKey.Marshal()) {
-				return nil, nil
-			}
-			if s.AuthorizedKeysFile != "" && authorized(s.AuthorizedKeysFile, k) {
-				return nil, nil
-			}
-			return nil, fmt.Errorf("unknown key")
+			return perms, err
 		},
 		NoClientAuth:  s.NoClientAuth.Load(),
 		ServerVersion: "SSH-2.0-SSHYardTest",
@@ -208,6 +205,28 @@ func (s *Server) config() *ssh.ServerConfig {
 	s.mu.Unlock()
 	cfg.AddHostKey(s.HostKey)
 	return cfg
+}
+
+// publicKey accepts the authorized keys and the trusted certificates.
+func (s *Server) publicKey(m ssh.ConnMetadata, k ssh.PublicKey) (*ssh.Permissions, error) {
+	if m.User() != s.User {
+		return nil, fmt.Errorf("unknown user")
+	}
+	if _, ok := k.(*ssh.Certificate); ok {
+		if s.TrustedCA == nil {
+			return nil, fmt.Errorf("no certificate authority")
+		}
+		ca := string(s.TrustedCA.Marshal())
+		checker := &ssh.CertChecker{IsUserAuthority: func(auth ssh.PublicKey) bool { return string(auth.Marshal()) == ca }}
+		return checker.Authenticate(m, k)
+	}
+	if s.AuthorizedKey != nil && string(k.Marshal()) == string(s.AuthorizedKey.Marshal()) {
+		return nil, nil
+	}
+	if s.AuthorizedKeysFile != "" && authorized(s.AuthorizedKeysFile, k) {
+		return nil, nil
+	}
+	return nil, fmt.Errorf("unknown key")
 }
 
 func (s *Server) accept() {

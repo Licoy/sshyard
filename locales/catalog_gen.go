@@ -2601,6 +2601,26 @@ func (msgs Messages) AskPassphraseEachTime() string {
 	return Catalog.Format(msgs.locale, "askPassphraseEachTime", nil)
 }
 
+// KeyAlsoPassword says "Also log in with a password"
+// in the language the app shows.
+func KeyAlsoPassword() string { return In(i18n.Locale()).KeyAlsoPassword() }
+
+// KeyAlsoPassword says "Also log in with a password"
+// in the language of msgs.
+func (msgs Messages) KeyAlsoPassword() string {
+	return Catalog.Format(msgs.locale, "keyAlsoPassword", nil)
+}
+
+// KeyAlsoPasswordHint says "For servers that want both the key and a password (AuthenticationMethods publickey,password). The password is saved e…"
+// in the language the app shows.
+func KeyAlsoPasswordHint() string { return In(i18n.Locale()).KeyAlsoPasswordHint() }
+
+// KeyAlsoPasswordHint says "For servers that want both the key and a password (AuthenticationMethods publickey,password). The password is saved e…"
+// in the language of msgs.
+func (msgs Messages) KeyAlsoPasswordHint() string {
+	return Catalog.Format(msgs.locale, "keyAlsoPasswordHint", nil)
+}
+
 // CredUsedBy says "Used by {names}"
 // in the language the app shows.
 func CredUsedBy(names string) string { return In(i18n.Locale()).CredUsedBy(names) }

@@ -255,6 +255,8 @@
   "keyPuttyConverted": "PuTTY 키, OpenSSH 형식으로 보관됨",
   "keyEncrypted": "암호문으로 암호화됨",
   "askPassphraseEachTime": "암호문을 저장하지 않고 실행할 때마다 한 번 묻기",
+  "keyAlsoPassword": "비밀번호로도 로그인",
+  "keyAlsoPasswordHint": "키와 비밀번호를 모두 요구하는 서버용입니다(AuthenticationMethods publickey,password). 비밀번호는 이 컴퓨터에 암호화되어 저장됩니다.",
   "credUsedBy": "{names}에서 사용 중",
   "credUnused": "사용 중인 호스트 없음",
   "credKeyRequired": "개인 키를 불러오거나 붙여넣거나 생성하세요.",

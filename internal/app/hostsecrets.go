@@ -35,6 +35,17 @@ func (a *App) hostSecretFields(c *ui.Context, m locales.Messages, tok theme.Toke
 			ui.Field(c, m.FieldPassphrase(), func() { formTextInput(c.Key("hf:pass"), &s.passphrase).Password().Placeholder(m.PasswordUnchanged()) })
 			ui.Field(c, "", func() { formCheckbox(c.Key("hf:ask"), &s.askPass, m.AskPassphraseEachTime()) })
 		}
+		ui.Field(c, "", func() { formCheckbox(c.Key("hf:keypw"), &f.keyPassword, m.KeyAlsoPassword()) })
+		if f.keyPassword {
+			ui.Field(c, m.FieldPassword(), func() {
+				ph := ""
+				if f.keyPasswordSaved {
+					ph = m.PasswordUnchanged()
+				}
+				formTextInput(c.Key("hf:password"), &s.password).Password().Placeholder(ph)
+			})
+			ui.Field(c, "", func() { ui.Text(c, m.KeyAlsoPasswordHint()).FontSize(theme.Caption).TextColor(tok.TextMuted) })
+		}
 	}
 	if s.err != "" {
 		ui.Text(c, s.err).FontSize(theme.Footnote).TextColor(tok.Danger)
@@ -58,7 +69,8 @@ func hostAuthNeedsSecrets(f *hostForm, h assets.Host) bool {
 	case assets.AuthPassword:
 		return f.secret.password != ""
 	case assets.AuthKey:
-		return f.secret.loaded() || f.secret.passphrase != "" || f.secret.askPass != f.orig.AskPassphrase
+		return f.secret.loaded() || f.secret.passphrase != "" || f.secret.askPass != f.orig.AskPassphrase ||
+			f.keyPassword != f.keyPasswordSaved || f.keyPassword && f.secret.password != ""
 	}
 	return false
 }
@@ -158,6 +170,21 @@ func (a *App) hostSecretChanges(m locales.Messages, f *hostForm, h assets.Host) 
 			}
 			values[keychain.Passphrase] = pass
 		}
+		// The password sent after the key, for a server that wants both.
+		if f.keyPassword {
+			switch {
+			case s.password != "":
+				values[keychain.Password] = []byte(s.password)
+			case f.orig.Auth != assets.AuthKey || !f.keyPasswordSaved:
+				return fail(m.CredPasswordRequired())
+			case src == h.ID:
+				keep[keychain.Password] = true
+			default:
+				if values[keychain.Password], err = a.kc.Get(keychain.Host(src, keychain.Password)); err != nil {
+					return h, nil, err
+				}
+			}
+		}
 	}
 	var changes []keychain.Change
 	for _, kind := range keychain.Kinds {
@@ -254,6 +281,12 @@ func (a *App) hostCredentials(h assets.Host, typed func(string) string) (session
 	}
 	if err != nil {
 		return out, err
+	}
+	// A password, when kept, follows the key: some servers want both.
+	if value, perr := read(keychain.Password); perr == nil {
+		out.Password = string(value)
+	} else if !errors.Is(perr, keychain.ErrNotFound) {
+		return out, perr
 	}
 	if h.AskPassphrase {
 		if typed == nil {
