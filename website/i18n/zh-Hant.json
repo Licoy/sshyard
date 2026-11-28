@@ -374,7 +374,7 @@
       ],
       [
         "連線方式",
-        "SSH、SFTP / SCP、Telnet、序列埠與本機終端機"
+        "SSH、SFTP / SCP、Telnet、RDP 遠端桌面、序列埠與本機終端機"
       ],
       [
         "下載大小",
@@ -812,7 +812,7 @@
       },
       {
         "q": "除了 SSH，還能連接什麼？",
-        "a": "還支援 Telnet、序列埠（COM）和本機終端機，Windows 上的本機終端機可選 PowerShell、CMD、Git Bash 與 WSL。伺服器沒有 SFTP 時，檔案面板會自動改用 SCP。"
+        "a": "還支援 Telnet、Windows 遠端桌面（RDP）、序列埠（COM）和本機終端機，Windows 上的本機終端機可選 PowerShell、CMD、Git Bash 與 WSL。伺服器沒有 SFTP 時，檔案面板會自動改用 SCP。"
       },
       {
         "q": "能同時在多臺伺服器上執行命令嗎？",

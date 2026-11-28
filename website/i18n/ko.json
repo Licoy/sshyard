@@ -374,7 +374,7 @@
       ],
       [
         "연결 방식",
-        "SSH, SFTP / SCP, Telnet, 직렬 포트, 로컬 터미널"
+        "SSH, SFTP / SCP, Telnet, RDP 원격 데스크톱, 직렬 포트, 로컬 터미널"
       ],
       [
         "다운로드 크기",
@@ -812,7 +812,7 @@
       },
       {
         "q": "SSH 말고 무엇에 연결할 수 있나요?",
-        "a": "Telnet, 직렬(COM) 포트, 로컬 터미널을 지원하며, Windows의 로컬 터미널은 PowerShell, CMD, Git Bash, WSL 중에서 고를 수 있습니다. 서버에 SFTP가 없으면 파일 창이 자동으로 SCP를 사용합니다."
+        "a": "Telnet, Windows 원격 데스크톱(RDP), 직렬(COM) 포트, 로컬 터미널을 지원하며, Windows의 로컬 터미널은 PowerShell, CMD, Git Bash, WSL 중에서 고를 수 있습니다. 서버에 SFTP가 없으면 파일 창이 자동으로 SCP를 사용합니다."
       },
       {
         "q": "여러 서버에서 한 번에 명령을 실행할 수 있나요?",

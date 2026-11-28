@@ -374,7 +374,7 @@
       ],
       [
         "连接方式",
-        "SSH、SFTP / SCP、Telnet、串口与本地终端"
+        "SSH、SFTP / SCP、Telnet、RDP 远程桌面、串口与本地终端"
       ],
       [
         "安装包大小",
@@ -812,7 +812,7 @@
       },
       {
         "q": "除了 SSH，还能连接什么？",
-        "a": "还支持 Telnet、串口（COM）和本地终端，Windows 上的本地终端可选 PowerShell、CMD、Git Bash 与 WSL。服务器没有 SFTP 时，文件面板会自动改用 SCP。"
+        "a": "还支持 Telnet、Windows 远程桌面（RDP）、串口（COM）和本地终端，Windows 上的本地终端可选 PowerShell、CMD、Git Bash 与 WSL。服务器没有 SFTP 时，文件面板会自动改用 SCP。"
       },
       {
         "q": "能同时在多台服务器上执行命令吗？",

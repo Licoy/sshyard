@@ -374,7 +374,7 @@
       ],
       [
         "Connections",
-        "SSH, SFTP / SCP, Telnet, serial ports and local terminals"
+        "SSH, SFTP / SCP, Telnet, RDP remote desktop, serial ports and local terminals"
       ],
       [
         "Download size",
@@ -812,7 +812,7 @@
       },
       {
         "q": "What can SSHYard connect to besides SSH?",
-        "a": "Telnet, serial (COM) ports and local terminals; on Windows the local terminal can be PowerShell, CMD, Git Bash or WSL. When a server has no SFTP, the file pane falls back to SCP."
+        "a": "Telnet, Windows remote desktops (RDP), serial (COM) ports and local terminals; on Windows the local terminal can be PowerShell, CMD, Git Bash or WSL. When a server has no SFTP, the file pane falls back to SCP."
       },
       {
         "q": "Can I run a command on several servers at once?",
