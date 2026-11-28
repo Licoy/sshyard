@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/Licoy/sshyard/internal/theme"
@@ -17,8 +18,12 @@ func TestThemeSource(t *testing.T) {
 
 // TestAppMenuLeavesAppShortcuts verifies that the macOS menu bar takes none
 // of the window's shortcuts the menu would otherwise get first: ⌘W (close
-// pane), ⌘R (reconnect) and ⌘=, ⌘- and ⌘0 (zoom).
+// pane), ⌘R (reconnect) and ⌘=, ⌘- and ⌘0 (zoom). The menu bar is set on
+// macOS only, and its roles expand to other platforms' items elsewhere.
 func TestAppMenuLeavesAppShortcuts(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("the app menu is set on macOS only")
+	}
 	taken := map[string]bool{"CmdOrCtrl+W": true, "CmdOrCtrl+R": true, "CmdOrCtrl+Plus": true, "CmdOrCtrl+=": true, "CmdOrCtrl+-": true, "CmdOrCtrl+0": true}
 	var walk func([]*mygo.MenuItem)
 	walk = func(items []*mygo.MenuItem) {
