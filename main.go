@@ -185,13 +185,16 @@ func ownWindowButtons() bool { return runtime.GOOS != "darwin" }
 
 // appMenu is MyGo's default menu bar (macOS) with Close Window on ⇧⌘W:
 // ⌘W closes the focused pane, as in Terminal, and the menu would take it
-// before the window does.
+// before the window does. The View menu leaves out the page's items
+// (reload and zoom): a window of native UI has no page, so they do
+// nothing, yet the menu would take ⌘R (reconnect) and ⌘=, ⌘- and ⌘0 (the
+// app's zoom) before the window does.
 func appMenu() *mygo.Menu {
 	return mygo.NewMenu([]*mygo.MenuItem{
 		{Role: mygo.RoleAppMenu},
 		{Role: mygo.RoleFileMenu, Submenu: []*mygo.MenuItem{{Role: mygo.RoleClose, Accelerator: "CmdOrCtrl+Shift+W"}}},
 		{Role: mygo.RoleEditMenu},
-		{Role: mygo.RoleViewMenu},
+		{Role: mygo.RoleViewMenu, Submenu: []*mygo.MenuItem{{Role: mygo.RoleToggleDevTools}, mygo.Separator(), {Role: mygo.RoleToggleFullScreen}}},
 		{Role: mygo.RoleWindowMenu},
 	})
 }
